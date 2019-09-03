@@ -55,3 +55,20 @@ def get_circular_boundary(grid):
     plt.pcolor(np.logical_and(radii >= radius-offset/2, 
                               radii < radius+offset/2))
     return b_ind_set
+    
+def load_wet_seasons(years=list(range(1999, 2017))):
+
+    years = set(years) - set([2007, 2008])
+    years = sorted(list(years))
+    
+    filenames = []
+    
+    for year in years:
+        filenames_year = CPOL_files_from_datetime_list(
+            np.arange(np.datetime64('{}-11-01 00:00'.format(str(year))), 
+                      np.datetime64('{}-04-01 00:00'.format(str(year+1))), 
+                      np.timedelta64(10, 'm'))
+            )[0]
+        filenames += filenames_year
+        
+    return filenames
