@@ -4,6 +4,9 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 import copy
+import pickle
+import pyart
+import tint
 
 def CPOL_files_from_datetime_list(datetimes):
     print('Gathering files.')
@@ -76,6 +79,18 @@ def load_wet_seasons(years=list(range(1999, 2017))):
         
     return filenames
     
+def system_tracks_to_tracks(sys_var, n_lvl):
+    var = sys_var.append([sys_var]*(n_lvl-1)).sort_index(sort_remaining=True)
+    levels = np.array(list(range(n_lvl))*len(sys_var))
+    try:
+        var = var.to_frame().sort_index(sort_remaining=True)
+    except:
+        print('Input already a dataframe.')
+    var.insert(0, 'level', levels)
+    var = var.reset_index()
+    var = var.set_index(['scan', 'time', 'level', 'uid'])
+    var = var.sort_index(sort_remaining=True)
+    return var
 
 def get_reanalysis_vars(tracks_obj):
     print('Adding data from Monash Reanalysis')
@@ -110,6 +125,7 @@ def get_reanalysis_vars(tracks_obj):
     shear_ds.attrs['units'] = 'm/s'
     shear_ds.attrs['long_name'] = '3 km minus 0 km mean wind shear'
     
+    # Restrict tracks_obj to when reanalysis is available
     tmp_tracks = tracks_obj.tracks.reset_index('time')
     tmp_system_tracks = tracks_obj.system_tracks.reset_index('time')
     
@@ -125,39 +141,27 @@ def get_reanalysis_vars(tracks_obj):
     tracks_obj.tracks = tracks_obj.tracks[t_cond]
     tracks_obj.system_tracks = tracks_obj.system_tracks[t_cond_sys]
     
-    tmp_tracks = tmp_tracks[t_cond]
     tmp_system_tracks = tmp_system_tracks[t_cond_sys]
-    
-    times = tmp_tracks.time.values.astype(np.datetime64)
     sys_times = tmp_system_tracks.time.values.astype(np.datetime64)
-        
-    shears = shear_ds.sel(time = times, method='nearest')
+
     sys_shears = shear_ds.sel(time = sys_times, method='nearest')
-    cl = vel_cl.sel(time = times, method='nearest')
     sys_cl = vel_cl.sel(time = sys_times, method='nearest')
-    
-    shears = shears.to_dataframe().reset_index('time', drop=True)
     sys_shears = sys_shears.to_dataframe().reset_index('time', drop=True)
-    cl = cl.to_dataframe().reset_index('time', drop=True)
     sys_cl = sys_cl.to_dataframe().reset_index('time', drop=True)
-    
-    shears.index = tracks_obj.tracks.index
+
     sys_shears.index = tracks_obj.system_tracks.index
-    cl.index = tracks_obj.tracks.index
     sys_cl.index = tracks_obj.system_tracks.index
+        
+    n_lvl = tracks_obj.params['LEVELS'].shape[0]
     
-    tracks_obj.tracks = tracks_obj.tracks.merge(
-        shears, left_index=True, right_index=True
-    )
-    tracks_obj.tracks = tracks_obj.tracks.merge(
-        cl, left_index=True, right_index=True
-    )
-    tracks_obj.system_tracks = tracks_obj.system_tracks.merge(
-        sys_shears, left_index=True, right_index=True
-    )
-    tracks_obj.system_tracks = tracks_obj.system_tracks.merge(
-        sys_cl, left_index=True, right_index=True
-    )
+    for var in [sys_shears, sys_cl]:
+        tracks_obj.system_tracks = tracks_obj.system_tracks.merge(
+            var, left_index=True, right_index=True
+        )
+        var_alt = system_tracks_to_tracks(var, n_lvl)
+        tracks_obj.tracks = tracks_obj.tracks.merge(
+            var_alt, left_index=True, right_index=True
+        )
     
     # Calculate additional shear related variables
     shear_dir = np.arctan2(tracks_obj.system_tracks['v_shear'], 
@@ -178,8 +182,13 @@ def get_reanalysis_vars(tracks_obj):
     prop = vels - cl_winds
     prop_dir = np.arctan2(prop['v_prop'], 
                           prop['u_prop'])
+    prop_dir = np.rad2deg(prop_dir)
+    prop_dir = prop_dir.rename('prop_dir')
+    prop_dir = np.round(prop_dir, 3)
+    
     prop_mag = np.sqrt(prop['v_prop'] ** 2 + prop['u_prop'] ** 2)
     prop_mag = prop_mag.rename('prop_mag')
+    prop_mag = np.round(prop_mag, 3)
     
     shear_rel_prop_dir = np.mod(prop_dir - shear_dir + 180, 360)-180
     shear_rel_prop_dir = shear_rel_prop_dir.rename('shear_rel_prop_dir')
@@ -189,4 +198,66 @@ def get_reanalysis_vars(tracks_obj):
         tracks_obj.system_tracks = tracks_obj.system_tracks.merge(
             var, left_index=True, right_index=True
         )
+        var_alt = system_tracks_to_tracks(var, n_lvl)
+        tracks_obj.tracks = tracks_obj.tracks.merge(
+            var_alt, left_index=True, right_index=True
+        )
+        
     return tracks_obj
+    
+def get_CPOL_tracks(year):
+    filenames = CPOL_files_from_datetime_list(
+        np.arange(np.datetime64('{}-11-01 00:00'.format(str(year))), 
+                  np.datetime64('{}-04-01 00:00'.format(str(year+1))), 
+                  np.timedelta64(10, 'm'))
+    )[0]
+
+    # Generate grid generator 
+    # Note generators produce iterators
+    # These are alternative to using lists and looping
+    grids = (pyart.io.read_grid(fn, include_fields = 'reflectivity')
+             for fn in filenames)
+
+    with open('/g/data/w40/esh563/CPOL_analysis/TINT_tracks/circ_b_ind_set.pkl', 
+              'rb') as f:
+        b_ind_set = pickle.load(f)
+
+    # Define settings for tracking
+    settings = {
+        'MIN_SIZE' : [40, 400, 800], # square km
+        'FIELD_THRESH' : ['convective', 20, 15], # DbZ
+        'ISO_THRESH' : [10, 10, 10], # DbZ
+        'GS_ALT' : 3000,
+        'SEARCH_MARGIN' : 10000, # m. This is just for object matching step:
+        # does not affect flow vectors.
+        'FLOW_MARGIN' : 40000, # m. Margin around object over which to
+        # perform phase correlation.
+        'LEVELS' : np.array( # m
+            [[3000, 3500], 
+             [3500, 7500],
+             [7500, 10000]]
+        ),
+        'TRACK_INTERVAL' : 0,
+        'BOUNDARY_GRID_CELLS' : b_ind_set,
+        'UPDRAFT_START': 3000
+    }
+
+    tracks_obj  = tint.Cell_tracks()
+
+    for parameter in ['MIN_SIZE', 'FIELD_THRESH', 'GS_ALT', 'LEVELS', 
+                      'TRACK_INTERVAL', 'ISO_THRESH', 'SEARCH_MARGIN',
+                      'FLOW_MARGIN', 'BOUNDARY_GRID_CELLS', 'UPDRAFT_START'
+                     ]:
+        tracks_obj.params[parameter] = settings[parameter]
+
+    # Calculate tracks
+    tracks_obj.get_tracks(grids)
+    tracks_obj = get_reanalysis_vars(tracks_obj)
+
+    out_file_name = ('/g/data/w40/esh563/CPOL_analysis/TINT_tracks/'
+                     + 'tracks_obj_{}_{}.pkl'.format(str(year), str(year+1)))
+
+    with open(out_file_name, 'wb') as f:
+        pickle.dump(tracks_obj, f)
+        
+    return tracks_obj        
