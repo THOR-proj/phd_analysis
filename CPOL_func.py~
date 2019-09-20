@@ -5,6 +5,8 @@ import xarray as xr
 import pandas as pd
 import copy
 import pickle
+import pyart
+import tint
 
 def CPOL_files_from_datetime_list(datetimes):
     print('Gathering files.')
@@ -258,4 +260,67 @@ def get_CPOL_tracks(year):
     with open(out_file_name, 'wb') as f:
         pickle.dump(tracks_obj, f)
         
-    return tracks_obj        
+    return tracks_obj
+    
+def combine_tracks(years=list(range(2001, 2015))):
+    years = set(years) - set([2007, 2008])
+    years = sorted(list(years))
+    bp = '/g/data/w40/esh563/CPOL_analysis/TINT_tracks/tracks_obj_'
+    max_uid = 0
+    tracks=[]
+    system_tracks=[]
+    for year in years:
+        print('Shifting uid of for {}'.format(year))
+        with open(bp + '{}_{}.pkl'.format(str(year), str(year+1)), 'rb') as f:
+            tracks_obj = pickle.load(f)
+        tracks_obj.tracks.reset_index(
+            level=['scan', 'time', 'level', 'uid'], inplace=True
+        )
+        tracks_obj.system_tracks.reset_index(
+            level=['scan', 'time', 'uid'], inplace=True
+        )
+        uids = tracks_obj.tracks['uid'].values.astype(int)
+        sys_uids = tracks_obj.system_tracks['uid'].values.astype(int)
+        uids += max_uid
+        sys_uids += max_uid
+        
+        # Fix tracks merger values
+        for i in range(len(tracks_obj.tracks)):
+            m_uid = tracks_obj.tracks.mergers.values[i]
+            new_m_uid = np.array(list(m_uid)).astype(int) + max_uid
+            new_m_uid = set(new_m_uid.astype(str).tolist())
+            tracks_obj.tracks.mergers.values[i] = new_m_uid
+            if len(m_uid) > 0:
+                import pdb
+                pdb.set_trace()
+            
+        # Fix system_tracks merger values
+        for i in range(len(tracks_obj.system_tracks)):
+            m_uid = tracks_obj.system_tracks.mergers.values[i]
+            new_m_uid = np.array(list(m_uid)).astype(int) + max_uid
+            new_m_uid = set(new_m_uid.astype(str).tolist())
+            tracks_obj.system_tracks.mergers.values[i] = new_m_uid
+        
+        max_uid = uids.max()
+        
+        tracks_obj.tracks['uid'] = uids.astype(str)
+        tracks_obj.system_tracks['uid'] = sys_uids.astype(str)
+        tracks_obj.tracks.set_index(['scan', 'time', 'level', 'uid'], 
+                                    inplace=True)
+        tracks_obj.system_tracks.set_index(['scan', 'time', 'uid'],
+                                           inplace=True)
+        tracks.append(tracks_obj.tracks)
+        system_tracks.append(tracks_obj.system_tracks)
+        
+    print('Concatenating shifted tracks.')    
+    tracks_obj.tracks = pd.concat(tracks)
+    tracks_obj.system_tracks = pd.concat(system_tracks)
+    
+    fn = bp + 'com_{}_{}.pkl'.format(str(years[0]), str(years[-1]))
+    with open(fn, 'wb') as f:
+        pickle.dump(tracks_obj, f)
+        
+    return tracks_obj
+        
+
+            
