@@ -40,13 +40,13 @@ def caine_files_from_TINT_obj(tracks_obj, uid):
 def calculate_hgt_AGL():
     fn = sorted(glob.glob('/g/data/w40/esh563/d04.dir/*.nc.gz'))
     height_AGL = np.zeros((64, 486, 717))
-    for i in range(len(fn)):
+    for i in range(len(fn[:10])):
         print('Adding file {}.'.format(str(i)))
         ds = xr.open_dataset(fn[i])
         da = (ds.PH+ds.PHB)/9.80665 - ds.HGT
         da = da.sum(axis=0)
         height_AGL += da.values
-    height_AGL = height_AGL/(3*len(fn))
+    height_AGL = height_AGL/(3*10)
     import pdb
     pdb.set_trace()
     height_AGL = height_AGL.mean(axis=(1,2))
