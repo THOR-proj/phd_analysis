@@ -9,10 +9,38 @@ import netCDF4
 
 import glob
 
+def caine_files_from_datetime_list(datetimes):
+    print('Gathering files.')
+    base = '/g/data/w40/esh563/lind04/dbz/'
+    filenames = []
+    for i in range(len(datetimes)):
+        year = str(datetimes[i])[0:4]
+        month = str(datetimes[i])[5:7]
+        day = str(datetimes[i])[8:10]
+        hour = str(datetimes[i])[11:13]
+        minute = str(datetimes[i])[14:16]
+        filename = ('{0}-{1}-{2}_'.format(year, month, day) 
+                    + '{0}:{1}:00'.format(hour, minute)
+                    + 'alllevels_zlib.nc')
+        if os.path.isfile(filename):
+            filenames.append(filename)
+    
+    return sorted(filenames), datetimes[0], datetimes[-1]
+    
+    
+def caine_files_from_TINT_obj(tracks_obj, uid):
+    datetimes = tracks_obj.system_tracks.xs(uid, level='uid')
+    datetimes = datetimes.reset_index(level='time')['time']
+    datetimes = list(datetimes.values)
+    [files, start_date, end_date] = CPOL_files_from_datetime_list(datetimes)
+    
+    return files, start_date, end_date
+    
+
 def calculate_hgt_AGL():
     fn = sorted(glob.glob('/g/data/w40/esh563/d04.dir/*.nc.gz'))
     height_AGL = np.zeros((64, 486, 717))
-    for i in range(len(fn[:2])):
+    for i in range(len(fn)):
         print('Adding file {}.'.format(str(i)))
         ds = xr.open_dataset(fn[i])
         da = (ds.PH+ds.PHB)/9.80665 - ds.HGT
