@@ -80,13 +80,9 @@ def vert_interp(field, z):
         
            
 def WRF_to_pyart():
-    fn = sorted(glob.glob('/g/data/w40/esh563/d04.dir/wrfout_d04_2006-02-09_10*.nc.gz'))
-    #datetimes = np.arange(np.datetime64('2006-02-09 00:00:00'), 
-    #                      np.datetime64('2006-02-13 12:30:00'), 
-    #                      np.timedelta64(30, 'm'))
-    #fn = ['/g/data/w40/esh563/d04.dir/wrfout_d04_2006-02-09_10:00:00.nc.gz']
-    datetimes = np.arange(np.datetime64('2006-02-09 10:00:00'), 
-                          np.datetime64('2006-02-09 11:00:00'), 
+    fn = sorted(glob.glob('/g/data/w40/esh563/d04.dir/wrfout*.nc.gz'))
+    datetimes = np.arange(np.datetime64('2006-02-09 00:00:00'), 
+                          np.datetime64('2006-02-13 12:30:00'), 
                           np.timedelta64(30, 'm'))
                           
     # Open arbitrary CPOL 2500 file from which to extract useful metadata

@@ -37,8 +37,6 @@ def caine_files_from_datetime_list(datetimes):
     base = '/g/data/w40/esh563/lind04_ref/'
     filenames = []
     for i in range(len(datetimes)):
-        import pdb
-        pdb.set_trace()
         filename = ('lind04_ref_' + str(datetimes[i]) + ':00.nc')
         if os.path.isfile(base + filename):
             filenames.append(base + filename)
