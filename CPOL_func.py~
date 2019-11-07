@@ -290,9 +290,6 @@ def combine_tracks(years=list(range(2001, 2015))):
             new_m_uid = np.array(list(m_uid)).astype(int) + max_uid
             new_m_uid = set(new_m_uid.astype(str).tolist())
             tracks_obj.tracks.mergers.values[i] = new_m_uid
-            if len(m_uid) > 0:
-                import pdb
-                pdb.set_trace()
             
         # Fix system_tracks merger values
         for i in range(len(tracks_obj.system_tracks)):

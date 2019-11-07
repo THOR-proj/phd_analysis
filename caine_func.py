@@ -7,6 +7,8 @@ import copy
 import pickle
 import netCDF4
 
+from scipy.special import gamma
+
 import glob
 
 from numba import jit
@@ -32,12 +34,12 @@ def caine_files_from_datetime_list(datetimes):
 '''
     
     
-def caine_files_from_datetime_list(datetimes):
+def caine_files_from_datetime_list(datetimes, mp='lin'):
     print('Gathering files.')
-    base = '/g/data/w40/esh563/lind04_ref/'
+    base = '/g/data/w40/esh563/{}d04_ref/'.format(mp)
     filenames = []
     for i in range(len(datetimes)):
-        filename = ('lind04_ref_' + str(datetimes[i]) + ':00.nc')
+        filename = ('{}d04_ref_'.format(mp) + str(datetimes[i]) + ':00.nc')
         if os.path.isfile(base + filename):
             filenames.append(base + filename)
     
@@ -79,12 +81,18 @@ def vert_interp(field, z):
     return interp
         
            
-def WRF_to_pyart():
-    fn = sorted(glob.glob('/g/data/w40/esh563/d04.dir/wrfout*.nc.gz'))
-    datetimes = np.arange(np.datetime64('2006-02-09 00:00:00'), 
-                          np.datetime64('2006-02-13 12:30:00'), 
-                          np.timedelta64(30, 'm'))
-                          
+def WRF_to_pyart(mp='lin'):
+    if mp=='lin':
+        fn = sorted(glob.glob('/g/data/w40/esh563/d04.dir/wrfout*.nc.gz'))
+        datetimes = np.arange(np.datetime64('2006-02-09 00:00:00'), 
+                              np.datetime64('2006-02-13 12:30:00'), 
+                              np.timedelta64(30, 'm'))
+    else:
+        fn = sorted(glob.glob('/g/data/w40/esh563/thompson/d04.dir/wrfout*.nc.gz'))
+        datetimes = np.arange(np.datetime64('2006-02-08 12:00:00'), 
+                              np.datetime64('2006-02-13 12:30:00'), 
+                              np.timedelta64(30, 'm'))                           
+                         
     # Open arbitrary CPOL 2500 file from which to extract useful metadata
     CPOL = xr.open_dataset(('/g/data/rr5/CPOL_radar/CPOL_level_1b/' 
                             + 'GRIDDED/GRID_150km_2500m/2006/20060210/'
@@ -92,14 +100,21 @@ def WRF_to_pyart():
                             
     for i in range(len(fn)):
         print('Starting conversions.')
+        if datetimes[i]<np.datetime64('2006-02-08T12:00:00'):
+            continue
         WRF = xr.open_dataset(fn[i])
         for j in range(3):
             wrf = WRF.isel(Time=j)
+                
             z = (wrf.PH + wrf.PHB)/9.80665
             
             # Destagger and standardise domains
-            wrf_water = wrf[['QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW', 'QGRAUP', 
-                             'T', 'P', 'PB']]
+            if mp=='lin':
+                wrf_water = wrf[['QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW',
+                                 'QGRAUP', 'T', 'P', 'PB']]
+            else:
+                wrf_water = wrf[['QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW', 
+                                 'QGRAUP', 'QNRAIN', 'QNICE', 'T', 'P', 'PB']]
             wrf_water['west_east'] = wrf_water.XLONG[0,:]
             wrf_water['south_north'] = wrf_water.XLAT[:,0]
 
@@ -138,6 +153,9 @@ def WRF_to_pyart():
             # Interpolate onto standard height levels
             var_list = ['QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW', 
                         'QGRAUP', 'T', 'P', 'PB', 'U', 'V', 'W']
+            if mp=='thompson':
+                var_list.append('QNICE')
+                var_list.append('QNRAIN')
             ds_list = []
             x = np.arange(-145000, 145000 + 2500, 2500, dtype=float)
             y = np.arange(-145000, 145000 + 2500, 2500, dtype=float)
@@ -175,24 +193,46 @@ def WRF_to_pyart():
             
             # Create reflectivity field
             rho_air = 1.225
-            N0r = 8*10**6
-            N0g = 4*10**6
-            N0s = 2*10**7
+
             rho_rain = 1000
             rho_snow = 100
             rho_graup = 400
+            rho_ice = 917
             
             T = (wrf.T + 300)*(100000/(wrf.PB+wrf.P)) ** (-0.286) - 273.15
             
-            rain_ref = 720 * (rho_air * wrf.QRAIN) ** (7/4) / (N0r ** (3/4) * (np.pi * rho_rain) ** (7/4))
-            snow_ref = 720 * (rho_air * wrf.QSNOW) ** (7/4) / (N0s ** (3/4) * (np.pi * rho_snow) ** (7/4)) * (rho_snow / rho_rain) ** 2 * (T < 0) *  0.224 
-            graup_ref = 720 * (rho_air * wrf.QGRAUP) ** (7/4) / (N0g ** (3/4) * (np.pi * rho_graup) ** (7/4)) * (rho_graup / rho_rain) ** 2 * (T < 0) * 0.224 
-            
+            if mp == 'lin':
+                N0r = 8*10**6
+                N0g = 4*10**6
+                N0s = 2*10**7
+                rain_ref = 720 * (rho_air * wrf.QRAIN) ** (7/4) / (N0r ** (3/4) * (np.pi * rho_rain) ** (7/4))
+                snow_ref = 720 * (rho_air * wrf.QSNOW) ** (7/4) / (N0s ** (3/4) * (np.pi * rho_snow) ** (7/4)) * (rho_snow / rho_rain) ** 2 
+                graup_ref = 720 * (rho_air * wrf.QGRAUP) ** (7/4) / (N0g ** (3/4) * (np.pi * rho_graup) ** (7/4)) * (rho_graup / rho_rain) ** 2 
+                
+                graup_ref.values[T.values<0] = graup_ref.values[T.values<0] * 0.224
+                snow_ref.values[T.values<0] = snow_ref.values[T.values<0] * 0.224
+            else:
+                # Solve for rain reflectivity
+                lam_rain = (np.pi*rho_rain*wrf.QNRAIN*gamma(4)/(6*wrf.QRAIN*gamma(1)))**(1/3)
+                N0r = wrf.QNRAIN * lam_rain / gamma(1)
+                rain_ref = (6/np.pi)**2*(wrf.QRAIN**2/wrf.QNRAIN)*gamma(7)*rho_air/(rho_rain*gamma(4))**2
+
+                # Solve for graupel reflectivity
+                N1 = 10**4
+                N2 = 5*10**6
+                qg0 = 0.15*10**(-3)
+                N0g = ((N1-N2)/2)*np.tanh((qg0-wrf.QGRAUP)/qg0)+(N1+N2)/2
+                graup_ref = 720*(rho_air*wrf.QGRAUP)**(7/4)/(N0g**(3/4)*(np.pi*rho_graup)**(7/4))*(rho_graup/rho_ice)**2
+
+                # Solve for snow reflectivity
+                a = 5.065339-0.062659*T-3.032362*4+0.029469*T*4-0.000285*T**2+0.312550*4**2+0.00020*T**2*4+0.003199*T*4**2-0.015952*4**3
+                a = 10 ** a
+                b = 0.476221-0.015896*T+0.165977*4+0.007468*T*4-0.000141*T**2+0.060366*4**2+0.000079*T**2*4+0.000594*T*4**2-0.003577*4**3
+                snow_ref = 0.189*(rho_snow/rho_ice)**2*a*(wrf.QSNOW*rho_air/0.069)**b      
+                            
             Z = 10 * np.log10(10 ** 18 * (rain_ref+snow_ref+graup_ref))
-            
             Z.values[Z.values<0] = np.nan
             Z.name = 'reflectivity'
-            
             wrf = xr.merge([wrf,Z])
             
             wrf.time.encoding['units'] = 'seconds since   '+str(t)+'Z'
@@ -219,10 +259,16 @@ def WRF_to_pyart():
             wrf.radar_time.attrs = CPOL.radar_time.attrs
             
             print('Saving file ' + str(t))
-            base = '/g/data/w40/esh563/lind04_ref/'
-            wrf.to_netcdf(base + 'lind04_ref_' + str(t) + '.nc', 
+            if mp=='lin':
+                base = '/g/data/w40/esh563/lind04_ref/'
+                wrf.to_netcdf(base + 'lind04_ref_' + str(t) + '.nc', 
                           format='NETCDF4')
-    
+            else:
+                base = '/g/data/w40/esh563/thompsond04_ref/'
+                wrf.to_netcdf(base + 'thompsond04_ref_' + str(t) + '.nc', 
+                          format='NETCDF4')
+            
+        del WRF
            
            
 def wrf_radar_npy_to_nc():
