@@ -31,8 +31,7 @@ def caine_files_from_datetime_list(datetimes):
             filenames.append(base + filename)
     
     return sorted(filenames), datetimes[0], datetimes[-1]
-'''
-    
+'''   
     
 def caine_files_from_datetime_list(datetimes, mp='lin'):
     print('Gathering files.')
@@ -100,10 +99,15 @@ def WRF_to_pyart(mp='lin'):
                             
     for i in range(len(fn)):
         print('Starting conversions.')
-        if datetimes[i]<np.datetime64('2006-02-08T12:00:00'):
+        
+        if datetimes[i]<np.datetime64('2006-02-13T12:00:00'):
             continue
+        '''
+        if datetimes[i]>np.datetime64('2006-02-12T17:50:00'):
+            continue
+        '''
         WRF = xr.open_dataset(fn[i])
-        for j in range(3):
+        for j in range(WRF.Times.size):
             wrf = WRF.isel(Time=j)
                 
             z = (wrf.PH + wrf.PHB)/9.80665
@@ -192,14 +196,13 @@ def WRF_to_pyart(mp='lin'):
             origin_lon = wrf.longitude.mean().values
             
             # Create reflectivity field
-            rho_air = 1.225
-
             rho_rain = 1000
-            rho_snow = 100
+            rho_snow = 100  
             rho_graup = 400
-            rho_ice = 917
+            rho_ice = 890
             
             T = (wrf.T + 300)*(100000/(wrf.PB+wrf.P)) ** (-0.286) - 273.15
+            rho_air=(wrf.P+wrf.PB)/(287*(T+273.15)*(0.622+wrf.QVAPOR)/(0.622*(1+wrf.QVAPOR)))
             
             if mp == 'lin':
                 N0r = 8*10**6
@@ -228,7 +231,7 @@ def WRF_to_pyart(mp='lin'):
                 a = 5.065339-0.062659*T-3.032362*4+0.029469*T*4-0.000285*T**2+0.312550*4**2+0.00020*T**2*4+0.003199*T*4**2-0.015952*4**3
                 a = 10 ** a
                 b = 0.476221-0.015896*T+0.165977*4+0.007468*T*4-0.000141*T**2+0.060366*4**2+0.000079*T**2*4+0.000594*T*4**2-0.003577*4**3
-                snow_ref = 0.189*(rho_snow/rho_ice)**2*a*(wrf.QSNOW*rho_air/0.069)**b      
+                snow_ref = 0.189*(0.069*6/(np.pi*rho_ice))**2*a*(wrf.QSNOW*rho_air/0.069)**b      
                             
             Z = 10 * np.log10(10 ** 18 * (rain_ref+snow_ref+graup_ref))
             Z.values[Z.values<0] = np.nan
