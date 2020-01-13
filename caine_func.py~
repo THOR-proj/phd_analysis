@@ -38,18 +38,20 @@ def caine_files_from_datetime_list(datetimes, mp='lin'):
     base = '/g/data/w40/esh563/{}d04_ref/'.format(mp)
     filenames = []
     for i in range(len(datetimes)):
-        filename = ('{}d04_ref_'.format(mp) + str(datetimes[i]) + ':00.nc')
+        filename = ('{}d04_ref_'.format(mp) 
+                    + str(datetimes[i].astype('datetime64[m]')) 
+                    + ':00.nc')
         if os.path.isfile(base + filename):
             filenames.append(base + filename)
     
     return sorted(filenames), datetimes[0], datetimes[-1]
     
     
-def caine_files_from_TINT_obj(tracks_obj, uid):
+def caine_files_from_TINT_obj(tracks_obj, uid, mp='lin'):
     datetimes = tracks_obj.system_tracks.xs(uid, level='uid')
     datetimes = datetimes.reset_index(level='time')['time']
     datetimes = list(datetimes.values)
-    [files, start_date, end_date] = CPOL_files_from_datetime_list(datetimes)
+    [files, start_date, end_date] = caine_files_from_datetime_list(datetimes, mp=mp)
     
     return files, start_date, end_date
     
@@ -100,9 +102,10 @@ def WRF_to_pyart(mp='lin'):
     for i in range(len(fn)):
         print('Starting conversions.')
         
+        '''
         if datetimes[i]<np.datetime64('2006-02-13T12:00:00'):
             continue
-        '''
+        
         if datetimes[i]>np.datetime64('2006-02-12T17:50:00'):
             continue
         '''
@@ -219,6 +222,7 @@ def WRF_to_pyart(mp='lin'):
                 lam_rain = (np.pi*rho_rain*wrf.QNRAIN*gamma(4)/(6*wrf.QRAIN*gamma(1)))**(1/3)
                 N0r = wrf.QNRAIN * lam_rain / gamma(1)
                 rain_ref = (6/np.pi)**2*(wrf.QRAIN**2/wrf.QNRAIN)*gamma(7)*rho_air/(rho_rain*gamma(4))**2
+                rain_ref = rain_ref.fillna(value=0)
 
                 # Solve for graupel reflectivity
                 N1 = 10**4
