@@ -270,7 +270,7 @@ def combine_tracks(years=list(range(2001, 2015))):
     tracks=[]
     system_tracks=[]
     for year in years:
-        print('Shifting uid of for {}'.format(year))
+        print('Shifting uid for {}'.format(year))
         with open(bp + '{}_{}.pkl'.format(str(year), str(year+1)), 'rb') as f:
             tracks_obj = pickle.load(f)
         tracks_obj.tracks.reset_index(
@@ -298,7 +298,7 @@ def combine_tracks(years=list(range(2001, 2015))):
             new_m_uid = set(new_m_uid.astype(str).tolist())
             tracks_obj.system_tracks.mergers.values[i] = new_m_uid
         
-        max_uid = uids.max()
+        max_uid = uids.max()+1
         
         tracks_obj.tracks['uid'] = uids.astype(str)
         tracks_obj.system_tracks['uid'] = sys_uids.astype(str)
