@@ -57,6 +57,9 @@ def create_categories(tracks_obj):
                  | (conv_align >= 135) | (conv_align <= -135))
     par_align = par_align.rename('par_align')
 
+    import pdb
+    pdb.set_trace()
+
     # Note for CPOL 2.5 km, total scan area is only 66052 km^2. This makes 
     # traditional MCS definitions of area > 30000 km^2 difficult to apply, 
     # and still coherently calculate tilt. 
