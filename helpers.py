@@ -39,7 +39,7 @@ def create_categories(tracks_obj):
     sig_vel_mag = (vel_mag <= 30)
     sig_vel_mag = sig_vel_mag.rename('sig_vel_mag')
 
-    stationary = (vel_mag <= 4) 
+    stationary = (vel_mag <= 8) 
     stationary = stationary.rename('stationary')
 
     linear = (tracks_obj.system_tracks['eccentricity'] > .7)
@@ -56,9 +56,6 @@ def create_categories(tracks_obj):
     par_align = (((conv_align >= -45) & (conv_align <= 45)) 
                  | (conv_align >= 135) | (conv_align <= -135))
     par_align = par_align.rename('par_align')
-
-    import pdb
-    pdb.set_trace()
 
     # Note for CPOL 2.5 km, total scan area is only 66052 km^2. This makes 
     # traditional MCS definitions of area > 30000 km^2 difficult to apply, 
