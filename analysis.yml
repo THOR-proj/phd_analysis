@@ -641,10 +641,4 @@ dependencies:
   - zipp=3.4.0=py_0
   - zlib=1.2.11=h516909a_1010
   - zstd=1.4.8=ha95c52a_1
-  - pip:
-    - cartopy-userconfig==1
-    - nci-intake-catalogue==1
-    - pipedviewer==7.63
-    - pyferret==7.63
-    - um-utils==2019.1.1
 prefix: /g/data3/hh5/public/apps/miniconda3/envs/analysis3-21.01

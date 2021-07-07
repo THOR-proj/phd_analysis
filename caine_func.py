@@ -1,60 +1,35 @@
 import os
-import datetime
 import numpy as np
 import xarray as xr
-import pandas as pd
-import copy
-import pickle
-import netCDF4
-
 from scipy.special import gamma
-
 import glob
-
 from numba import jit
 
-'''
-def caine_files_from_datetime_list(datetimes):
+
+def caine_files_from_datetime_list(
+        datetimes, base_dir='/g/data/w40/esh563/', micro_physics='lin'):
     print('Gathering files.')
-    base = '/g/data/w40/esh563/lind04_ref/'
+    base_dir += '{}d04_ref/'.format(micro_physics)
     filenames = []
     for i in range(len(datetimes)):
-        year = str(datetimes[i])[0:4]
-        month = str(datetimes[i])[5:7]
-        day = str(datetimes[i])[8:10]
-        hour = str(datetimes[i])[11:13]
-        minute = str(datetimes[i])[14:16]
-        filename = ('{0}-{1}-{2}_'.format(year, month, day)
-                    + '{0}:{1}:00'.format(hour, minute)
-                    + 'alllevels_zlib.nc')
-        if os.path.isfile(base + filename):
-            filenames.append(base + filename)
-    
+        filename = (
+            '{}d04_ref_'.format(micro_physics)
+            + str(datetimes[i].astype('datetime64[m]')) + ':00.nc')
+        if os.path.isfile(base_dir + filename):
+            filenames.append(base_dir + filename)
+
     return sorted(filenames), datetimes[0], datetimes[-1]
-'''   
-    
-def caine_files_from_datetime_list(datetimes, mp='lin'):
-    print('Gathering files.')
-    base = '/g/data/w40/esh563/{}d04_ref/'.format(mp)
-    filenames = []
-    for i in range(len(datetimes)):
-        filename = ('{}d04_ref_'.format(mp) 
-                    + str(datetimes[i].astype('datetime64[m]')) 
-                    + ':00.nc')
-        if os.path.isfile(base + filename):
-            filenames.append(base + filename)
-    
-    return sorted(filenames), datetimes[0], datetimes[-1]
-    
-    
-def caine_files_from_TINT_obj(tracks_obj, uid, mp='lin'):
+
+
+def caine_files_from_TINT_obj(tracks_obj, uid, micro_physics='lin'):
     datetimes = tracks_obj.system_tracks.xs(uid, level='uid')
     datetimes = datetimes.reset_index(level='time')['time']
     datetimes = list(datetimes.values)
-    [files, start_date, end_date] = caine_files_from_datetime_list(datetimes, mp=mp)
-    
+    [files, start_date, end_date] = caine_files_from_datetime_list(
+        datetimes, micro_physics=micro_physics)
+
     return files, start_date, end_date
-    
+
 
 def calculate_hgt_AGL():
     fn = sorted(glob.glob('/g/data/w40/esh563/d04.dir/*.nc.gz'))
@@ -66,61 +41,62 @@ def calculate_hgt_AGL():
         da = da.sum(axis=0)
         height_AGL += da.values
     height_AGL = height_AGL/(3*len(fn))
-    height_AGL = height_AGL.mean(axis=(1,2))
+    height_AGL = height_AGL.mean(axis=(1, 2))
     np.save('/g/data/w40/esh563/d04_hgt_AGL.npy', height_AGL)
     return height_AGL
-    
-    
+
+
 @jit()
 def vert_interp(field, z):
-    interp = np.ones((41,117,117)) * np.nan
-    z_int = np.arange(0.0,20500.0,500.0)
+    interp = np.ones((41, 117, 117)) * np.nan
+    z_int = np.arange(0.0, 20500.0, 500.0)
 
     for i in range(117):
         for j in range(117):
-            interp[:,i,j] = np.interp(z_int, z[:,i,j], field[:,i,j], left=np.nan)
+            interp[:, i, j] = np.interp(
+                z_int, z[:, i, j], field[:, i, j], left=np.nan)
     return interp
-        
-           
+
+
 def WRF_to_pyart(mp='lin'):
     if mp=='lin':
         fn = sorted(glob.glob('/g/data/w40/esh563/d04.dir/wrfout*.nc.gz'))
-        datetimes = np.arange(np.datetime64('2006-02-09 00:00:00'), 
-                              np.datetime64('2006-02-13 12:30:00'), 
+        datetimes = np.arange(np.datetime64('2006-02-09 00:00:00'),
+                              np.datetime64('2006-02-13 12:30:00'),
                               np.timedelta64(30, 'm'))
     else:
         fn = sorted(glob.glob('/g/data/w40/esh563/thompson/d04.dir/wrfout*.nc.gz'))
-        datetimes = np.arange(np.datetime64('2006-02-08 18:30:00'), 
-                              np.datetime64('2006-02-13 12:30:00'), 
-                              np.timedelta64(30, 'm'))                           
-                         
+        datetimes = np.arange(np.datetime64('2006-02-08 18:30:00'),
+                              np.datetime64('2006-02-13 12:30:00'),
+                              np.timedelta64(30, 'm'))
+
     # Open arbitrary CPOL 2500 file from which to extract useful metadata
-    CPOL = xr.open_dataset(('/g/data/rr5/CPOL_radar/CPOL_level_1b/' 
+    CPOL = xr.open_dataset(('/g/data/rr5/CPOL_radar/CPOL_level_1b/'
                             + 'GRIDDED/GRID_150km_2500m/2006/20060210/'
                             + 'CPOL_20060210_1200_GRIDS_2500m.nc'))
-                            
+
     for i in range(len(fn)):
         print('Starting conversions.')
-        
+
         '''
         if datetimes[i]<np.datetime64('2006-02-13T12:00:00'):
             continue
-        
+
         if datetimes[i]>np.datetime64('2006-02-12T17:50:00'):
             continue
         '''
         WRF = xr.open_dataset(fn[i])
         for j in range(WRF.Times.size):
             wrf = WRF.isel(Time=j)
-                
+
             z = (wrf.PH + wrf.PHB)/9.80665
-            
+
             # Destagger and standardise domains
             if mp=='lin':
                 wrf_water = wrf[['QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW',
                                  'QGRAUP', 'T', 'P', 'PB']]
             else:
-                wrf_water = wrf[['QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW', 
+                wrf_water = wrf[['QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW',
                                  'QGRAUP', 'QNRAIN', 'QNICE', 'T', 'P', 'PB']]
             wrf_water['west_east'] = wrf_water.XLONG[0,:]
             wrf_water['south_north'] = wrf_water.XLAT[:,0]
@@ -149,16 +125,16 @@ def WRF_to_pyart(mp='lin'):
             wrf_vert = wrf_vert.rename({'bottom_top_stag' : 'bottom_top'})
 
             wrf = xr.merge([wrf_water, U, V, wrf_vert])
-            
+
             wrf = wrf.coarsen(west_east=2, boundary='trim', side='left').mean()
             wrf = wrf.coarsen(south_north=2, boundary='trim', side='left').mean()
-            
+
             # Restrict to rough CPOL domain
             wrf = wrf.sel(west_east = slice(129.70584, 132.39513))
             wrf = wrf.sel(south_north = slice(-13.55555, -10.931778))
-            
+
             # Interpolate onto standard height levels
-            var_list = ['QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW', 
+            var_list = ['QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW',
                         'QGRAUP', 'T', 'P', 'PB', 'U', 'V', 'W']
             if mp=='thompson':
                 var_list.append('QNICE')
@@ -175,7 +151,7 @@ def WRF_to_pyart(mp='lin'):
                 ds = xr.Dataset({v: (['time', 'z', 'y', 'x'],  interp_data),},
                                 coords={'time': [t], 'y': y, 'x': x, 'z': z})
                 ds_list.append(ds)
-                
+
             # Add latitude longitude values
             longitude = wrf.XLONG.values
             longitude = np.expand_dims(longitude, 0)
@@ -192,29 +168,29 @@ def WRF_to_pyart(mp='lin'):
             ds = xr.Dataset({'latitude': (['time', 'z', 'y', 'x'],  latitude),},
                             coords={'time': [t], 'y': y, 'x': x, 'z': z})
             ds_list.append(ds)
-            
+
             wrf = xr.merge(ds_list)
 
             origin_lat = wrf.latitude.mean().values
             origin_lon = wrf.longitude.mean().values
-            
+
             # Create reflectivity field
             rho_rain = 1000
-            rho_snow = 100  
+            rho_snow = 100
             rho_graup = 400
             rho_ice = 890
-            
+
             T = (wrf.T + 300)*(100000/(wrf.PB+wrf.P)) ** (-0.286) - 273.15
             rho_air=(wrf.P+wrf.PB)/(287*(T+273.15)*(0.622+wrf.QVAPOR)/(0.622*(1+wrf.QVAPOR)))
-            
+
             if mp == 'lin':
                 N0r = 8*10**6
                 N0g = 4*10**6
                 N0s = 2*10**7
                 rain_ref = 720 * (rho_air * wrf.QRAIN) ** (7/4) / (N0r ** (3/4) * (np.pi * rho_rain) ** (7/4))
-                snow_ref = 720 * (rho_air * wrf.QSNOW) ** (7/4) / (N0s ** (3/4) * (np.pi * rho_snow) ** (7/4)) * (rho_snow / rho_rain) ** 2 
-                graup_ref = 720 * (rho_air * wrf.QGRAUP) ** (7/4) / (N0g ** (3/4) * (np.pi * rho_graup) ** (7/4)) * (rho_graup / rho_rain) ** 2 
-                
+                snow_ref = 720 * (rho_air * wrf.QSNOW) ** (7/4) / (N0s ** (3/4) * (np.pi * rho_snow) ** (7/4)) * (rho_snow / rho_rain) ** 2
+                graup_ref = 720 * (rho_air * wrf.QGRAUP) ** (7/4) / (N0g ** (3/4) * (np.pi * rho_graup) ** (7/4)) * (rho_graup / rho_rain) ** 2
+
                 graup_ref.values[T.values<0] = graup_ref.values[T.values<0] * 0.224
                 snow_ref.values[T.values<0] = snow_ref.values[T.values<0] * 0.224
             else:
@@ -235,13 +211,13 @@ def WRF_to_pyart(mp='lin'):
                 a = 5.065339-0.062659*T-3.032362*4+0.029469*T*4-0.000285*T**2+0.312550*4**2+0.00020*T**2*4+0.003199*T*4**2-0.015952*4**3
                 a = 10 ** a
                 b = 0.476221-0.015896*T+0.165977*4+0.007468*T*4-0.000141*T**2+0.060366*4**2+0.000079*T**2*4+0.000594*T*4**2-0.003577*4**3
-                snow_ref = 0.189*(0.069*6/(np.pi*rho_ice))**2*a*(wrf.QSNOW*rho_air/0.069)**b      
-                            
+                snow_ref = 0.189*(0.069*6/(np.pi*rho_ice))**2*a*(wrf.QSNOW*rho_air/0.069)**b
+
             Z = 10 * np.log10(10 ** 18 * (rain_ref+snow_ref+graup_ref))
             Z.values[Z.values<0] = np.nan
             Z.name = 'reflectivity'
             wrf = xr.merge([wrf,Z])
-            
+
             wrf.time.encoding['units'] = 'seconds since   '+str(t)+'Z'
             wrf.time.attrs['standard_name'] = 'time'
             wrf.time.encoding['calendar'] = 'gregorian'
@@ -264,32 +240,32 @@ def WRF_to_pyart(mp='lin'):
 
             wrf['radar_time'] = ('nradar', [t])
             wrf.radar_time.attrs = CPOL.radar_time.attrs
-            
+
             print('Saving file ' + str(t))
             if mp=='lin':
                 base = '/g/data/w40/esh563/lind04_ref/'
-                wrf.to_netcdf(base + 'lind04_ref_' + str(t) + '.nc', 
+                wrf.to_netcdf(base + 'lind04_ref_' + str(t) + '.nc',
                           format='NETCDF4')
             else:
                 base = '/g/data/w40/esh563/thompsond04_ref/'
-                wrf.to_netcdf(base + 'thompsond04_ref_' + str(t) + '.nc', 
+                wrf.to_netcdf(base + 'thompsond04_ref_' + str(t) + '.nc',
                           format='NETCDF4')
-            
+
         del WRF
-           
-           
+
+
 def wrf_radar_npy_to_nc():
     fn = sorted(glob.glob('/g/data/w40/esh563/lind04/dbz/*.npy'))
-    datetimes = np.arange(np.datetime64('2006-02-08 12:00:00'), 
-                          np.datetime64('2006-02-13 12:10:00'), 
+    datetimes = np.arange(np.datetime64('2006-02-08 12:00:00'),
+                          np.datetime64('2006-02-13 12:10:00'),
                           np.timedelta64(10, 'm'))
-                          
+
     z = np.arange(0, 500*41, 500, dtype=float)
     x = np.arange(0, 1250*241, 1250, dtype=float)
     y = np.arange(0, 1250*241, 1250, dtype=float)
 
     # Open arbitrary CPOL 2500 file from which to extract useful metadata
-    CPOL = xr.open_dataset(('/g/data/rr5/CPOL_radar/CPOL_level_1b/' 
+    CPOL = xr.open_dataset(('/g/data/rr5/CPOL_radar/CPOL_level_1b/'
                                 + 'GRIDDED/GRID_150km_2500m/2006/20060210/'
                                 + 'CPOL_20060210_1200_GRIDS_2500m.nc'))
     for i in range(len(fn)):
@@ -299,10 +275,10 @@ def wrf_radar_npy_to_nc():
         surface = np.ones((1,241,241)) * np.nan
         data = np.concatenate([surface, data])
         data[data==-20]=np.nan
-        # Could impose radius limiting here... 
+        # Could impose radius limiting here...
         data = np.expand_dims(data, 0)
-        da_ref = xr.DataArray(data, dims=('time', 'z', 'x', 'y'), 
-                              coords={'time': np.array([datetimes[i]]), 
+        da_ref = xr.DataArray(data, dims=('time', 'z', 'x', 'y'),
+                              coords={'time': np.array([datetimes[i]]),
                                       'z':z, 'x':x, 'y':y})
 
         da_ref.time.encoding['units'] = 'seconds since   '+str(datetimes[i])+'Z'
@@ -366,7 +342,7 @@ def wrf_radar_npy_to_nc():
         ds.radar_time.attrs = CPOL.radar_time.attrs
 
         ds.to_netcdf(fn[i][:-4] + '.nc', format='NETCDF4')
-        
+
 
 def average_winds():
     # Load height field
@@ -377,7 +353,7 @@ def average_winds():
         ret = np.cumsum(a, dtype=float)
         ret[n:] = ret[n:] - ret[:-n]
         return ret[n - 1:] / n
-        
+
     fn = sorted(glob.glob('/g/data/w40/esh563/d04.dir/*.nc.gz'))
     for i in range(len(fn)):
         print('Loading ' + fn[i])
@@ -450,8 +426,8 @@ def average_winds():
 
         wind = xr.merge([U,V,W])
 
-        wind = wind.rename({'south_north':'lat', 
-                            'west_east':'lon', 
+        wind = wind.rename({'south_north':'lat',
+                            'west_east':'lon',
                             'bottom_top': 'alt'})
 
         base = '/g/data/w40/esh563/lind04_2500_winds/'
@@ -462,7 +438,7 @@ def average_winds():
 
             wind_j = wind.isel({'Time': j})
             print('Saving ' + base + str(dt+j*delt) + '.nc')
-            wind_j.to_netcdf(base + str(dt+j*delt) + '.nc', 
+            wind_j.to_netcdf(base + str(dt+j*delt) + '.nc',
                              mode='w', format='NETCDF4')
 
             # wind.to_netcdf()
