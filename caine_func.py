@@ -59,13 +59,14 @@ def vert_interp(field, z):
 
 
 def WRF_to_pyart(mp='lin'):
-    if mp=='lin':
+    if mp == 'lin':
         fn = sorted(glob.glob('/g/data/w40/esh563/d04.dir/wrfout*.nc.gz'))
         datetimes = np.arange(np.datetime64('2006-02-09 00:00:00'),
                               np.datetime64('2006-02-13 12:30:00'),
                               np.timedelta64(30, 'm'))
     else:
-        fn = sorted(glob.glob('/g/data/w40/esh563/thompson/d04.dir/wrfout*.nc.gz'))
+        fn = sorted(
+            glob.glob('/g/data/w40/esh563/thompson/d04.dir/wrfout*.nc.gz'))
         datetimes = np.arange(np.datetime64('2006-02-08 18:30:00'),
                               np.datetime64('2006-02-13 12:30:00'),
                               np.timedelta64(30, 'm'))
@@ -78,13 +79,6 @@ def WRF_to_pyart(mp='lin'):
     for i in range(len(fn)):
         print('Starting conversions.')
 
-        '''
-        if datetimes[i]<np.datetime64('2006-02-13T12:00:00'):
-            continue
-
-        if datetimes[i]>np.datetime64('2006-02-12T17:50:00'):
-            continue
-        '''
         WRF = xr.open_dataset(fn[i])
         for j in range(WRF.Times.size):
             wrf = WRF.isel(Time=j)
@@ -92,51 +86,55 @@ def WRF_to_pyart(mp='lin'):
             z = (wrf.PH + wrf.PHB)/9.80665
 
             # Destagger and standardise domains
-            if mp=='lin':
+            if mp == 'lin':
                 wrf_water = wrf[['QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW',
                                  'QGRAUP', 'T', 'P', 'PB']]
             else:
                 wrf_water = wrf[['QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW',
                                  'QGRAUP', 'QNRAIN', 'QNICE', 'T', 'P', 'PB']]
-            wrf_water['west_east'] = wrf_water.XLONG[0,:]
-            wrf_water['south_north'] = wrf_water.XLAT[:,0]
+            wrf_water['west_east'] = wrf_water.XLONG[0, :]
+            wrf_water['south_north'] = wrf_water.XLAT[:, 0]
 
             U = wrf['U']
-            U = U.rolling(west_east_stag=2, center=True).mean().dropna('west_east_stag')
+            U = U.rolling(west_east_stag=2, center=True).mean()
+            U = U.dropna('west_east_stag')
             U['west_east_stag'] = wrf_water['west_east'].values
-            U = U.rename({'west_east_stag' : 'west_east'})
-            U['south_north'] = U.XLAT_U[:,0].values
+            U = U.rename({'west_east_stag': 'west_east'})
+            U['south_north'] = U.XLAT_U[:, 0].values
             U = U.drop(['XLONG_U', 'XLAT_U'])
             U.name = 'U'
 
             V = wrf['V']
-            V = V.rolling(south_north_stag=2, center=True).mean().dropna('south_north_stag')
+            V = V.rolling(south_north_stag=2, center=True).mean()
+            V = V.dropna('south_north_stag')
             V['south_north_stag'] = wrf_water['south_north'].values
-            V = V.rename({'south_north_stag' : 'south_north'})
-            V['west_east'] = V.XLONG_V[0,:].values
+            V = V.rename({'south_north_stag': 'south_north'})
+            V['west_east'] = V.XLONG_V[0, :].values
             V = V.drop(['XLONG_V', 'XLAT_V'])
             V.name = 'V'
 
             wrf_vert = wrf[['W', 'PH', 'PHB']]
-            wrf_vert['west_east'] = wrf_vert.XLONG[0,:]
-            wrf_vert['south_north'] = wrf_vert.XLAT[:,0]
+            wrf_vert['west_east'] = wrf_vert.XLONG[0, :]
+            wrf_vert['south_north'] = wrf_vert.XLAT[:, 0]
             wrf_vert = wrf_vert.drop(['XLONG', 'XLAT'])
-            wrf_vert = wrf_vert.rolling(bottom_top_stag=2, center=True).mean().dropna('bottom_top_stag')
-            wrf_vert = wrf_vert.rename({'bottom_top_stag' : 'bottom_top'})
+            wrf_vert = wrf_vert.rolling(bottom_top_stag=2, center=True).mean()
+            wrf_vert = wrf_vert.dropna('bottom_top_stag')
+            wrf_vert = wrf_vert.rename({'bottom_top_stag': 'bottom_top'})
 
             wrf = xr.merge([wrf_water, U, V, wrf_vert])
 
             wrf = wrf.coarsen(west_east=2, boundary='trim', side='left').mean()
-            wrf = wrf.coarsen(south_north=2, boundary='trim', side='left').mean()
+            wrf = wrf.coarsen(
+                south_north=2, boundary='trim', side='left').mean()
 
             # Restrict to rough CPOL domain
-            wrf = wrf.sel(west_east = slice(129.70584, 132.39513))
-            wrf = wrf.sel(south_north = slice(-13.55555, -10.931778))
+            wrf = wrf.sel(west_east=slice(129.70584, 132.39513))
+            wrf = wrf.sel(south_north=slice(-13.55555, -10.931778))
 
             # Interpolate onto standard height levels
             var_list = ['QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW',
                         'QGRAUP', 'T', 'P', 'PB', 'U', 'V', 'W']
-            if mp=='thompson':
+            if mp == 'thompson':
                 var_list.append('QNICE')
                 var_list.append('QNRAIN')
             ds_list = []
@@ -148,8 +146,9 @@ def WRF_to_pyart(mp='lin'):
             for v in var_list:
                 interp_data = vert_interp(wrf[v].values, hgt)
                 interp_data = np.expand_dims(interp_data, 0)
-                ds = xr.Dataset({v: (['time', 'z', 'y', 'x'],  interp_data),},
-                                coords={'time': [t], 'y': y, 'x': x, 'z': z})
+                ds = xr.Dataset(
+                    {v: (['time', 'z', 'y', 'x'],  interp_data)},
+                    coords={'time': [t], 'y': y, 'x': x, 'z': z})
                 ds_list.append(ds)
 
             # Add latitude longitude values
@@ -157,16 +156,18 @@ def WRF_to_pyart(mp='lin'):
             longitude = np.expand_dims(longitude, 0)
             longitude = np.concatenate([longitude] * 41)
             longitude = np.expand_dims(longitude, 0)
-            ds = xr.Dataset({'longitude': (['time', 'z', 'y', 'x'],  longitude),},
-                            coords={'time': [t], 'y': y, 'x': x, 'z': z})
+            ds = xr.Dataset(
+                {'longitude': (['time', 'z', 'y', 'x'],  longitude)},
+                coords={'time': [t], 'y': y, 'x': x, 'z': z})
             ds_list.append(ds)
 
             latitude = wrf.XLAT.values
             latitude = np.expand_dims(latitude, 0)
             latitude = np.concatenate([latitude] * 41)
             latitude = np.expand_dims(latitude, 0)
-            ds = xr.Dataset({'latitude': (['time', 'z', 'y', 'x'],  latitude),},
-                            coords={'time': [t], 'y': y, 'x': x, 'z': z})
+            ds = xr.Dataset(
+                {'latitude': (['time', 'z', 'y', 'x'],  latitude)},
+                coords={'time': [t], 'y': y, 'x': x, 'z': z})
             ds_list.append(ds)
 
             wrf = xr.merge(ds_list)
@@ -180,19 +181,28 @@ def WRF_to_pyart(mp='lin'):
             rho_graup = 400
             rho_ice = 890
 
-            T = (wrf.T + 300)*(100000/(wrf.PB+wrf.P)) ** (-0.286) - 273.15
-            rho_air=(wrf.P+wrf.PB)/(287*(T+273.15)*(0.622+wrf.QVAPOR)/(0.622*(1+wrf.QVAPOR)))
+            T = (wrf.T + 300) * (100000 / (wrf.PB + wrf.P)) ** (-0.286)
+            T = T - 273.15
+            rho_air_den = 287 * (T + 273.15) * (0.622 + wrf.QVAPOR)
+            rho_air_den = rho_air_den / (0.622 * (1 + wrf.QVAPOR))
+            rho_air = (wrf.P + wrf.PB) / rho_air_den
 
             if mp == 'lin':
                 N0r = 8*10**6
                 N0g = 4*10**6
                 N0s = 2*10**7
-                rain_ref = 720 * (rho_air * wrf.QRAIN) ** (7/4) / (N0r ** (3/4) * (np.pi * rho_rain) ** (7/4))
-                snow_ref = 720 * (rho_air * wrf.QSNOW) ** (7/4) / (N0s ** (3/4) * (np.pi * rho_snow) ** (7/4)) * (rho_snow / rho_rain) ** 2
-                graup_ref = 720 * (rho_air * wrf.QGRAUP) ** (7/4) / (N0g ** (3/4) * (np.pi * rho_graup) ** (7/4)) * (rho_graup / rho_rain) ** 2
+                rain_ref_den = (N0r ** (3/4) * (np.pi * rho_rain) ** (7/4))
+                rain_ref = 720 * (rho_air * wrf.QRAIN) ** (7/4) / rain_ref_den
+                snow_ref_den = (N0s ** (3/4) * (np.pi * rho_snow) ** (7/4))
+                snow_ref_den = snow_ref_den * (rho_snow / rho_rain) ** 2
+                snow_ref = 720 * (rho_air * wrf.QSNOW) ** (7/4) / snow_ref_den
+                graup_ref_den = (N0g ** (3/4) * (np.pi * rho_graup) ** (7/4))
+                graup_ref_den = graup_ref_den * (rho_graup / rho_rain) ** 2
+                graup_ref = 720 * (rho_air * wrf.QGRAUP) ** (7/4)
+                graup_ref = graup_ref / graup_ref_den
 
-                graup_ref.values[T.values<0] = graup_ref.values[T.values<0] * 0.224
-                snow_ref.values[T.values<0] = snow_ref.values[T.values<0] * 0.224
+                graup_ref.values[T.values < 0] = graup_ref.values[T.values < 0] * 0.224
+                snow_ref.values[T.values < 0] = snow_ref.values[T.values < 0] * 0.224
             else:
                 # Solve for rain reflectivity
                 lam_rain = (np.pi*rho_rain*wrf.QNRAIN*gamma(4)/(6*wrf.QRAIN*gamma(1)))**(1/3)
@@ -214,9 +224,9 @@ def WRF_to_pyart(mp='lin'):
                 snow_ref = 0.189*(0.069*6/(np.pi*rho_ice))**2*a*(wrf.QSNOW*rho_air/0.069)**b
 
             Z = 10 * np.log10(10 ** 18 * (rain_ref+snow_ref+graup_ref))
-            Z.values[Z.values<0] = np.nan
+            Z.values[Z.values < 0] = np.nan
             Z.name = 'reflectivity'
-            wrf = xr.merge([wrf,Z])
+            wrf = xr.merge([wrf, Z])
 
             wrf.time.encoding['units'] = 'seconds since   '+str(t)+'Z'
             wrf.time.attrs['standard_name'] = 'time'
@@ -224,7 +234,8 @@ def WRF_to_pyart(mp='lin'):
 
             # Copy metadata from CPOL dataset
             wrf['projection'] = CPOL['projection']
-            wrf['ProjectionCoordinateSystem'] = CPOL['ProjectionCoordinateSystem']
+            wrf['ProjectionCoordinateSystem'] = CPOL[
+                'ProjectionCoordinateSystem']
             wrf['radar_latitude'] = origin_lat
             wrf['radar_latitude'].attrs = CPOL['radar_latitude'].attrs
             wrf['radar_longitude'] = origin_lon
@@ -242,14 +253,15 @@ def WRF_to_pyart(mp='lin'):
             wrf.radar_time.attrs = CPOL.radar_time.attrs
 
             print('Saving file ' + str(t))
-            if mp=='lin':
+            if mp == 'lin':
                 base = '/g/data/w40/esh563/lind04_ref/'
-                wrf.to_netcdf(base + 'lind04_ref_' + str(t) + '.nc',
-                          format='NETCDF4')
+                wrf.to_netcdf(
+                    base + 'lind04_ref_' + str(t) + '.nc', format='NETCDF4')
             else:
                 base = '/g/data/w40/esh563/thompsond04_ref/'
-                wrf.to_netcdf(base + 'thompsond04_ref_' + str(t) + '.nc',
-                          format='NETCDF4')
+                wrf.to_netcdf(
+                    base + 'thompsond04_ref_' + str(t) + '.nc',
+                    format='NETCDF4')
 
         del WRF
 
