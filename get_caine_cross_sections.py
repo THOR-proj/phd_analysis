@@ -32,7 +32,7 @@ fig_dir += 'thompson_objects/'
 params = {
     'line_coords': True, 'center_cell': False,
     'cell_ind': 7, 'winds': True,
-    'direction': 'perpendicular', 'crosshair': True, 'save_dir': fig_dir,
+    'direction': 'perpendicular', 'crosshair': True, 'save_dir': fig_dir,  
     'line_average': True, 'streamplot': True, 'relative_winds': True,
     'data_fn': 'angles', 'load_line_coords_winds': False,
     'save_ds': False}
@@ -60,6 +60,7 @@ for uid_ind in np.arange(14).astype(str):
 micro_physics = 'lin'
 fig_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_figures/'
 fig_dir += 'lin_objects/'
+params['save_dir'] = fig_dir
 
 dates = np.arange(
     np.datetime64('2006-02-09 00:00'),
