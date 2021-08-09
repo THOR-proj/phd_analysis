@@ -1,6 +1,0 @@
-xgridpoints_ave
-120
-ygridpoints_ave
-120
-gridspacing_ave
-2500.0
