@@ -1,6 +1,8 @@
 import pandas as pd
 from functools import reduce
 import numpy as np
+import xarray as xr
+import copy
 
 
 def add_monsoon_regime(tracks_obj):
@@ -105,6 +107,7 @@ def create_categories(tracks_obj):
     categories = reduce(lambda  left,right: pd.merge(left,right,left_index=True, right_index=True), dframes)
 
     return categories
+
 
 def get_reanalysis_vars(tracks_obj):
     print('Adding data from Monash Reanalysis')

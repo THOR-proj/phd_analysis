@@ -4,7 +4,7 @@ import pandas as pd
 import pickle
 import pyart
 import tint
-import helpers
+import analysis
 
 
 def CPOL_files_from_datetime_list(datetimes):
@@ -62,12 +62,9 @@ def get_circular_boundary(grid):
 
 
 def load_wet_seasons(years=list(range(1999, 2017))):
-
     years = set(years) - set([2007, 2008])
     years = sorted(list(years))
-
     filenames = []
-
     for year in years:
         filenames_year = CPOL_files_from_datetime_list(
             np.arange(np.datetime64('{}-11-01 00:00'.format(str(year))),
@@ -75,7 +72,6 @@ def load_wet_seasons(years=list(range(1999, 2017))):
                       np.timedelta64(10, 'm'))
             )[0]
         filenames += filenames_year
-
     return filenames
 
 
@@ -103,8 +99,10 @@ def get_CPOL_tracks(year, rain=True, save_rain=True, dt=''):
     # Generate grid generator
     # Note generators produce iterators
     # These are alternative to using lists and looping
-    grids = (pyart.io.read_grid(fn, include_fields = ['reflectivity', 'radar_estimated_rain_rate'])
-             for fn in filenames)
+    grids = (
+        pyart.io.read_grid(fn, include_fields=[
+            'reflectivity', 'radar_estimated_rain_rate'])
+        for fn in filenames)
 
     with open('/g/data/w40/esh563/CPOL_analysis/TINT_tracks/circ_b_ind_set.pkl',
               'rb') as f:
@@ -112,37 +110,37 @@ def get_CPOL_tracks(year, rain=True, save_rain=True, dt=''):
 
     # Define settings for tracking
     settings = {
-        'MIN_SIZE' : [40, 400, 800], # square km
-        'FIELD_THRESH' : ['convective', 20, 15], # DbZ
-        'ISO_THRESH' : [10, 10, 10], # DbZ
-        'GS_ALT' : 3000,
-        'SEARCH_MARGIN' : 50000, # m. This is just for object matching step:
+        'MIN_SIZE': [40, 400, 800],  # square km
+        'FIELD_THRESH': ['convective', 20, 15],  # DbZ
+        'ISO_THRESH': [10, 10, 10],  # DbZ
+        'GS_ALT': 3000,
+        'SEARCH_MARGIN': 50000,  # m. This is just for object matching step:
         # does not affect flow vectors.
-        'FLOW_MARGIN' : 40000, # m. Margin around object over which to
+        'FLOW_MARGIN': 40000,  # m. Margin around object over which to
         # perform phase correlation.
-        'LEVELS' : np.array( # m
+        'LEVELS': np.array(  # m
             [[3000, 3500],
              [3500, 7500],
              [7500, 10000]]
         ),
-        'TRACK_INTERVAL' : 0,
-        'BOUNDARY_GRID_CELLS' : b_ind_set,
+        'TRACK_INTERVAL': 0,
+        'BOUNDARY_GRID_CELLS': b_ind_set,
         'UPDRAFT_START': 3000
     }
 
-    tracks_obj  = tint.Cell_tracks()
+    tracks_obj = tint.Cell_tracks()
 
-    for parameter in ['MIN_SIZE', 'FIELD_THRESH', 'GS_ALT', 'LEVELS',
-                      'TRACK_INTERVAL', 'ISO_THRESH', 'SEARCH_MARGIN',
-                      'FLOW_MARGIN', 'BOUNDARY_GRID_CELLS', 'UPDRAFT_START'
-                     ]:
+    for parameter in [
+            'MIN_SIZE', 'FIELD_THRESH', 'GS_ALT', 'LEVELS', 'TRACK_INTERVAL',
+            'ISO_THRESH', 'SEARCH_MARGIN', 'FLOW_MARGIN',
+            'BOUNDARY_GRID_CELLS', 'UPDRAFT_START']:
         tracks_obj.params[parameter] = settings[parameter]
 
     # Calculate tracks
     tracks_obj.get_tracks(grids, rain, save_rain, dt)
-    #tracks_obj = helpers.get_reanalysis_vars(tracks_obj)
+    # tracks_obj = analysis.get_reanalysis_vars(tracks_obj)
     try:
-        tracks_obj = helpers.add_monsoon_regime(tracks_obj)
+        tracks_obj = analysis.add_monsoon_regime(tracks_obj)
     except:
         print('Failed to add pope regimes.')
 
