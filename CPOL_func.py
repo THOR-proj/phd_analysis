@@ -91,10 +91,10 @@ def system_tracks_to_tracks(sys_var, n_lvl):
 
 def get_CPOL_tracks(year, rain=True, save_rain=True, dt=''):
     filenames = CPOL_files_from_datetime_list(
-        np.arange(np.datetime64('{}-11-01 00:00'.format(str(year))),
-                  np.datetime64('{}-04-01 00:00'.format(str(year+1))),
-                  np.timedelta64(10, 'm'))
-    )[0]
+        np.arange(
+            np.datetime64('{}-11-01 00:00'.format(str(year))),
+            np.datetime64('{}-04-01 00:00'.format(str(year+1))),
+            np.timedelta64(10, 'm')))[0]
 
     # Generate grid generator
     # Note generators produce iterators
