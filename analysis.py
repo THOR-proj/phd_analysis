@@ -95,8 +95,7 @@ def create_categories(tracks_obj):
     not_border = not_border.rename('not_border')
 
     tracks_0 = tracks_obj.tracks[['touch_border', 'proj_area']].xs(
-        0, level='level'
-    )
+        0, level='level')
     not_border_0 = (tracks_0['touch_border']*6.25/tracks_0['proj_area']) < 0.01
     not_border_0 = not_border_0.rename('not_border_0')
 
@@ -104,7 +103,9 @@ def create_categories(tracks_obj):
                left_tilt, right_tilt, sig_tilt_mag,
                sig_vel_mag, stationary, linear, small_area,
                large_area, not_border, not_border_0, perp_align, par_align]
-    categories = reduce(lambda  left,right: pd.merge(left,right,left_index=True, right_index=True), dframes)
+    categories = reduce(
+        lambda left, right: pd.merge(
+            left, right, left_index=True, right_index=True), dframes)
 
     return categories
 
@@ -161,8 +162,8 @@ def get_reanalysis_vars(tracks_obj):
     tmp_system_tracks = tmp_system_tracks[t_cond_sys]
     sys_times = tmp_system_tracks.time.values.astype(np.datetime64)
 
-    sys_shears = shear_ds.sel(time = sys_times, method='nearest')
-    sys_cl = vel_cl.sel(time = sys_times, method='nearest')
+    sys_shears = shear_ds.sel(time=sys_times, method='nearest')
+    sys_cl = vel_cl.sel(time=sys_times, method='nearest')
     sys_shears = sys_shears.to_dataframe().reset_index('time', drop=True)
     sys_cl = sys_cl.to_dataframe().reset_index('time', drop=True)
 
@@ -173,12 +174,10 @@ def get_reanalysis_vars(tracks_obj):
 
     for var in [sys_shears, sys_cl]:
         tracks_obj.system_tracks = tracks_obj.system_tracks.merge(
-            var, left_index=True, right_index=True
-        )
+            var, left_index=True, right_index=True)
         var_alt = system_tracks_to_tracks(var, n_lvl)
         tracks_obj.tracks = tracks_obj.tracks.merge(
-            var_alt, left_index=True, right_index=True
-        )
+            var_alt, left_index=True, right_index=True)
 
     # Calculate additional shear related variables
     shear_dir = np.arctan2(tracks_obj.system_tracks['v_shear'],
@@ -211,13 +210,13 @@ def get_reanalysis_vars(tracks_obj):
     shear_rel_prop_dir = shear_rel_prop_dir.rename('shear_rel_prop_dir')
     shear_rel_prop_dir = np.round(shear_rel_prop_dir, 3)
 
-    for var in [shear_dir, shear_mag, prop_dir, prop_mag, prop, shear_rel_prop_dir]:
+    for var in [
+            shear_dir, shear_mag, prop_dir, prop_mag,
+            prop, shear_rel_prop_dir]:
         tracks_obj.system_tracks = tracks_obj.system_tracks.merge(
-            var, left_index=True, right_index=True
-        )
+            var, left_index=True, right_index=True)
         var_alt = system_tracks_to_tracks(var, n_lvl)
         tracks_obj.tracks = tracks_obj.tracks.merge(
-            var_alt, left_index=True, right_index=True
-        )
+            var_alt, left_index=True, right_index=True)
 
     return tracks_obj

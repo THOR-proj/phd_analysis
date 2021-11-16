@@ -7,9 +7,11 @@ import tint
 import analysis
 
 
-def CPOL_files_from_datetime_list(datetimes):
+def CPOL_files_from_datetime_list(datetimes, base_dir=None):
     print('Gathering files.')
-    base = '/g/data/kl02/vhl548/data_for_others/cpol/gridded/grid_150km_2500m'
+    if base_dir is None:
+        base_dir = '/g/data/hj10/cpol/cpol_level_1b/v2020'
+        base_dir += '/gridded/grid_150km_2500m/'
     filenames = []
     for i in range(len(datetimes)):
         year = str(datetimes[i])[0:4]
@@ -17,9 +19,9 @@ def CPOL_files_from_datetime_list(datetimes):
         day = str(datetimes[i])[8:10]
         hour = str(datetimes[i])[11:13]
         minute = str(datetimes[i])[14:16]
-        filename = (base + '{0}/{0}{1}{2}/'.format(year, month, day)
-                    + 'CPOL_{0}{1}{2}'.format(year, month, day)
-                    + '_{}{}_GRIDS_2500m.nc'.format(hour, minute))
+        filename = (base_dir + '{0}/{0}{1}{2}/'.format(year, month, day)
+                    + 'twp10cpolgrid150.b2.{0}{1}{2}.'.format(year, month, day)
+                    + '{}{}00.nc'.format(hour, minute))
         if os.path.isfile(filename):
             filenames.append(filename)
 

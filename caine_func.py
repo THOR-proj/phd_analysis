@@ -46,6 +46,48 @@ def calculate_hgt_AGL():
     return height_AGL
 
 
+def prepare_ambient_WRF(ds):
+
+    times = ds.Times.values.astype(str)
+    times = [np.datetime64(t.replace('_', 'T')) for t in times]
+    longitude = ds['XLONG'].values[0, 0, :]
+    latitude = ds['XLAT'].values[0, :, 0]
+
+    u = ds.U.rolling(
+        {'west_east_stag': 2}, center=True).mean().dropna('west_east_stag')
+    u = u.rename({
+        'west_east_stag': 'longitude', 'south_north': 'latitude',
+        'Time': 'time'})
+    u = u.rename('u')
+    u = u.assign_coords({
+        'longitude': longitude, 'latitude': latitude, 'time': times})
+    u = u.drop_vars(['XLONG_U', 'XLAT_U'])
+
+    v = ds.V.rolling(
+        {'south_north_stag': 2}, center=True).mean().dropna('south_north_stag')
+    v = v.rename({
+        'west_east': 'longitude', 'south_north_stag': 'latitude',
+        'Time': 'time'})
+    v = v.rename('v')
+    v = v.assign_coords({
+        'longitude': longitude, 'latitude': latitude, 'time': times})
+    v = v.drop_vars(['XLONG_V', 'XLAT_V'])
+
+    phi = ds.PHB + ds.PH
+    phi = phi.rolling(
+        {'bottom_top_stag': 2}, center=True).mean().dropna('bottom_top_stag')
+    phi = phi.rename('phi')
+    phi = phi.rename({
+        'west_east': 'longitude', 'south_north': 'latitude',
+        'bottom_top_stag': 'bottom_top', 'Time': 'time'})
+    u = u.assign_coords({
+        'longitude': longitude, 'latitude': latitude, 'time': times})
+    phi = phi.drop_vars(['XLONG', 'XLAT'])
+
+    ds_new = xr.Dataset({'u': u, 'v': v, 'phi': phi})
+    return ds_new
+
+
 @jit()
 def vert_interp(field, z):
     interp = np.ones((41, 117, 117)) * np.nan
