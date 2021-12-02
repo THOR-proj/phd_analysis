@@ -32,7 +32,7 @@ fig_dir += 'thompson_objects/'
 params = {
     'line_coords': True, 'center_cell': False,
     'cell_ind': 7, 'winds': True,
-    'direction': 'perpendicular', 'crosshair': True, 'save_dir': fig_dir,  
+    'direction': 'perpendicular', 'crosshair': True, 'save_dir': fig_dir,
     'line_average': True, 'streamplot': True, 'relative_winds': True,
     'data_fn': 'angles', 'load_line_coords_winds': False,
     'save_ds': False}

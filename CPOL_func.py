@@ -4,7 +4,9 @@ import pandas as pd
 import pickle
 import pyart
 import tint
-import analysis
+import sys
+
+sys.path.insert(0, '/home/563/esh563/TINT')
 
 
 def CPOL_files_from_datetime_list(datetimes, base_dir=None):
@@ -91,64 +93,36 @@ def system_tracks_to_tracks(sys_var, n_lvl):
     return var
 
 
-def get_CPOL_tracks(year, rain=True, save_rain=True, dt=''):
-    filenames = CPOL_files_from_datetime_list(
-        np.arange(
-            np.datetime64('{}-11-01 00:00'.format(str(year))),
-            np.datetime64('{}-04-01 00:00'.format(str(year+1))),
-            np.timedelta64(10, 'm')))[0]
+def get_CPOL_season(
+        year, base_dir=None, ERA5_dir=None, b_path=None, save_dir=None):
+    if base_dir is None:
+        base_dir = '/g/data/hj10/cpol/cpol_level_1b/v2020/'
+        base_dir += 'gridded/grid_150km_2500m/'
+    if ERA5_dir is None:
+        ERA5_dir = '/g/data/rt52/era5/pressure-levels/reanalysis/'
+    if b_path is None:
+        b_path = '/home/563/esh563/CPOL_analysis/circ_b_ind_set.pkl'
+    if save_dir is None:
+        save_dir = '/g/data/w40/esh563/TINT_tracks/'
 
-    # Generate grid generator
-    # Note generators produce iterators
-    # These are alternative to using lists and looping
+    dates = np.arange(
+        np.datetime64('{}-11-01 00:00'.format(str(year))),
+        np.datetime64('{}-04-01 00:00'.format(str(year+1))),
+        np.timedelta64(10, 'm'))
+
+    filenames, start_time, end_time = CPOL_files_from_datetime_list(
+        dates, base_dir=base_dir)
+
+    tracks_obj = tint.Tracks(params={
+        'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir})
+
     grids = (
-        pyart.io.read_grid(fn, include_fields=[
-            'reflectivity', 'radar_estimated_rain_rate'])
+        pyart.io.read_grid(fn, include_fields=['reflectivity'])
         for fn in filenames)
 
-    with open('/g/data/w40/esh563/CPOL_analysis/TINT_tracks/circ_b_ind_set.pkl',
-              'rb') as f:
-        b_ind_set = pickle.load(f)
+    tracks_obj.get_tracks(grids, b_path=b_path)
 
-    # Define settings for tracking
-    settings = {
-        'MIN_SIZE': [40, 400, 800],  # square km
-        'FIELD_THRESH': ['convective', 20, 15],  # DbZ
-        'ISO_THRESH': [10, 10, 10],  # DbZ
-        'GS_ALT': 3000,
-        'SEARCH_MARGIN': 50000,  # m. This is just for object matching step:
-        # does not affect flow vectors.
-        'FLOW_MARGIN': 40000,  # m. Margin around object over which to
-        # perform phase correlation.
-        'LEVELS': np.array(  # m
-            [[3000, 3500],
-             [3500, 7500],
-             [7500, 10000]]
-        ),
-        'TRACK_INTERVAL': 0,
-        'BOUNDARY_GRID_CELLS': b_ind_set,
-        'UPDRAFT_START': 3000
-    }
-
-    tracks_obj = tint.Cell_tracks()
-
-    for parameter in [
-            'MIN_SIZE', 'FIELD_THRESH', 'GS_ALT', 'LEVELS', 'TRACK_INTERVAL',
-            'ISO_THRESH', 'SEARCH_MARGIN', 'FLOW_MARGIN',
-            'BOUNDARY_GRID_CELLS', 'UPDRAFT_START']:
-        tracks_obj.params[parameter] = settings[parameter]
-
-    # Calculate tracks
-    tracks_obj.get_tracks(grids, rain, save_rain, dt)
-    # tracks_obj = analysis.get_reanalysis_vars(tracks_obj)
-    try:
-        tracks_obj = analysis.add_monsoon_regime(tracks_obj)
-    except:
-        print('Failed to add pope regimes.')
-
-    out_file_name = ('/g/data/w40/esh563/CPOL_analysis/TINT_tracks/'
-                     + 'tracks_obj_{}_{}.pkl'.format(str(year), str(year+1)))
-
+    out_file_name = save_dir + '{}1101_{}0401.pkl'.format(year, year+1)
     with open(out_file_name, 'wb') as f:
         pickle.dump(tracks_obj, f)
 
