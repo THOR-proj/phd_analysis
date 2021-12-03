@@ -3,10 +3,10 @@ import numpy as np
 import pandas as pd
 import pickle
 import pyart
-import tint
 import sys
-
 sys.path.insert(0, '/home/563/esh563/TINT')
+
+import tint
 
 
 def CPOL_files_from_datetime_list(datetimes, base_dir=None):
