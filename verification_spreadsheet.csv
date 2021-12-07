@@ -1,5 +1,2 @@
-Scan,Object,Bad Velocity,Bad Stratiform Offset,Inflow Classification Affected?,SO Classification Affected?
-622,38,1,0,0,1
-623,38,1,0,1,1
-624,38,1,0,1,0
-625,38,1,0,1,1
+Scan,Object,Bad Velocity,Bad Stratiform Offset,Inflow Classification Affected?,SO Classification Affected?,,Notes
+1537,128,1,0,1,1,,Stange bug. Velocity completely wrong. Should investigate if time permits. 
