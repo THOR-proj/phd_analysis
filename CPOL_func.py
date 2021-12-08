@@ -122,7 +122,7 @@ def get_CPOL_season(
 
     tracks_obj.get_tracks(grids, b_path=b_path)
 
-    out_file_name = save_dir + '{}1101_{}0401.pkl'.format(year, year+1)
+    out_file_name = save_dir + '{}1001_{}0501.pkl'.format(year, year+1)
     with open(out_file_name, 'wb') as f:
         pickle.dump(tracks_obj, f)
 
