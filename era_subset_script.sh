@@ -10,35 +10,78 @@ subset () {
     ${SAVE_DIR}/${4}/${1}/${4}_era5_oper_pl_${1}${2}01-${1}${2}${3}.nc
 }
 
+check_leap_year () {
+    echo '2000, 2004, 2008, 2012, 2016' | grep -q ${1}
+}
+
 for year in $(seq 1998 2016); do
     echo "Subsetting year ${year}$. \n"
     for var in u v z; do
         echo "Subsetting ${var}$. \n"
 
         echo "Subsetting January. \n"
-        subset ${year} 01 31 ${var}
+        FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}0101-${year}0131.nc
+        if test -f "$FILE"; then
+            echo "${FILE} exists."
+        else
+            subset ${year} 01 31 ${var}
+        fi
 
         echo "Subsetting February. \n"
-        echo '2000, 2004, 2008, 2012, 2016' | grep -q ${year}
-        if [[$? -eq 0]; then
-            subset ${year} 02 29 ${var}
+        if (check_leap_year ${year}); then
+            FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}0201-${year}0229.nc
+            if test -f "$FILE"; then
+                echo "${FILE} exists."
+            else
+                subset ${year} 02 29 ${var}
+            fi
         else
-            subset ${year} 02 28 ${var}
+            FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}0201-${year}0228.nc
+            if test -f "$FILE"; then
+                echo "${FILE} exists."
+            else
+                subset ${year} 02 28 ${var}
+            fi
         fi
 
         echo "Subsetting March. \n"
-        subset ${year} 03 31 ${var}
+        FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}0301-${year}0331.nc
+        if test -f "$FILE"; then
+            echo "${FILE} exists."
+        else
+            subset ${year} 03 31 ${var}
+        fi
 
         echo "Subsetting April."
-        subset ${year} 04 31 ${var}
+        FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}0401-${year}0430.nc
+        if test -f "$FILE"; then
+            echo "${FILE} exists."
+        else
+            subset ${year} 04 30 ${var}
+        fi
 
         echo "Subsetting October. \n"
-        subset ${year} 10 31 ${var}
+        FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}1001-${year}1031.nc
+        if test -f "$FILE"; then
+            echo "${FILE} exists."
+        else
+            subset ${year} 10 31 ${var}
+        fi
 
         echo "Subsetting November. \n"
-        subset ${year} 11 30 ${var}
+        FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}1101-${year}1130.nc
+        if test -f "$FILE"; then
+            echo "${FILE} exists."
+        else
+            subset ${year} 11 30 ${var}
+        fi
 
         echo "Subsetting December. \n"
-        subset ${year} 12 31 ${var}
+        FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}1201-${year}1231.nc
+        if test -f "$FILE"; then
+            echo "${FILE} exists."
+        else
+            subset ${year} 12 31 ${var}
+        fi
     done
 done
