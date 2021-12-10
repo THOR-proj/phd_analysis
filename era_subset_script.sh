@@ -15,11 +15,11 @@ check_leap_year () {
 }
 
 for year in $(seq 1998 2016); do
-    echo "Subsetting year ${year}$. \n"
+    echo "Subsetting year ${year}."
     for var in u v z; do
-        echo "Subsetting ${var}$. \n"
+        echo "Subsetting ${var}."
 
-        echo "Subsetting January. \n"
+        echo "Subsetting January."
         FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}0101-${year}0131.nc
         if test -f "$FILE"; then
             echo "${FILE} exists."
@@ -27,7 +27,7 @@ for year in $(seq 1998 2016); do
             subset ${year} 01 31 ${var}
         fi
 
-        echo "Subsetting February. \n"
+        echo "Subsetting February."
         if (check_leap_year ${year}); then
             FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}0201-${year}0229.nc
             if test -f "$FILE"; then
@@ -44,7 +44,7 @@ for year in $(seq 1998 2016); do
             fi
         fi
 
-        echo "Subsetting March. \n"
+        echo "Subsetting March."
         FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}0301-${year}0331.nc
         if test -f "$FILE"; then
             echo "${FILE} exists."
@@ -60,7 +60,7 @@ for year in $(seq 1998 2016); do
             subset ${year} 04 30 ${var}
         fi
 
-        echo "Subsetting October. \n"
+        echo "Subsetting October."
         FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}1001-${year}1031.nc
         if test -f "$FILE"; then
             echo "${FILE} exists."
@@ -68,7 +68,7 @@ for year in $(seq 1998 2016); do
             subset ${year} 10 31 ${var}
         fi
 
-        echo "Subsetting November. \n"
+        echo "Subsetting November."
         FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}1101-${year}1130.nc
         if test -f "$FILE"; then
             echo "${FILE} exists."
@@ -76,7 +76,7 @@ for year in $(seq 1998 2016); do
             subset ${year} 11 30 ${var}
         fi
 
-        echo "Subsetting December. \n"
+        echo "Subsetting December."
         FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}1201-${year}1231.nc
         if test -f "$FILE"; then
             echo "${FILE} exists."

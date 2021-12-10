@@ -98,7 +98,7 @@ def get_CPOL_season(
         base_dir = '/g/data/hj10/cpol/cpol_level_1b/v2020/'
         base_dir += 'gridded/grid_150km_2500m/'
     if ERA5_dir is None:
-        ERA5_dir = '/g/data/rt52/era5/pressure-levels/reanalysis/'
+        ERA5_dir = '/g/data/w40/esh563/era5/pressure-levels/reanalysis/'
     if b_path is None:
         b_path = '/home/563/esh563/CPOL_analysis/circ_b_ind_set.pkl'
     if save_dir is None:
@@ -106,7 +106,7 @@ def get_CPOL_season(
 
     dates = np.arange(
         np.datetime64('{}-10-01 00:00'.format(str(year))),
-        np.datetime64('{}-05-01 00:00'.format(str(year+1))),
+        np.datetime64('{}-04-30 23:00'.format(str(year+1))),
         np.timedelta64(10, 'm'))
 
     filenames, start_time, end_time = CPOL_files_from_datetime_list(
