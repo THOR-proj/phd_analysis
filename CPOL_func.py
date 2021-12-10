@@ -106,7 +106,7 @@ def get_CPOL_season(
 
     dates = np.arange(
         np.datetime64('{}-10-01 00:00'.format(str(year))),
-        np.datetime64('{}-04-30 23:00'.format(str(year+1))),
+        np.datetime64('{}-05-01 00:00'.format(str(year+1))),
         np.timedelta64(10, 'm'))
 
     filenames, start_time, end_time = CPOL_files_from_datetime_list(

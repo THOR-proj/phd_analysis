@@ -60,6 +60,14 @@ for year in $(seq 1998 2016); do
             subset ${year} 04 30 ${var}
         fi
 
+        echo "Subsetting May."
+        FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}0501-${year}0531.nc
+        if test -f "$FILE"; then
+            echo "${FILE} exists."
+        else
+            subset ${year} 05 31 ${var}
+        fi
+
         echo "Subsetting October."
         FILE=${SAVE_DIR}/${var}/${year}/${var}_era5_oper_pl_${year}1001-${year}1031.nc
         if test -f "$FILE"; then
