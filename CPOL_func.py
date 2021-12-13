@@ -128,59 +128,96 @@ def get_CPOL_season(
     return tracks_obj
 
 
-def combine_tracks(years=list(range(2002, 2015))):
+def combine_tracks(years=list(range(1998, 2016)), base_dir=None):
+    if base_dir is None:
+        base_dir = '/home/student.unimelb.edu.au/shorte1/'
+        base_dir += 'Documents/TINT_tracks/'
     years = set(years) - set([2007, 2008])
     years = sorted(list(years))
-    bp = '/g/data/w40/esh563/CPOL_analysis/TINT_tracks/tracks_obj_'
     max_uid = 0
     tracks = []
     system_tracks = []
+    tracks_class = []
+    exclusions = []
+
+    fields = [
+        'grid_x', 'grid_y', 'proj_area',
+        'lon', 'lat', 'touch_border', 'semi_major', 'semi_minor',
+        'orientation', 'eccentricity', 'u_shift', 'v_shift', 'u_ambient_mean',
+        'v_ambient_mean', 'u_relative', 'v_relative', 'u_shear', 'v_shear']
+    s_fields = [
+        'grid_x', 'grid_y', 'lon',
+        'lat', 'u_shift', 'v_shift', 'u_relative', 'v_relative',
+        'semi_major', 'semi_minor', 'eccentricity',
+        'orientation', 'cells', 'field_max', 'proj_area', 'max_height',
+        'touch_border', 'x_vert_disp', 'y_vert_disp', 'tilt_mag', 'vel_dir',
+        'tilt_dir', 'sys_rel_tilt_dir']
+
     for year in years:
         print('Shifting uid for {}'.format(year))
-        with open(bp + '{}_{}.pkl'.format(str(year), str(year+1)), 'rb') as f:
+        with open(base_dir + '{}1001_{}0501.pkl'.format(
+                str(year), str(year+1)), 'rb') as f:
             tracks_obj = pickle.load(f)
+        tracks_obj.tracks = tracks_obj.tracks[fields]
+        tracks_obj.system_tracks[s_fields] = tracks_obj.system_tracks[s_fields]
         tracks_obj.tracks.reset_index(
-            level=['scan', 'time', 'level', 'uid'], inplace=True
-        )
+            level=['scan', 'time', 'level', 'uid'], inplace=True)
         tracks_obj.system_tracks.reset_index(
-            level=['scan', 'time', 'uid'], inplace=True
-        )
+            level=['scan', 'time', 'uid'], inplace=True)
+        tracks_obj.tracks_class.reset_index(
+            level=['scan', 'time', 'level', 'uid'], inplace=True)
+        tracks_obj.exclusions.reset_index(
+            level=['scan', 'time', 'level', 'uid'], inplace=True)
         uids = tracks_obj.tracks['uid'].values.astype(int)
         sys_uids = tracks_obj.system_tracks['uid'].values.astype(int)
+        class_uids = tracks_obj.tracks_class['uid'].values.astype(int)
+        excl_uids = tracks_obj.exclusions['uid'].values.astype(int)
         uids += max_uid
         sys_uids += max_uid
+        class_uids += max_uid
+        excl_uids += max_uid
 
-        # Fix tracks merger values
-        for i in range(len(tracks_obj.tracks)):
-            m_uid = tracks_obj.tracks.mergers.values[i]
-            new_m_uid = np.array(list(m_uid)).astype(int) + max_uid
-            new_m_uid = set(new_m_uid.astype(str).tolist())
-            tracks_obj.tracks.mergers.values[i] = new_m_uid
+        # import pdb; pdb.set_trace()
 
-        # Fix system_tracks merger values
-        for i in range(len(tracks_obj.system_tracks)):
-            m_uid = tracks_obj.system_tracks.mergers.values[i]
-            new_m_uid = np.array(list(m_uid)).astype(int) + max_uid
-            new_m_uid = set(new_m_uid.astype(str).tolist())
-            tracks_obj.system_tracks.mergers.values[i] = new_m_uid
+        # # Fix tracks merger values
+        # for i in range(len(tracks_obj.tracks)):
+        #     m_uid = tracks_obj.tracks.mergers.values[i]
+        #     new_m_uid = np.array(list(m_uid)).astype(int) + max_uid
+        #     new_m_uid = set(new_m_uid.astype(str).tolist())
+        #     tracks_obj.tracks.mergers.values[i] = new_m_uid
+        #
+        # # Fix system_tracks merger values
+        # for i in range(len(tracks_obj.system_tracks)):
+        #     m_uid = tracks_obj.system_tracks.mergers.values[i]
+        #     new_m_uid = np.array(list(m_uid)).astype(int) + max_uid
+        #     new_m_uid = set(new_m_uid.astype(str).tolist())
+        #     tracks_obj.system_tracks.mergers.values[i] = new_m_uid
 
         max_uid = uids.max()+1
 
         tracks_obj.tracks['uid'] = uids.astype(str)
         tracks_obj.system_tracks['uid'] = sys_uids.astype(str)
-        tracks_obj.tracks.set_index(['scan', 'time', 'level', 'uid'],
-                                    inplace=True)
-        tracks_obj.system_tracks.set_index(['scan', 'time', 'uid'],
-                                           inplace=True)
+        tracks_obj.tracks_class['uid'] = class_uids.astype(str)
+        tracks_obj.exclusions['uid'] = excl_uids.astype(str)
+        tracks_obj.tracks.set_index(
+            ['scan', 'time', 'level', 'uid'], inplace=True)
+        tracks_obj.system_tracks.set_index(
+            ['scan', 'time', 'uid'], inplace=True)
+        tracks_obj.tracks_class.set_index(
+            ['scan', 'time', 'level', 'uid'], inplace=True)
+        tracks_obj.exclusions.set_index(
+            ['scan', 'time', 'level', 'uid'], inplace=True)
         tracks.append(tracks_obj.tracks)
         system_tracks.append(tracks_obj.system_tracks)
+        tracks_class.append(tracks_obj.tracks_class)
+        exclusions.append(tracks_obj.exclusions)
 
     print('Concatenating shifted tracks.')
     tracks_obj.tracks = pd.concat(tracks)
     tracks_obj.system_tracks = pd.concat(system_tracks)
+    tracks_obj.tracks_class = pd.concat(tracks_class)
+    tracks_obj.exclusions = pd.concat(exclusions)
 
-    fn = bp + 'comb_{}_{}.pkl'.format(str(years[0]), str(years[-1]))
+    fn = base_dir + 'comb_{}_{}.pkl'.format(str(years[0]), str(years[-1]))
     with open(fn, 'wb') as f:
         pickle.dump(tracks_obj, f)
-
-    return tracks_obj
