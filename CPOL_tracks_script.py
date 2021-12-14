@@ -11,7 +11,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 if args.years == '':
-    years = sorted(list(set(range(1998, 2016)) - {2007, 2008}))
+    years = sorted(list(set(range(1998, 2016)) - {2007, 2008, 2000}))
 else:
     years = args.years
     years = list(map(int, years.split(',')))

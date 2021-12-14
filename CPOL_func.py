@@ -132,7 +132,7 @@ def combine_tracks(years=list(range(1998, 2016)), base_dir=None):
     if base_dir is None:
         base_dir = '/home/student.unimelb.edu.au/shorte1/'
         base_dir += 'Documents/TINT_tracks/'
-    years = set(years) - set([2007, 2008])
+    years = set(years) - set([2007, 2008, 2000])
     years = sorted(list(years))
     max_uid = 0
     tracks = []
