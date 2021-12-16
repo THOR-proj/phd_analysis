@@ -5,24 +5,6 @@ import xarray as xr
 import copy
 
 
-def add_monsoon_regime(tracks_obj):
-    pd.read_csv('/g/data/w40/esh563/CPOL_analysis/Pope_regimes.csv')
-    pope = pd.read_csv('/g/data/w40/esh563/CPOL_analysis/Pope_regimes.csv',
-                       index_col=0, names=['date', 'regime'])
-    pope.index = pd.to_datetime(pope.index)
-    regimes = []
-    np.datetime64(tracks_obj.system_tracks.index[0][1].date())
-    for i in range(len(tracks_obj.system_tracks)):
-        d = np.datetime64(tracks_obj.system_tracks.index[i][1].date())
-        try:
-            regimes.append(pope.loc[d].values[0])
-        except:
-            regimes.append(np.nan)
-
-    tracks_obj.system_tracks['pope_regime'] = regimes
-    return tracks_obj
-
-
 def create_categories(tracks_obj):
     # Let's filter by tilt direction and magnitude, velocity magnitude
     # and significant area.

@@ -113,7 +113,8 @@ def get_CPOL_season(
         dates, base_dir=base_dir)
 
     tracks_obj = tint.Tracks(params={
-        'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir})
+        'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
+        'LEVELS': np.array([[500, 2500], [2500, 7500], [7500, 10000]])})
 
     grids = (
         pyart.io.read_grid(fn, include_fields=['reflectivity'])
