@@ -114,7 +114,14 @@ def get_CPOL_season(
 
     tracks_obj = tint.Tracks(params={
         'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
-        'LEVELS': np.array([[500, 2500], [2500, 7500], [7500, 10000]])})
+        'LEVELS': np.array(
+            [[500, 3500], [3500, 5500], [5500, 7500], [7500, 10000]]),  # m
+        # Minimum size of objects in each layer.
+        'MIN_SIZE': [80, 400, 400, 800],  # square km
+        # Thresholds for object identification.
+        'FIELD_THRESH': ['convective', 20, 20, 15],  # DbZ or 'convective'.
+        # Threshold to define a cell as isolated.
+        'ISO_THRESH': [10, 10, 10, 10]})
 
     grids = (
         pyart.io.read_grid(fn, include_fields=['reflectivity'])
