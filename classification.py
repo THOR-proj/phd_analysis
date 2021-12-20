@@ -3,6 +3,7 @@ import pickle
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import datetime
 
 base_dir = '/media/shorte1/Ewan\'s Hard Drive/phd/data/CPOL/'
 save_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_tracks/'
@@ -40,7 +41,7 @@ def init_fonts():
 def load_year(year, subscript=''):
     print('Processing year {}'.format(year))
     save_dir = '/home/student.unimelb.edu.au/shorte1/'
-    save_dir += 'Documents//TINT_tracks/base/'
+    save_dir += 'Documents//TINT_tracks/lower_conv_level/'
     filename = save_dir + '{}1001_{}0501{}.pkl'.format(
         year, year+1, subscript)
     with open(filename, 'rb') as f:
@@ -142,7 +143,49 @@ def get_counts(base_dir=None):
     return class_df
 
 
+def get_colors():
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    return colors
+
+
+def set_ticks(ax1, ax2, leg_columns=3):
+    plt.sca(ax1)
+    plt.xticks(np.arange(30, 310, 30))
+    plt.ylabel('Count [-]')
+    plt.xlabel('Time since Initiation [m]')
+    ax1.legend(
+        loc='lower center', bbox_to_anchor=(1.1, -0.475),
+        ncol=leg_columns, fancybox=True, shadow=True)
+    plt.setp(ax1.lines, linewidth=1.75)
+
+    plt.sca(ax2)
+    plt.xticks(np.arange(30, 310, 30))
+    plt.yticks(np.arange(0, 1.1, 0.1))
+    plt.ylabel('Ratio [-]')
+    plt.xlabel('Time since Initiation [m]')
+    plt.setp(ax2.lines, linewidth=1.75)
+
+
+def initialise_fig():
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 3.5))
+    return fig, (ax1, ax2)
+
+
+def get_time_str():
+    current_time = str(datetime.datetime.now())[0:-7]
+    current_time = current_time.replace(" ", "_").replace(":", "_")
+    current_time = current_time.replace("-", "")
+    return current_time
+
+
+def make_subplot_labels(ax1, ax2):
+    ax1.text(-0.15, 1.0, 'a)', transform=ax1.transAxes, size=16)
+    ax2.text(-0.15, 1.0, 'b)', transform=ax2.transAxes, size=16)
+
+
 def plot_offsets(class_df):
+    colors = get_colors()
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
     counts = counts.sort_index()
     counts_df = pd.DataFrame({'counts': counts})
@@ -160,37 +203,45 @@ def plot_offsets(class_df):
     offset_totals = TS + LS + LeS + RiS
 
     init_fonts()
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    fig, (ax1, ax2) = initialise_fig()
     x = np.arange(30, 310, 10)
-    ax1.plot(x, TS.loc[x], label='Trailing Stratiform')
-    ax1.plot(x, LS.loc[x], label='Leading Stratiform')
-    ax1.plot(x, LeS.loc[x], label='Parallel Stratiform (Left)')
-    ax1.plot(x, RiS.loc[x], label='Parallel Stratiform (Right)')
-    ax1.plot(x, offset_totals.loc[x], label='Total')
-    plt.sca(ax1)
-    plt.xticks(np.arange(30, 310, 30))
-    plt.ylabel('Count [-]')
-    plt.xlabel('Time since Initiation [m]')
-    ax1.legend(
-        loc='lower center', bbox_to_anchor=(0.5, -0.6),
-        ncol=2, fancybox=True, shadow=True)
+    ax1.plot(x, TS.loc[x], label='Trailing Stratiform', color=colors[0])
+    ax1.plot(x, LS.loc[x], label='Leading Stratiform', color=colors[1])
+    ax1.plot(
+        x, LeS.loc[x], label='Parallel Stratiform (Left)', color=colors[2])
+    ax1.plot(
+        x, RiS.loc[x], label='Parallel Stratiform (Right)', color=colors[4])
+    ax1.plot(x, offset_totals.loc[x], label='Total', color=colors[3])
 
-    ax2.plot(x, (TS/offset_totals).loc[x], label='Trailing Stratiform')
-    ax2.plot(x, (LS/offset_totals).loc[x], label='Leading Stratiform')
-    ax2.plot(x, (LeS/offset_totals).loc[x], label='Parallel Stratiform (Left)')
     ax2.plot(
-        x, (RiS/offset_totals).loc[x], label='Parallel Stratiform (Right)')
-    plt.sca(ax2)
-    plt.xticks(np.arange(30, 300, 30))
-    plt.yticks(np.arange(0, 1.1, 0.1))
-    plt.ylabel('Ratio [-]')
-    plt.xlabel('Time since Initiation [m]')
-    ax2.legend(
-        loc='lower center', bbox_to_anchor=(0.5, -0.6),
-        ncol=2, fancybox=True, shadow=True)
+        x, (TS/offset_totals).loc[x],
+        label='Trailing Stratiform', color=colors[0])
+    ax2.plot(
+        x, (LeS/offset_totals).loc[x], label='Parallel Stratiform (Left)',
+        color=colors[2])
+    ax2.plot(
+        x, (RiS/offset_totals).loc[x], label='Parallel Stratiform (Right)',
+        color=colors[4])
+    ax2.plot(
+        x, (LS/offset_totals).loc[x],
+        label='Leading Stratiform', color=colors[1])
+
+    make_subplot_labels(ax1, ax2)
+    set_ticks(ax1, ax2)
+
+    current_time = get_time_str()
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_figures/'
+    plt.savefig(
+        base_dir + 'offsets_{}.png'.format(current_time),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
+    totals = [y.loc[x].sum() for y in [TS, LS, LeS, RiS, offset_totals]]
+
+    return totals
 
 
 def plot_inflows(class_df):
+    colors = get_colors()
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
     counts = counts.sort_index()
     counts_df = pd.DataFrame({'counts': counts})
@@ -209,38 +260,40 @@ def plot_inflows(class_df):
     inflow_totals = A + FF + RF + LeF + RiF
 
     init_fonts()
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    fig, (ax1, ax2) = initialise_fig()
     x = np.arange(30, 310, 10)
-    ax1.plot(x, FF.loc[x], label='Front Fed')
-    ax1.plot(x, RF.loc[x], label='Rear Fed')
-    ax1.plot(x, LeF.loc[x], label='Parallel Fed (Left)')
-    ax1.plot(x, RiF.loc[x], label='Parallel Fed (Right)')
-    ax1.plot(x, inflow_totals.loc[x], label='Total')
-    ax1.plot(x, A.loc[x], label='Ambiguous')
-    plt.sca(ax1)
-    plt.xticks(np.arange(30, 310, 30))
-    plt.ylabel('Count [-]')
-    plt.xlabel('Time since Initiation [m]')
-    ax1.legend(
-        loc='lower center', bbox_to_anchor=(0.5, -0.6),
-        ncol=2, fancybox=True, shadow=True)
+    ax1.plot(x, FF.loc[x], label='Front Fed', color=colors[0])
+    ax1.plot(x, RF.loc[x], label='Rear Fed', color=colors[1])
+    ax1.plot(x, LeF.loc[x], label='Parallel Fed (Left)', color=colors[2])
+    ax1.plot(x, RiF.loc[x], label='Parallel Fed (Right)', color=colors[4])
+    ax1.plot(x, A.loc[x], label='Ambiguous', color=colors[5])
+    ax1.plot(x, inflow_totals.loc[x], label='Total', color=colors[3])
 
-    ax2.plot(x, (FF/inflow_totals).loc[x], label='Front Fed')
-    ax2.plot(x, (RF/inflow_totals).loc[x], label='Rear Fed')
-    ax2.plot(x, (LeF/inflow_totals).loc[x], label='Parallel Fed (Left)')
-    ax2.plot(x, (RiF/inflow_totals).loc[x], label='Parallel Fed (Right)')
-    ax2.plot(x, (A/inflow_totals).loc[x], label='Ambiguous')
-    plt.sca(ax2)
-    plt.xticks(np.arange(30, 300, 30))
-    plt.yticks(np.arange(0, 1.1, 0.1))
-    plt.ylabel('Ratio [-]')
-    plt.xlabel('Time since Initiation [m]')
-    ax2.legend(
-        loc='lower center', bbox_to_anchor=(0.5, -0.6),
-        ncol=2, fancybox=True, shadow=True)
+    ax2.plot(
+        x, (FF/inflow_totals).loc[x], label='Front Fed', color=colors[0])
+    ax2.plot(x, (RF/inflow_totals).loc[x], label='Rear Fed', color=colors[1])
+    ax2.plot(
+        x, (LeF/inflow_totals).loc[x], label='Parallel Fed (Left)',
+        color=colors[2])
+    ax2.plot(
+        x, (RiF/inflow_totals).loc[x], label='Parallel Fed (Right)',
+        color=colors[4])
+    ax2.plot(x, (A/inflow_totals).loc[x], label='Ambiguous', color=colors[5])
+    set_ticks(ax1, ax2)
+    make_subplot_labels(ax1, ax2)
+
+    current_time = get_time_str()
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_figures/'
+    plt.savefig(
+        base_dir + 'inflows_{}.png'.format(current_time),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
+    totals = [y.loc[x].sum() for y in [FF, RF, LeF, RiF, A, inflow_totals]]
+    return totals
 
 
 def plot_tilts(class_df):
+    colors = get_colors()
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
     counts = counts.sort_index()
     counts_df = pd.DataFrame({'counts': counts})
@@ -257,34 +310,35 @@ def plot_tilts(class_df):
     tilt_totals = A + UST + DST
 
     init_fonts()
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    fig, (ax1, ax2) = initialise_fig()
     x = np.arange(30, 310, 10)
-    ax1.plot(x, UST.loc[x], label='Up-Shear Tilted')
-    ax1.plot(x, DST.loc[x], label='Down-Shear Tilted')
-    ax1.plot(x, A.loc[x], label='Ambiguous')
-    ax1.plot(x, tilt_totals.loc[x], label='Total', color='red')
-    plt.sca(ax1)
-    plt.xticks(np.arange(30, 310, 30))
-    plt.ylabel('Count [-]')
-    plt.xlabel('Time since Initiation [m]')
-    ax1.legend(
-        loc='lower center', bbox_to_anchor=(0.5, -0.6),
-        ncol=2, fancybox=True, shadow=True)
+    ax1.plot(x, UST.loc[x], label='Up-Shear Tilted', color=colors[0])
+    ax1.plot(x, DST.loc[x], label='Down-Shear Tilted', color=colors[1])
+    ax1.plot(x, A.loc[x], label='Ambiguous', color=colors[5])
+    ax1.plot(x, tilt_totals.loc[x], label='Total', color=colors[3])
 
-    ax2.plot(x, (UST/tilt_totals).loc[x], label='Up-Shear Tilted')
-    ax2.plot(x, (DST/tilt_totals).loc[x], label='Down-Shear Tilted')
-    ax2.plot(x, (A/tilt_totals).loc[x], label='Ambiguous')
-    plt.sca(ax2)
-    plt.xticks(np.arange(30, 300, 30))
-    plt.yticks(np.arange(0, 1.1, 0.1))
-    plt.ylabel('Ratio [-]')
-    plt.xlabel('Time since Initiation [m]')
-    ax2.legend(
-        loc='lower center', bbox_to_anchor=(0.5, -0.6),
-        ncol=2, fancybox=True, shadow=True)
+    ax2.plot(
+        x, (UST/tilt_totals).loc[x], label='Up-Shear Tilted',
+        color=colors[0])
+    ax2.plot(
+        x, (DST/tilt_totals).loc[x], label='Down-Shear Tilted',
+        color=colors[1])
+    ax2.plot(x, (A/tilt_totals).loc[x], label='Ambiguous', color=colors[5])
+    set_ticks(ax1, ax2, leg_columns=2)
+    make_subplot_labels(ax1, ax2)
+
+    current_time = get_time_str()
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_figures/'
+    plt.savefig(
+        base_dir + 'tilts_{}.png'.format(current_time),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
+    totals = [y.loc[x].sum() for y in [UST, DST, A, tilt_totals]]
+    return totals
 
 
 def plot_propagations(class_df):
+    colors = get_colors()
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
     counts = counts.sort_index()
     counts_df = pd.DataFrame({'counts': counts})
@@ -298,31 +352,35 @@ def plot_propagations(class_df):
     [A, USP, DSP] = [
         off_type.reindex(new_index, fill_value=0)
         for off_type in [A, USP, DSP]]
-    tilt_totals = A + USP + DSP
+    prop_totals = A + USP + DSP
 
     init_fonts()
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    fig, (ax1, ax2) = initialise_fig()
     x = np.arange(30, 310, 10)
-    ax1.plot(x, USP.loc[x], label='Up-Shear Propagating')
-    ax1.plot(x, DSP.loc[x], label='Down-Shear Propagating')
-    ax1.plot(x, A.loc[x], label='Ambiguous')
-    ax1.plot(x, tilt_totals.loc[x], label='Total', color='red')
-    plt.sca(ax1)
-    plt.xticks(np.arange(30, 310, 30))
-    plt.ylabel('Count [-]')
-    plt.xlabel('Time since Initiation [m]')
-    ax1.legend(
-        loc='lower center', bbox_to_anchor=(0.5, -0.6),
-        ncol=2, fancybox=True, shadow=True)
+    ax1.plot(x, DSP.loc[x], label='Down-Shear Propagating', color=colors[0])
+    ax1.plot(x, USP.loc[x], label='Up-Shear Propagating', color=colors[1])
+    ax1.plot(x, A.loc[x], label='Ambiguous', color=colors[5])
+    ax1.plot(
+        x, prop_totals.loc[x], label='Total', color=colors[3])
 
-    ax2.plot(x, (USP/tilt_totals).loc[x], label='Up-Shear Propagating')
-    ax2.plot(x, (DSP/tilt_totals).loc[x], label='Down-Shear Propagating')
-    ax2.plot(x, (A/tilt_totals).loc[x], label='Ambiguous')
-    plt.sca(ax2)
-    plt.xticks(np.arange(30, 300, 30))
-    plt.yticks(np.arange(0, 1.1, 0.1))
-    plt.ylabel('Ratio [-]')
-    plt.xlabel('Time since Initiation [m]')
-    ax2.legend(
-        loc='lower center', bbox_to_anchor=(0.5, -0.6),
-        ncol=2, fancybox=True, shadow=True)
+    ax2.plot(
+        x, (DSP/prop_totals).loc[x], label='Down-Shear Propagating',
+        color=colors[0])
+    ax2.plot(
+        x, (USP/prop_totals).loc[x], label='Up-Shear Propagating',
+        color=colors[1])
+    ax2.plot(
+        x, (A/prop_totals).loc[x], label='Ambiguous',
+        color=colors[5])
+
+    set_ticks(ax1, ax2, leg_columns=2)
+    make_subplot_labels(ax1, ax2)
+
+    current_time = get_time_str()
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_figures/'
+    plt.savefig(
+        base_dir + 'propagations_{}.png'.format(current_time),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
+    totals = [y.loc[x].sum() for y in [DSP, USP, A, prop_totals]]
+    return totals
