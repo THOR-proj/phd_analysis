@@ -41,7 +41,7 @@ def init_fonts():
 def load_year(year, subscript=''):
     print('Processing year {}'.format(year))
     save_dir = '/home/student.unimelb.edu.au/shorte1/'
-    save_dir += 'Documents//TINT_tracks/lower_conv_level/'
+    save_dir += 'Documents//TINT_tracks/four_levels/'
     filename = save_dir + '{}1001_{}0501{}.pkl'.format(
         year, year+1, subscript)
     with open(filename, 'rb') as f:
