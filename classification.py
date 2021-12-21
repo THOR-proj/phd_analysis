@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
+from tint.objects import classify_tracks, get_exclusion_categories
 
 base_dir = '/media/shorte1/Ewan\'s Hard Drive/phd/data/CPOL/'
 save_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_tracks/'
@@ -41,7 +42,7 @@ def init_fonts():
 def load_year(year, subscript=''):
     print('Processing year {}'.format(year))
     save_dir = '/home/student.unimelb.edu.au/shorte1/'
-    save_dir += 'Documents//TINT_tracks/four_levels/'
+    save_dir += 'Documents/TINT_tracks/four_levels/'
     filename = save_dir + '{}1001_{}0501{}.pkl'.format(
         year, year+1, subscript)
     with open(filename, 'rb') as f:
@@ -53,7 +54,7 @@ def get_sub_tracks(tracks_obj):
     exclusions = [
         'small_area', 'large_area', 'intersect_border',
         'intersect_border_convective', 'duration_cond',
-        'small_velocity', 'small_offset']
+        'small_velocity', 'small_offset', 'non_linear']
     excluded = tracks_obj.exclusions[exclusions]
     amb = 'Ambiguous (On Quadrant Boundary)'
     quad_bound = tracks_obj.tracks_class['offset_type'] == amb
@@ -77,7 +78,27 @@ def get_sub_uids(sub_tracks):
     return sub_uids
 
 
-def get_counts(base_dir=None):
+def redo_exclusions(tracks_obj):
+    tracks_obj.params['DT'] = 10
+    tracks_obj.params['CLASS_THRESH'] = {
+        'OFFSET_MAG': 10000,  # metres
+        'SHEAR_MAG': 2,  # m/s
+        'VEL_MAG': 5,  # m/s
+        'REL_VEL_MAG': 2,  # m/s
+        'ANGLE_BUFFER': 10}
+    tracks_obj.params['EXCL_THRESH'] = {
+        'SMALL_AREA': 500,  # km^2
+        'LARGE_AREA': 50000,  # km^2
+        'BORD_THRESH': 0.001,  # Ratio border pixels to total pixels
+        'MAJOR_AXIS_LENGTH': 25,  # km
+        'AXIS_RATIO': 2,
+        'DURATION': 30}  # minutes
+    tracks_obj = classify_tracks(tracks_obj)
+    tracks_obj = get_exclusion_categories(tracks_obj)
+    return tracks_obj
+
+
+def get_counts(base_dir=None, get_exclusions=False):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
     [
@@ -87,6 +108,9 @@ def get_counts(base_dir=None):
     years = sorted(list(set(range(1998, 2016)) - {2000, 2007, 2008}))
     for year in years:
         tracks_obj = load_year(year)
+        if get_exclusions:
+            print('Getting new exclusions.')
+            tracks_obj = redo_exclusions(tracks_obj)
         print('Adding Pope monsoon regime.')
         tracks_obj = add_monsoon_regime(tracks_obj, base_dir=base_dir)
         sub_tracks = get_sub_tracks(tracks_obj)
@@ -184,7 +208,15 @@ def make_subplot_labels(ax1, ax2):
     ax2.text(-0.15, 1.0, 'b)', transform=ax2.transAxes, size=16)
 
 
-def plot_offsets(class_df):
+def get_save_dir(save_dir):
+    if save_dir is None:
+        save_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+        save_dir += 'TINT_figures/'
+    return save_dir
+
+
+def plot_offsets(class_df, save_dir=None, append_time=False):
+    save_dir = get_save_dir(save_dir)
     colors = get_colors()
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
     counts = counts.sort_index()
@@ -228,19 +260,24 @@ def plot_offsets(class_df):
 
     make_subplot_labels(ax1, ax2)
     set_ticks(ax1, ax2)
-
     current_time = get_time_str()
-    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_figures/'
+
+    if append_time:
+        fn = 'offsets_{}.png'.format(current_time)
+    else:
+        fn = 'offsets.png'
+
     plt.savefig(
-        base_dir + 'offsets_{}.png'.format(current_time),
-        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+        save_dir + fn, dpi=200, facecolor='w',
+        edgecolor='white', bbox_inches='tight')
 
     totals = [y.loc[x].sum() for y in [TS, LS, LeS, RiS, offset_totals]]
 
     return totals
 
 
-def plot_inflows(class_df):
+def plot_inflows(class_df, save_dir=None, append_time=False):
+    save_dir = get_save_dir(save_dir)
     colors = get_colors()
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
     counts = counts.sort_index()
@@ -283,16 +320,20 @@ def plot_inflows(class_df):
     make_subplot_labels(ax1, ax2)
 
     current_time = get_time_str()
-    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_figures/'
+    if append_time:
+        fn = 'inflows_{}.png'.format(current_time)
+    else:
+        fn = 'inflows.png'
     plt.savefig(
-        base_dir + 'inflows_{}.png'.format(current_time),
-        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+        save_dir + fn, dpi=200, facecolor='w',
+        edgecolor='white', bbox_inches='tight')
 
     totals = [y.loc[x].sum() for y in [FF, RF, LeF, RiF, A, inflow_totals]]
     return totals
 
 
-def plot_tilts(class_df):
+def plot_tilts(class_df, save_dir=None, append_time=False):
+    save_dir = get_save_dir(save_dir)
     colors = get_colors()
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
     counts = counts.sort_index()
@@ -328,16 +369,20 @@ def plot_tilts(class_df):
     make_subplot_labels(ax1, ax2)
 
     current_time = get_time_str()
-    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_figures/'
+    if append_time:
+        fn = 'tilts_{}.png'.format(current_time)
+    else:
+        fn = 'tilts.png'
     plt.savefig(
-        base_dir + 'tilts_{}.png'.format(current_time),
-        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+        save_dir + fn, dpi=200, facecolor='w', edgecolor='white',
+        bbox_inches='tight')
 
     totals = [y.loc[x].sum() for y in [UST, DST, A, tilt_totals]]
     return totals
 
 
-def plot_propagations(class_df):
+def plot_propagations(class_df, save_dir=None, append_time=False):
+    save_dir = get_save_dir(save_dir)
     colors = get_colors()
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
     counts = counts.sort_index()
@@ -377,10 +422,151 @@ def plot_propagations(class_df):
     make_subplot_labels(ax1, ax2)
 
     current_time = get_time_str()
-    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_figures/'
+    if append_time:
+        fn = 'propagations_{}.png'.format(current_time)
+    else:
+        fn = 'propagations.png'
     plt.savefig(
-        base_dir + 'propagations_{}.png'.format(current_time),
-        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+        save_dir + fn, dpi=200, facecolor='w', edgecolor='white',
+        bbox_inches='tight')
 
     totals = [y.loc[x].sum() for y in [DSP, USP, A, prop_totals]]
     return totals
+
+
+def plot_all():
+    test_dir = [
+        'base', 'lower_conv_level', 'four_levels', 'higher_shear_thresh',
+        'higher_rel_vel_thresh', 'higher_theta_e', 'higher_offset_thresh',
+        'higher_area_thresh', 'higher_border_thresh', 'linear_50',
+        'linear_25_2']
+    test_names = [
+        'Base', 'Lower Convective Level', 'Four Levels',
+        'Higher Shear Threshold', 'Higher Relative Velocity Threshold',
+        'Higher Quadrant Buffer', 'Higher Stratiform Offset Threshold',
+        'Higher Minimum Area Threshold',
+        'Stricter Border Intersection Threshold',
+        '50 km Linearity Threshold',
+        '25 km Reduced Axis Ratio Linearity Threshold']
+
+    test = []
+    [TS, LS, LeS, RiS, offset_total] = [[] for i in range(5)]
+    [FF, RF, LeF, RiF, A_inflow, inflow_total] = [[] for i in range(6)]
+    [UST, DST, A_tilt, tilt_total] = [[] for i in range(4)]
+    [USP, DSP, A_prop, prop_total] = [[] for i in range(4)]
+
+    for i in range(len(test_dir)):
+        base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+        class_path = base_dir + 'TINT_tracks/'
+        class_path += '{}_classes.pkl'.format(test_dir[i])
+        fig_dir = base_dir + 'TINT_figures/'
+        fig_dir += test_dir[i] + '/'
+        with open(class_path, 'rb') as f:
+            class_df = pickle.load(f)
+        test.append(test_names[i])
+
+        offset_summary = plot_offsets(class_df, fig_dir)
+        TS.append(offset_summary[0].values[0])
+        LS.append(offset_summary[1].values[0])
+        LeS.append(offset_summary[2].values[0])
+        RiS.append(offset_summary[3].values[0])
+        offset_total.append(offset_summary[4].values[0])
+
+        inflow_summary = plot_inflows(class_df, fig_dir)
+        FF.append(inflow_summary[0].values[0])
+        RF.append(inflow_summary[1].values[0])
+        LeF.append(inflow_summary[2].values[0])
+        RiF.append(inflow_summary[3].values[0])
+        A_inflow.append(inflow_summary[4].values[0])
+        inflow_total.append(inflow_summary[5].values[0])
+
+        tilt_summary = plot_tilts(class_df, fig_dir)
+        UST.append(tilt_summary[0].values[0])
+        DST.append(tilt_summary[1].values[0])
+        A_tilt.append(tilt_summary[2].values[0])
+        tilt_total.append(tilt_summary[3].values[0])
+
+        prop_summary = plot_propagations(class_df, fig_dir)
+        USP.append(prop_summary[1].values[0])
+        DSP.append(prop_summary[0].values[0])
+        A_prop.append(prop_summary[2].values[0])
+        prop_total.append(prop_summary[3].values[0])
+
+        plt.close('all')
+
+    offset_sensitivity_df = pd.DataFrame({
+        'Test': test, 'Trailing Stratiform': TS,
+        'Leading Stratiform': LS, 'Parallel Stratiform (Left)': LeS,
+        'Parallel Stratiform (Right)': RiS, 'Total': offset_total})
+    offset_sensitivity_df = offset_sensitivity_df.set_index('Test')
+
+    inflow_sensitivity_df = pd.DataFrame({
+        'Test': test, 'Front Fed': FF,
+        'Rear Fed': RF, 'Parallel Fed (Left)': LeF,
+        'Parallel Fed (Right)': RiF, 'Ambiguous': A_inflow,
+        'Total': inflow_total})
+    inflow_sensitivity_df = inflow_sensitivity_df.set_index('Test')
+
+    tilt_sensitivity_df = pd.DataFrame({
+        'Test': test, 'Up-Shear Tilted': UST,
+        'Down-Shear Tilted': DST, 'Ambiguous': A_tilt,
+        'Total': tilt_total})
+    tilt_sensitivity_df = tilt_sensitivity_df.set_index('Test')
+
+    prop_sensitivity_df = pd.DataFrame({
+        'Test': test, 'Down-Shear Propagating': DSP,
+        'Up-Shear Propagating': USP, 'Ambiguous': A_prop,
+        'Total': prop_total})
+    prop_sensitivity_df = prop_sensitivity_df.set_index('Test')
+
+    sen_dfs = [
+        offset_sensitivity_df, inflow_sensitivity_df,
+        tilt_sensitivity_df, prop_sensitivity_df]
+
+    return sen_dfs
+
+
+def plot_sensitivities(sen_dfs):
+
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8.5))
+    init_fonts()
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    offset_c = [colors[i] for i in [0, 1, 2, 4]]
+    inflow_c = [colors[i] for i in [0, 1, 2, 4, 5]]
+    tilt_c = [colors[i] for i in [0, 1, 5]]
+    prop_c = [colors[i] for i in [0, 1, 5]]
+    clists = [offset_c, inflow_c, tilt_c, prop_c]
+    leg_offset = [-.45, -.55, -.45, -.45]
+    labels = ['a)', 'b)', 'c)', 'd)']
+    for i in range(len(sen_dfs)):
+        base_ratios = sen_dfs[i].drop('Total', axis=1)
+        c_list = clists[i]
+        for c in base_ratios.columns:
+            base_ratios.loc[:, c] = (
+                base_ratios.loc[:, c]/sen_dfs[i].loc[:, 'Total'])
+
+        base_ratios = base_ratios.reset_index(drop=True)
+        base_ratios.loc[:, 'Test'] = np.array([
+            'Base', 'C2', '4LVL', 'S4', 'RV4', 'T15', 'SO15', 'A2000',
+            'B05', 'L50', 'L252'])
+        base_ratios = base_ratios.set_index('Test')
+        max_rat = np.ceil(base_ratios.max().max()*10)/10
+
+        ax = axes[i // 2, i % 2]
+        ncol = len(base_ratios.columns)
+        ax = base_ratios.plot(
+            kind='bar', stacked=False, fontsize=12, rot=0, ax=ax,
+            yticks=np.arange(0, max_rat+0.1, 0.1), width=0.6*ncol/4,
+            color=c_list)
+        ax.set_xlabel(None)
+        ax.xaxis.set_label_coords(.5, -0.15)
+        ax.set_ylabel('Ratio [-]', fontsize=14)
+        ax.legend(
+            loc='lower center', bbox_to_anchor=(.475, leg_offset[i]),
+            ncol=2, fancybox=True, shadow=True)
+        ax.set_yticks(np.arange(0, max_rat+0.05, 0.05), minor=True)
+        ax.grid(which='minor', alpha=0.2, axis='y')
+        ax.grid(which='major', alpha=0.5, axis='y')
+        ax.text(-0.15, 1.0, labels[i], transform=ax.transAxes, size=16)
+    plt.subplots_adjust(hspace=0.65)
