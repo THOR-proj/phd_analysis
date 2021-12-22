@@ -39,22 +39,24 @@ def init_fonts():
     rcParams.update({'font.size': 12})
 
 
-def load_year(year, subscript=''):
+def load_year(year, tracks_dir='base'):
     print('Processing year {}'.format(year))
     save_dir = '/home/student.unimelb.edu.au/shorte1/'
-    save_dir += 'Documents/TINT_tracks/four_levels/'
-    filename = save_dir + '{}1001_{}0501{}.pkl'.format(
-        year, year+1, subscript)
+    save_dir += 'Documents/TINT_tracks/{}/'.format(tracks_dir)
+    filename = save_dir + '{}1001_{}0501.pkl'.format(
+        year, year+1)
     with open(filename, 'rb') as f:
         tracks_obj = pickle.load(f)
     return tracks_obj
 
 
-def get_sub_tracks(tracks_obj):
+def get_sub_tracks(tracks_obj, non_linear=False):
     exclusions = [
         'small_area', 'large_area', 'intersect_border',
         'intersect_border_convective', 'duration_cond',
-        'small_velocity', 'small_offset', 'non_linear']
+        'small_velocity', 'small_offset']
+    if non_linear:
+        exclusions += ['non_linear']
     excluded = tracks_obj.exclusions[exclusions]
     amb = 'Ambiguous (On Quadrant Boundary)'
     quad_bound = tracks_obj.tracks_class['offset_type'] == amb
@@ -78,27 +80,17 @@ def get_sub_uids(sub_tracks):
     return sub_uids
 
 
-def redo_exclusions(tracks_obj):
-    tracks_obj.params['DT'] = 10
-    tracks_obj.params['CLASS_THRESH'] = {
-        'OFFSET_MAG': 10000,  # metres
-        'SHEAR_MAG': 2,  # m/s
-        'VEL_MAG': 5,  # m/s
-        'REL_VEL_MAG': 2,  # m/s
-        'ANGLE_BUFFER': 10}
-    tracks_obj.params['EXCL_THRESH'] = {
-        'SMALL_AREA': 500,  # km^2
-        'LARGE_AREA': 50000,  # km^2
-        'BORD_THRESH': 0.001,  # Ratio border pixels to total pixels
-        'MAJOR_AXIS_LENGTH': 25,  # km
-        'AXIS_RATIO': 2,
-        'DURATION': 30}  # minutes
+def redo_exclusions(tracks_obj, class_thresh, excl_thresh):
+    tracks_obj.params['CLASS_THRESH'] = class_thresh
+    tracks_obj.params['EXCL_THRESH'] = excl_thresh
     tracks_obj = classify_tracks(tracks_obj)
     tracks_obj = get_exclusion_categories(tracks_obj)
     return tracks_obj
 
 
-def get_counts(base_dir=None, get_exclusions=False):
+def get_counts(
+        base_dir=None, get_exclusions=False, tracks_dir='base',
+        non_linear=False, class_thresh=None, excl_thresh=None):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
     [
@@ -107,13 +99,13 @@ def get_counts(base_dir=None, get_exclusions=False):
         [] for i in range(8)]
     years = sorted(list(set(range(1998, 2016)) - {2000, 2007, 2008}))
     for year in years:
-        tracks_obj = load_year(year)
+        tracks_obj = load_year(year, tracks_dir=tracks_dir)
         if get_exclusions:
             print('Getting new exclusions.')
-            tracks_obj = redo_exclusions(tracks_obj)
+            tracks_obj = redo_exclusions(tracks_obj, class_thresh, excl_thresh)
         print('Adding Pope monsoon regime.')
         tracks_obj = add_monsoon_regime(tracks_obj, base_dir=base_dir)
-        sub_tracks = get_sub_tracks(tracks_obj)
+        sub_tracks = get_sub_tracks(tracks_obj, non_linear=non_linear)
         if sub_tracks is None:
             print('No tracks satisfying conditions. Skipping year.')
             continue
@@ -439,7 +431,7 @@ def plot_all():
         'base', 'lower_conv_level', 'four_levels', 'higher_shear_thresh',
         'higher_rel_vel_thresh', 'higher_theta_e', 'higher_offset_thresh',
         'higher_area_thresh', 'higher_border_thresh', 'linear_50',
-        'linear_25_2']
+        'linear_25']
     test_names = [
         'Base', 'Lower Convective Level', 'Four Levels',
         'Higher Shear Threshold', 'Higher Relative Velocity Threshold',
@@ -548,7 +540,7 @@ def plot_sensitivities(sen_dfs):
 
         base_ratios = base_ratios.reset_index(drop=True)
         base_ratios.loc[:, 'Test'] = np.array([
-            'Base', 'C2', '4LVL', 'S4', 'RV4', 'T15', 'SO15', 'A2000',
+            'Base', 'C2', '4LVL', 'S4', 'RV4', 'T15', 'SO15', 'A2',
             'B05', 'L50', 'L252'])
         base_ratios = base_ratios.set_index('Test')
         max_rat = np.ceil(base_ratios.max().max()*10)/10
