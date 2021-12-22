@@ -115,10 +115,7 @@ def get_CPOL_season(
     tracks_obj = tint.Tracks(params={
         'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
         # Altitude in m for calculating global shift.
-        'GS_ALT': 1500,  # m
-        # Layers to identify objects within.
-        'LEVELS': np.array(
-            [[500, 2500], [2500, 7500], [7500, 10000]])})
+        'FIELD_THRESH': [40, 20, 15]})
 
     grids = (
         pyart.io.read_grid(fn, include_fields=['reflectivity'])
