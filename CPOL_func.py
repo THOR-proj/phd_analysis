@@ -118,7 +118,7 @@ def get_CPOL_season(
         'GS_ALT': 1500,  # m
         # Layers to identify objects within.
         'LEVELS': np.array(
-            [[500, 2500], [3500, 7500], [7500, 10000]])})
+            [[500, 2500], [2500, 7500], [7500, 10000]])})
 
     grids = (
         pyart.io.read_grid(fn, include_fields=['reflectivity'])
