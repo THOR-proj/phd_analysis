@@ -113,32 +113,12 @@ def get_CPOL_season(
         dates, base_dir=base_dir)
 
     params = {
-        'GS_ALT': 1500,  # m
+        'GS_ALT': 2500,  # m
         # Layers to identify objects within.
         'LEVELS': np.array(
-            [[500, 2500], [2500, 5000], [5000, 7500], [7500, 10000]]),  # m
-        # Minimum size of objects in each layer.
-        'MIN_SIZE': [80, 400, 400, 800],  # square km
-        # Thresholds for object identification.
-        'FIELD_THRESH': [40, 20, 20, 15],  # DbZ or 'convective'.
-        # Threshold to define a cell as isolated.
-        'ISO_THRESH': [10, 10, 10, 10],  # DbZ
+            [[500, 4500], [4500, 7500], [7500, 10000]]),  # m
         # Interval in the above array used for tracking.
-        'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
-        'CLASS_THRESH': {
-            'OFFSET_MAG': 12500,  # metres
-            'SHEAR_MAG': 3,  # m/s
-            'VEL_MAG': 5,  # m/s
-            'REL_VEL_MAG': 3,  # m/s
-            'ANGLE_BUFFER': 15},  # degrees
-        'EXCL_THRESH': {
-            'SMALL_AREA': 2000,  # km^2
-            'LARGE_AREA': 50000,  # km^2
-            'BORD_THRESH': 0.001,  # Ratio border pixels to total pixels
-            'MAJOR_AXIS_LENGTH': 25,  # km
-            'AXIS_RATIO': 2,
-            'DURATION': 30}  # minutes
-        }
+        'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir}
 
     tracks_obj = tint.Tracks(params=params)
 
