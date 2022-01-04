@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import classification as cl
 from scipy import stats
+import copy
 
 base_dir = '/media/shorte1/Ewan\'s Hard Drive/phd/data/CPOL/'
 save_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_tracks/'
@@ -27,12 +28,15 @@ def shear_versus_orientation(class_thresh=None, excl_thresh=None):
     tracks_dir = base_dir + 'TINT_tracks/base/'
     fig_dir = base_dir + 'TINT_figures/'
 
-    shear_angle_list = []
-    orientation_list = []
-    prop_angle_list = []
+    all_dic = {
+        'shear_angle_list': [], 'orientation_list': [],
+        'prop_angle_list': []}
+
+    FFTS_UST_dic = copy.deepcopy(all_dic)
+    TS_dic = copy.deepcopy(all_dic)
+    LS_dic = copy.deepcopy(all_dic)
 
     for year in years:
-    # for year in [2005]:
 
         print('Getting data for year {}.'.format(year))
         fn = '{}1001_{}0501.pkl'.format(year, year+1)
@@ -48,7 +52,7 @@ def shear_versus_orientation(class_thresh=None, excl_thresh=None):
         exclusions = [
             'small_area', 'large_area', 'intersect_border',
             'intersect_border_convective', 'duration_cond',
-            'small_velocity', 'small_offset', 'non_linear']
+            'small_velocity', 'small_offset']
         excluded = tracks_obj.exclusions[exclusions]
         amb = 'Ambiguous (On Quadrant Boundary)'
         quad_bound = tracks_obj.tracks_class['offset_type'] == amb
@@ -56,65 +60,131 @@ def shear_versus_orientation(class_thresh=None, excl_thresh=None):
         included = np.logical_not(excluded)
 
         sub_classes = tracks_obj.tracks_class.where(included == True).dropna()
+        inds_all = sub_classes.index.values
+        sub_tracks_all = tracks_obj.tracks.loc[inds_all]
+        sub_tracks_all = sub_tracks_all.xs(0, level='level')
 
-        cols = ['inflow_type', 'offset_type']
-        req_type = (
-            'Front Fed', 'Trailing Stratiform')
-        FFTS_cond_1 = np.all(sub_classes[cols] == req_type, axis=1)
-
-        cols = ['inflow_type', 'offset_type']
-        req_type = (
-            'Rear Fed', 'Leading Stratiform')
-        FFTS_cond_2 = np.all(sub_classes[cols] == req_type, axis=1)
-
-        cols = ['inflow_type', 'offset_type']
-        req_type = (
-            'Parallel Fed (Left)', 'Parallel Stratiform (Right)')
-        FFTS_cond_3 = np.all(sub_classes[cols] == req_type, axis=1)
-
-        cols = ['inflow_type', 'offset_type']
-        req_type = (
-            'Parallel Fed (Right)', 'Parallel Stratiform (Left)')
-        FFTS_cond_4 = np.all(sub_classes[cols] == req_type, axis=1)
-
-        # FFTS_cond = FFTS_cond_1 + FFTS_cond_2 + FFTS_cond_3 + FFTS_cond_4
-        FFTS_cond = FFTS_cond_1
-
-        # inds = sub_classes.where(FFTS_cond == True).dropna()
-        inds = sub_classes
-        inds = inds.index.values
-
-        sub_tracks = tracks_obj.tracks.loc[inds]
-        sub_tracks = sub_tracks.xs(0, level='level')
+        sub_tracks_FFTS_UST = get_FFTS_UST(sub_classes, tracks_obj)
+        sub_tracks_TS = get_TS(sub_classes, tracks_obj)
+        sub_tracks_LS = get_LS(sub_classes, tracks_obj)
 
         # import pdb; pdb.set_trace()
 
-        u_shear = sub_tracks['u_shear']
-        v_shear = sub_tracks['v_shear']
-        u_relative = sub_tracks['u_relative']
-        v_relative = sub_tracks['v_relative']
+        sub_tracks = [
+            sub_tracks_all, sub_tracks_FFTS_UST,
+            sub_tracks_TS, sub_tracks_LS]
+        dicts = [
+            all_dic, FFTS_UST_dic, TS_dic, LS_dic]
 
-        shear_angle = np.arctan2(v_shear, u_shear)
-        shear_angle = np.rad2deg(shear_angle)
+        for i in range(len(sub_tracks)):
+            dicts[i] = get_dic_properties(sub_tracks[i], dicts[i])
 
-        prop_angle = np.arctan2(v_relative, u_relative)
-        prop_angle = np.rad2deg(prop_angle)
+    return all_dic, FFTS_UST_dic, TS_dic, LS_dic
 
-        orientation = sub_tracks['orientation']
 
-        shear_angle_list += shear_angle.tolist()
-        orientation_list += orientation.tolist()
-        prop_angle_list += prop_angle.tolist()
+def get_dic_properties(sub_tracks, dic):
+    u_shear = sub_tracks['u_shear']
+    v_shear = sub_tracks['v_shear']
+    u_relative = sub_tracks['u_relative']
+    v_relative = sub_tracks['v_relative']
 
-    # fig, ax = plt.subplots(1, 1, figsize=(4, 4))
-    # plt.sca(ax)
-    # ax.scatter(
-    #     np.mod(shear_angle_list + 90, 180), np.mod(orientation_list, 180),
-    #     marker='.', s=2)
-    # plt.xticks(np.arange(0, 180+30, 30))
-    # plt.yticks(np.arange(0, 180+30, 30))
+    shear_angle = np.arctan2(v_shear, u_shear)
+    shear_angle = np.rad2deg(shear_angle)
 
-    return shear_angle_list, orientation_list, prop_angle_list
+    prop_angle = np.arctan2(v_relative, u_relative)
+    prop_angle = np.rad2deg(prop_angle)
+
+    orientation = sub_tracks['orientation_alt']
+
+    dic['shear_angle_list'] += shear_angle.tolist()
+    dic['orientation_list'] += orientation.tolist()
+    dic['prop_angle_list'] += prop_angle.tolist()
+
+    return dic
+
+
+def get_FFTS_UST(sub_classes, tracks_obj):
+
+    cols = ['inflow_type', 'offset_type', 'tilt_type']
+    req_type = (
+        'Front Fed', 'Trailing Stratiform', 'Up-Shear Tilted')
+    cond = np.all(sub_classes[cols] == req_type, axis=1)
+
+    inds = sub_classes.where(cond == True).dropna()
+    # inds = sub_classes
+    inds = inds.index.values
+
+    sub_tracks = tracks_obj.tracks.loc[inds]
+    sub_tracks = sub_tracks.xs(0, level='level')
+
+    return sub_tracks
+
+
+def get_TS(sub_classes, tracks_obj):
+
+    cols = ['inflow_type', 'offset_type']
+    req_type = (
+        'Front Fed', 'Trailing Stratiform')
+    cond_1 = np.all(sub_classes[cols] == req_type, axis=1)
+
+    cols = ['inflow_type', 'offset_type']
+    req_type = (
+        'Rear Fed', 'Leading Stratiform')
+    cond_2 = np.all(sub_classes[cols] == req_type, axis=1)
+
+    cols = ['inflow_type', 'offset_type']
+    req_type = (
+        'Parallel Fed (Left)', 'Parallel Stratiform (Right)')
+    cond_3 = np.all(sub_classes[cols] == req_type, axis=1)
+
+    cols = ['inflow_type', 'offset_type']
+    req_type = (
+        'Parallel Fed (Right)', 'Parallel Stratiform (Left)')
+    cond_4 = np.all(sub_classes[cols] == req_type, axis=1)
+
+    cond = cond_1 + cond_2 + cond_3 + cond_4
+
+    inds = sub_classes.where(cond == True).dropna()
+    inds = inds.index.values
+
+    sub_tracks = tracks_obj.tracks.loc[inds]
+    sub_tracks = sub_tracks.xs(0, level='level')
+
+    return sub_tracks
+
+
+def get_LS(sub_classes, tracks_obj):
+
+    cols = ['inflow_type', 'offset_type']
+    req_type = (
+        'Front Fed', 'Leading Stratiform')
+    cond_1 = np.all(sub_classes[cols] == req_type, axis=1)
+
+    cols = ['inflow_type', 'offset_type']
+    req_type = (
+        'Rear Fed', 'Trailing Stratiform')
+    cond_2 = np.all(sub_classes[cols] == req_type, axis=1)
+
+    cols = ['inflow_type', 'offset_type']
+    req_type = (
+        'Parallel Fed (Left)', 'Parallel Stratiform (Left)')
+    cond_3 = np.all(sub_classes[cols] == req_type, axis=1)
+
+    cols = ['inflow_type', 'offset_type']
+    req_type = (
+        'Parallel Fed (Right)', 'Parallel Stratiform (Right)')
+    cond_4 = np.all(sub_classes[cols] == req_type, axis=1)
+
+    cond = cond_1 + cond_2 + cond_3 + cond_4
+
+    inds = sub_classes.where(cond == True).dropna()
+    # inds = sub_classes
+    inds = inds.index.values
+
+    sub_tracks = tracks_obj.tracks.loc[inds]
+    sub_tracks = sub_tracks.xs(0, level='level')
+
+    return sub_tracks
 
 
 def shear_angle_versus_orientation_scatter(shear_angle_list, orientation_list):
@@ -154,30 +224,131 @@ def shear_angle_versus_orientation_scatter(shear_angle_list, orientation_list):
     plt.ylabel('Line Normal Direction [Degrees]')
 
 
-def shear_angle_versus_orientation_hist(shear_angle_list, orientation_list):
+def get_random_hist():
+
+    db = 0.05
+    bins = np.arange(-1, 1+db, db)
+    # plt.set_yticks(np.arange(0, 8, 1))
+    # plt.set_yticks(np.arange(0, 8, .5), minor=True)
+
+    plt.hist(result, bins=bins, density=True)
+    plt.yticks(np.arange(0, 8, 1))
+
+
+def shear_angle_versus_orientation_hist(dicts, data='base'):
+
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    fig_dir = base_dir + 'TINT_figures/'
+
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
 
     init_fonts()
 
-    shear = np.mod(np.array(shear_angle_list), 360)
-    line_normal = np.mod(np.array(orientation_list)+90, 360)
-    cosines = np.cos(np.deg2rad(shear)-np.deg2rad(line_normal))
+    fig, axes = plt.subplots(
+        int(np.ceil(len(dicts) / 2)), 2, figsize=(12, 6))
 
-    fig, ax = plt.subplots(1, 1, figsize=(4, 4))
-    # plt.sca(ax)
-    db = 0.05
-    ax.hist(cosines, bins=np.arange(-1, 1+db, db))
+    for i in range(len(dicts)):
+        shear = np.mod(np.array(dicts[i]['shear_angle_list']), 360)
+        line_normal = np.mod(np.array(dicts[i]['orientation_list'])+90, 360)
+        cosines = np.cos(np.deg2rad(shear-line_normal))
 
-    # dx = 0.5
-    # x = np.arange(0, 360+dx, dx)
-    #
-    # ax.plot(
-    #     x, linreg.intercept + linreg.slope*x, 'r',
-    #     label='Least Squares')
-    # stats_lab = 'slope = {:.2f},   r = {:.2f},   p = {:.2e}'.format(
-    #     linreg.slope, linreg.rvalue, linreg.pvalue)
-    # ax.text(0.05, 1.025, stats_lab, transform=ax.transAxes, size=12)
-    #
-    # plt.xticks(np.arange(0, 360+45, 45))
-    # plt.yticks(np.arange(-180, 360+5*45, 45))
-    plt.xlabel('Cosine of Angle between Shear and Line Normal [-]')
-    plt.ylabel('Count [-]')
+        ax = axes[i // 2, i % 2]
+        plt.sca(ax)
+        db = 0.05
+        bins = np.arange(-1, 1+db, db)
+
+        ax.hist(
+            cosines, bins=bins, density=True, color=colors[0])
+
+        angle_1 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
+        angle_2 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
+        random_consines = np.cos(angle_2-angle_1)
+        ax.hist(
+            random_consines, bins=bins, density=True, histtype=u'step',
+            color=colors[3], linewidth=2, alpha=0.75)
+
+
+        minor_ticks = np.arange(-1, 1+5*db, 5*db)
+        ax.set_xticks(minor_ticks, minor=True)
+        ax.set_yticks(np.arange(0, 8, 1))
+        ax.set_yticks(np.arange(0, 7.5, .5), minor=True)
+        plt.yticks(np.arange(0, 8, 1))
+        plt.xlabel('Cosine of Shear and Line-Normal Angle [-]')
+        plt.ylabel('Density [-]')
+
+        ax.grid(which='major', alpha=0.5, axis='y')
+        ax.grid(which='minor', alpha=0.2, axis='y')
+
+        total_lab = 'Total = {}'.format(len(dicts[i]['shear_angle_list']))
+        ax.text(
+            0.05, .89, total_lab, transform=ax.transAxes, size=12,
+            backgroundcolor='1')
+
+    plt.subplots_adjust(hspace=0.35)
+    cl.make_subplot_labels(axes.flatten(), size=14)
+
+    plt.savefig(
+        fig_dir + 'shear_versus_orientation_{}.png'.format(data),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
+    return cosines
+
+
+def shear_angle_versus_propagation_hist(dicts, data='base'):
+
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    fig_dir = base_dir + 'TINT_figures/'
+
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+
+    init_fonts()
+
+    fig, axes = plt.subplots(
+        int(np.ceil(len(dicts) / 2)), 2, figsize=(12, 6))
+
+    for i in range(len(dicts)):
+        shear = np.mod(np.array(dicts[i]['shear_angle_list']), 360)
+        line_normal = np.mod(np.array(dicts[i]['prop_angle_list']), 360)
+        cosines = np.cos(np.deg2rad(shear-line_normal))
+
+        ax = axes[i // 2, i % 2]
+        plt.sca(ax)
+        db = 0.05
+        bins = np.arange(-1, 1+db, db)
+
+        ax.hist(
+            cosines, bins=bins, density=True, color=colors[0])
+
+        angle_1 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
+        angle_2 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
+        random_consines = np.cos(angle_2-angle_1)
+        ax.hist(
+            random_consines, bins=bins, density=True, histtype=u'step',
+            color=colors[3], linewidth=2, alpha=0.75)
+
+        minor_ticks = np.arange(-1, 1+5*db, 5*db)
+        ax.set_xticks(minor_ticks, minor=True)
+        ax.set_yticks(np.arange(0, 10, 1))
+        ax.set_yticks(np.arange(0, 9.5, .5), minor=True)
+        plt.yticks(np.arange(0, 10, 1))
+        plt.xlabel('Cosine of Shear and Propagation Direction Angle [-]')
+        plt.ylabel('Density [-]')
+
+        ax.grid(which='major', alpha=0.5, axis='y')
+        ax.grid(which='minor', alpha=0.2, axis='y')
+
+        total_lab = 'Total = {}'.format(len(dicts[i]['shear_angle_list']))
+        ax.text(
+            0.05, .89, total_lab, transform=ax.transAxes, size=12,
+            backgroundcolor='1')
+
+    plt.subplots_adjust(hspace=0.35)
+    cl.make_subplot_labels(axes.flatten(), size=14)
+
+    plt.savefig(
+        fig_dir + 'shear_angle_versus_propagation_{}.png'.format(data),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
+    return cosines

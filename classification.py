@@ -200,7 +200,7 @@ def get_time_str():
     return current_time
 
 
-def make_subplot_labels(axes):
+def make_subplot_labels(axes, size=16):
     labels = list(string.ascii_lowercase)
     labels = [label + ')' for label in labels]
     for i in range(len(axes)):
@@ -417,18 +417,21 @@ def plot_propagations(
 def plot_all():
 
     test_dir = [
-        'base', 'lower_conv_level', 'four_levels', 'higher_shear_thresh',
-        'higher_rel_vel_thresh', 'higher_theta_e', 'higher_offset_thresh',
+        'base', 'lower_conv_level', 'higher_conv_level',
+        'four_levels', 'no_steiner', 'lower_ref_thresh',
+        'higher_shear_thresh', 'higher_rel_vel_thresh', 'higher_theta_e',
+        'higher_offset_thresh',
         'higher_area_thresh', 'higher_border_thresh', 'linear_50',
-        'linear_25']
+        'linear_25', 'combined']
     test_names = [
-        'Base', 'Lower Convective Level', 'Four Levels',
+        'Base', 'Lower Convective Level', 'Higher Convective Level',
+        'Four Levels', 'No Steiner', 'Lower Reflectivitiy Thresholds',
         'Higher Shear Threshold', 'Higher Relative Velocity Threshold',
         'Higher Quadrant Buffer', 'Higher Stratiform Offset Threshold',
         'Higher Minimum Area Threshold',
         'Stricter Border Intersection Threshold',
         '50 km Linearity Threshold',
-        '25 km Reduced Axis Ratio Linearity Threshold']
+        '25 km Reduced Axis Ratio Linearity Threshold', 'Combined']
 
     test = []
     [TS, LS, LeS, RiS, offset_total] = [[] for i in range(5)]
@@ -531,7 +534,7 @@ def plot_all():
 
 def plot_sensitivities(sen_dfs):
 
-    fig, axes = plt.subplots(2, 2, figsize=(12, 8.5))
+    fig, axes = plt.subplots(2, 2, figsize=(13, 8.5))
     init_fonts()
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
@@ -551,8 +554,8 @@ def plot_sensitivities(sen_dfs):
 
         base_ratios = base_ratios.reset_index(drop=True)
         base_ratios.loc[:, 'Test'] = np.array([
-            'Base', 'C2', '4LVL', 'S4', 'RV4', 'T15', 'SO15', 'A2',
-            'B05', 'L50', 'L25'])
+            'Base', 'C2', 'C4', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15', 'S15',
+            'A2', 'B5', 'L50', 'L25', 'C'])
         base_ratios = base_ratios.set_index('Test')
         max_rat = np.ceil(base_ratios.max().max()*10)/10
 
@@ -560,7 +563,7 @@ def plot_sensitivities(sen_dfs):
         ncol = len(base_ratios.columns)
         ax = base_ratios.plot(
             kind='bar', stacked=False, fontsize=12, rot=0, ax=ax,
-            yticks=np.arange(0, max_rat+0.1, 0.1), width=0.6*ncol/4,
+            yticks=np.arange(0, max_rat+0.1, 0.1), width=0.625*ncol/4,
             color=c_list)
         ax.set_xlabel(None)
         ax.xaxis.set_label_coords(.5, -0.15)
@@ -574,22 +577,31 @@ def plot_sensitivities(sen_dfs):
         ax.text(-0.15, 1.0, labels[i], transform=ax.transAxes, size=16)
     plt.subplots_adjust(hspace=0.65)
 
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    fig_dir = base_dir + 'TINT_figures/'
+    plt.savefig(
+        fig_dir + 'total_ratio_sensitivities.png',
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
 
 def category_breakdown():
 
     test_dir = [
-        'base', 'lower_conv_level', 'four_levels', 'higher_shear_thresh',
+        'base', 'lower_conv_level', 'higher_conv_level', 'four_levels',
+        'no_steiner', 'lower_ref_thresh', 'higher_shear_thresh',
         'higher_rel_vel_thresh', 'higher_theta_e', 'higher_offset_thresh',
         'higher_area_thresh', 'higher_border_thresh', 'linear_50',
-        'linear_25']
+        'linear_25', 'combined']
     test_names = [
-        'Base', 'Lower Convective Level', 'Four Levels',
-        'Higher Shear Threshold', 'Higher Relative Velocity Threshold',
+        'Base', 'Lower Convective Level', 'Higher Convective Level',
+        'Four Levels', 'No Steiner', 'Lower reflectivity Thresholds',
+        'Higher Shear Threshold',
+        'Higher Relative Velocity Threshold',
         'Higher Quadrant Buffer', 'Higher Stratiform Offset Threshold',
         'Higher Minimum Area Threshold',
         'Stricter Border Intersection Threshold',
         '50 km Linearity Threshold',
-        '25 km Linearity Threshold']
+        '25 km Linearity Threshold', 'Combined']
 
     can_classes = [TS, LS, LeS, RiS, can_A, can_totals] = [
         [] for i in range(6)]
@@ -611,12 +623,48 @@ def category_breakdown():
             for i in range(len(can_classes))]
 
     tilt_sensitivity_df = pd.DataFrame({
-        'Test': test, 'Relative Trailing Stratiform': TS,
-        'Relative Leading Stratiform': LS,
-        'Relative Parallel Stratiform (Left)': LeS,
-        'Relative Parallel Stratiform (Right)': RiS, 'Ambiguous': can_A,
+        'Test': test, 'Relative TS': TS,
+        'Relative LS': LS,
+        'Relative PS (Left)': LeS,
+        'Relative PS (Right)': RiS, 'Ambiguous': can_A,
         'Total': can_totals})
     tilt_sensitivity_df = tilt_sensitivity_df.set_index('Test')
+
+    tilt_sensitivity_df = tilt_sensitivity_df.drop('Total', axis=1)
+    tilt_sensitivity_df = tilt_sensitivity_df.reset_index(drop=True)
+    tilt_sensitivity_df.loc[:, 'Test'] = np.array([
+        'Base', 'C2', 'C4', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15', 'S15',
+        'A2', 'B5', 'L50', 'L25', 'C'])
+    tilt_sensitivity_df = tilt_sensitivity_df.set_index('Test')
+
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    colors = [colors[i] for i in [0, 1, 2, 4, 5]]
+
+    fig, ax = plt.subplots(1, 1, figsize=(6, 3.5))
+    init_fonts()
+    tilt_sensitivity_df.plot(
+        kind='bar', stacked=False, rot=0,
+        yticks=np.arange(0, 0.7, 0.1), width=0.6*5/4,
+        fig=fig, ax=ax, color=colors)
+    plt.sca(ax)
+    plt.ylabel('Ratio [-]', fontsize=14)
+    plt.xlabel(None)
+    ax.legend(
+        loc='lower center', bbox_to_anchor=(0.5, -0.5),
+        ncol=2, fancybox=True, shadow=True)
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    fig_dir = base_dir + 'TINT_figures/'
+
+    ax.set_yticks(np.arange(0, 0.7, 0.1))
+    ax.set_yticks(np.arange(0, .65, 0.05), minor='True')
+
+    ax.grid(which='major', alpha=0.5, axis='y')
+    ax.grid(which='minor', alpha=0.2, axis='y')
+
+    plt.savefig(
+        fig_dir + 'relative_stratiform_breakdown.png', dpi=200, facecolor='w',
+        edgecolor='white', bbox_inches='tight')
 
     return tilt_sensitivity_df
 
@@ -624,8 +672,7 @@ def category_breakdown():
 def canonical_class_breakdown(class_df):
     counts_df = pd.DataFrame({'counts': class_df.value_counts()})
 
-    ratios = counts_df['counts']/(counts_df['counts'].sum())
-    counts_df['percent'] = ratios * 100
+    counts_df['ratios'] = counts_df['counts']/(counts_df['counts'].sum())
 
     q_str = "(offset_type == 'Trailing Stratiform'"
     q_str += "and inflow_type == 'Front Fed')"
@@ -670,9 +717,9 @@ def canonical_class_breakdown(class_df):
     q_str = "inflow_type == 'Ambiguous'"
     A = counts_df.query(q_str)
 
-    percentages = [x['percent'].sum() for x in [TS, LS, LeS, RiS, A]]
+    ratios = [x['ratios'].sum() for x in [TS, LS, LeS, RiS, A]]
     total = counts_df['counts'].sum()
-    return percentages + [total]
+    return ratios + [total]
 
 
 def plot_categories(class_df=None, pope_regime=None, fig=None, ax=None):
@@ -793,7 +840,7 @@ def pope_comparison(class_df=None):
         edgecolor='white', bbox_inches='tight')
 
 
-def shear_comparison(class_df=None, fig=None, ax=None):
+def monsoon_comparison(class_df=None, fig=None, ax=None, legend=True):
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
     if class_df is None:
         class_path = base_dir + 'TINT_tracks/'
@@ -886,15 +933,16 @@ def shear_comparison(class_df=None, fig=None, ax=None):
     ratios_df.plot(
         kind='bar', stacked=False, rot=0, fontsize=12, ax=ax,
         yticks=np.arange(0, 1.1, 0.1), width=0.6*4/4,
-        color=colors)
+        color=colors, legend=False)
     ax.set_xlabel(None)
     # ax.xaxis.set_label_coords(.5, -0.15)
     ax.set_ylabel('Ratio [-]', fontsize=14)
-    ax.legend(
-        loc='lower center', bbox_to_anchor=(.475, -0.5),
-        ncol=2, fancybox=True, shadow=True)
-    # ax.set_yticks(np.arange(0, max_rat+0.05, 0.05), minor=True)
-    # ax.grid(which='minor', alpha=0.2, axis='y')
+    if legend:
+        ax.legend(
+            loc='lower center', bbox_to_anchor=(.475, -0.5),
+            ncol=2, fancybox=True, shadow=True)
+    ax.set_yticks(np.arange(0, 1+0.05, 0.05), minor=True)
+    ax.grid(which='minor', alpha=0.2, axis='y')
     ax.grid(which='major', alpha=0.5, axis='y')
 
     lab_h = 0.925
