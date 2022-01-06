@@ -224,17 +224,6 @@ def shear_angle_versus_orientation_scatter(shear_angle_list, orientation_list):
     plt.ylabel('Line Normal Direction [Degrees]')
 
 
-def get_random_hist():
-
-    db = 0.05
-    bins = np.arange(-1, 1+db, db)
-    # plt.set_yticks(np.arange(0, 8, 1))
-    # plt.set_yticks(np.arange(0, 8, .5), minor=True)
-
-    plt.hist(result, bins=bins, density=True)
-    plt.yticks(np.arange(0, 8, 1))
-
-
 def shear_angle_versus_orientation_hist(dicts, data='base'):
 
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
@@ -252,29 +241,32 @@ def shear_angle_versus_orientation_hist(dicts, data='base'):
         shear = np.mod(np.array(dicts[i]['shear_angle_list']), 360)
         line_normal = np.mod(np.array(dicts[i]['orientation_list'])+90, 360)
         cosines = np.cos(np.deg2rad(shear-line_normal))
+        angles = np.arccos(cosines) * 180 / np.pi
 
         ax = axes[i // 2, i % 2]
         plt.sca(ax)
-        db = 0.05
-        bins = np.arange(-1, 1+db, db)
+        db = 5
+        bins = np.arange(0, 180+db, db)
 
         ax.hist(
-            cosines, bins=bins, density=True, color=colors[0])
+            angles, bins=bins, density=True, color=colors[0])
 
-        angle_1 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
-        angle_2 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
-        random_consines = np.cos(angle_2-angle_1)
-        ax.hist(
-            random_consines, bins=bins, density=True, histtype=u'step',
-            color=colors[3], linewidth=2, alpha=0.75)
+        # angle_1 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
+        # angle_2 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
+        # random_cosines = np.cos(angle_2-angle_1)
+        # random_angles = np.arccos(random_cosines) * 180 / np.pi
+        # ax.hist(
+        #     random_angles, bins=bins, density=True, histtype=u'step',
+        #     color=colors[3], linewidth=2, alpha=0.75)
 
-
-        minor_ticks = np.arange(-1, 1+5*db, 5*db)
+        minor_ticks = np.arange(0, 180+db, db)
         ax.set_xticks(minor_ticks, minor=True)
-        ax.set_yticks(np.arange(0, 8, 1))
-        ax.set_yticks(np.arange(0, 7.5, .5), minor=True)
-        plt.yticks(np.arange(0, 8, 1))
-        plt.xlabel('Cosine of Shear and Line-Normal Angle [-]')
+        ax.set_xticks(np.arange(0, 180+45, 45))
+        ax.set_yticks(np.arange(0, .02+.004, .004))
+        ax.set_yticks(np.arange(0, .02+.002, .002), minor=True)
+        plt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+        # plt.yticks(np.arange(0, 8, 1))
+        plt.xlabel('Angle between Shear and Line-Normal [Degrees]')
         plt.ylabel('Density [-]')
 
         ax.grid(which='major', alpha=0.5, axis='y')
@@ -282,11 +274,11 @@ def shear_angle_versus_orientation_hist(dicts, data='base'):
 
         total_lab = 'Total = {}'.format(len(dicts[i]['shear_angle_list']))
         ax.text(
-            0.05, .89, total_lab, transform=ax.transAxes, size=12,
+            0.75, .89, total_lab, transform=ax.transAxes, size=12,
             backgroundcolor='1')
 
     plt.subplots_adjust(hspace=0.35)
-    cl.make_subplot_labels(axes.flatten(), size=14)
+    cl.make_subplot_labels(axes.flatten(), size=16, x_shift=-0.175)
 
     plt.savefig(
         fig_dir + 'shear_versus_orientation_{}.png'.format(data),
@@ -312,28 +304,32 @@ def shear_angle_versus_propagation_hist(dicts, data='base'):
         shear = np.mod(np.array(dicts[i]['shear_angle_list']), 360)
         line_normal = np.mod(np.array(dicts[i]['prop_angle_list']), 360)
         cosines = np.cos(np.deg2rad(shear-line_normal))
+        angles = np.arccos(cosines) * 180 / np.pi
 
         ax = axes[i // 2, i % 2]
         plt.sca(ax)
-        db = 0.05
-        bins = np.arange(-1, 1+db, db)
+        db = 5
+        bins = np.arange(0, 180+db, db)
 
         ax.hist(
-            cosines, bins=bins, density=True, color=colors[0])
+            angles, bins=bins, density=True, color=colors[0])
 
-        angle_1 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
-        angle_2 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
-        random_consines = np.cos(angle_2-angle_1)
-        ax.hist(
-            random_consines, bins=bins, density=True, histtype=u'step',
-            color=colors[3], linewidth=2, alpha=0.75)
+        # angle_1 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
+        # angle_2 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
+        # random_cosines = np.cos(angle_2-angle_1)
+        # random_angles = np.arccos(random_cosines) * 180 / np.pi
+        # ax.hist(
+        #     random_angles, bins=bins, density=True, histtype=u'step',
+        #     color=colors[3], linewidth=2, alpha=0.75)
 
-        minor_ticks = np.arange(-1, 1+5*db, 5*db)
+        minor_ticks = np.arange(0, 180+db, db)
         ax.set_xticks(minor_ticks, minor=True)
-        ax.set_yticks(np.arange(0, 10, 1))
-        ax.set_yticks(np.arange(0, 9.5, .5), minor=True)
-        plt.yticks(np.arange(0, 10, 1))
-        plt.xlabel('Cosine of Shear and Propagation Direction Angle [-]')
+        ax.set_xticks(np.arange(0, 180+45, 45))
+        ax.set_yticks(np.arange(0, .028+.004, .004))
+        ax.set_yticks(np.arange(0, .028+.002, .002), minor=True)
+        plt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+        # plt.yticks(np.arange(0, 8, 1))
+        plt.xlabel('Angle between Shear and Relative Velocity [Degrees]')
         plt.ylabel('Density [-]')
 
         ax.grid(which='major', alpha=0.5, axis='y')
@@ -341,14 +337,14 @@ def shear_angle_versus_propagation_hist(dicts, data='base'):
 
         total_lab = 'Total = {}'.format(len(dicts[i]['shear_angle_list']))
         ax.text(
-            0.05, .89, total_lab, transform=ax.transAxes, size=12,
+            0.75, .89, total_lab, transform=ax.transAxes, size=12,
             backgroundcolor='1')
 
     plt.subplots_adjust(hspace=0.35)
-    cl.make_subplot_labels(axes.flatten(), size=14)
+    cl.make_subplot_labels(axes.flatten(), size=16, x_shift=-0.175)
 
     plt.savefig(
-        fig_dir + 'shear_angle_versus_propagation_{}.png'.format(data),
+        fig_dir + 'shear_versus_propagation_{}.png'.format(data),
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
     return cosines

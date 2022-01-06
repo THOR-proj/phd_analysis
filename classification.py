@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import string
 import datetime
 from tint.objects import classify_tracks, get_exclusion_categories
+from tint.objects import get_system_tracks
+
 
 base_dir = '/media/shorte1/Ewan\'s Hard Drive/phd/data/CPOL/'
 save_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_tracks/'
@@ -62,6 +64,9 @@ def get_sub_tracks(tracks_obj, non_linear=False):
     amb = 'Ambiguous (On Quadrant Boundary)'
     quad_bound = tracks_obj.tracks_class['offset_type'] == amb
     excluded = np.logical_or(np.any(excluded, 1), quad_bound)
+    quad_bound = tracks_obj.tracks_class['rel_offset_type'] == amb
+    import pdb; pdb.set_trace()
+    excluded = np.logical_or(excluded, quad_bound)
     included = np.logical_not(excluded)
     sub_tracks = tracks_obj.tracks_class.where(included == True).dropna()
     if len(sub_tracks) == 0:
@@ -81,29 +86,31 @@ def get_sub_uids(sub_tracks):
     return sub_uids
 
 
-def redo_exclusions(tracks_obj, class_thresh, excl_thresh):
-    tracks_obj.params['CLASS_THRESH'] = class_thresh
-    tracks_obj.params['EXCL_THRESH'] = excl_thresh
+def redo_exclusions(tracks_obj, class_thresh=None, excl_thresh=None):
+    if class_thresh is not None:
+        tracks_obj.params['CLASS_THRESH'] = class_thresh
+    if excl_thresh is not None:
+        tracks_obj.params['EXCL_THRESH'] = excl_thresh
+    tracks_obj = get_system_tracks(tracks_obj)
     tracks_obj = classify_tracks(tracks_obj)
     tracks_obj = get_exclusion_categories(tracks_obj)
     return tracks_obj
 
 
 def get_counts(
-        base_dir=None, get_exclusions=False, tracks_dir='base',
+        base_dir=None, tracks_dir='base',
         non_linear=False, class_thresh=None, excl_thresh=None):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
     [
-        year_list, uid, time, offset_type, inflow_type,
+        year_list, uid, time, offset_type, rel_offset_type, inflow_type,
         tilt_dir, prop_dir, pope_regime] = [
-        [] for i in range(8)]
+        [] for i in range(9)]
     years = sorted(list(set(range(1998, 2016)) - {2000, 2007, 2008}))
     for year in years:
         tracks_obj = load_year(year, tracks_dir=tracks_dir)
-        if get_exclusions:
-            print('Getting new exclusions.')
-            tracks_obj = redo_exclusions(tracks_obj, class_thresh, excl_thresh)
+        print('Getting new exclusions.')
+        tracks_obj = redo_exclusions(tracks_obj, class_thresh, excl_thresh)
         print('Adding Pope monsoon regime.')
         tracks_obj = add_monsoon_regime(tracks_obj, base_dir=base_dir)
         sub_tracks = get_sub_tracks(tracks_obj, non_linear=non_linear)
@@ -116,6 +123,8 @@ def get_counts(
             scans = obj.index.values
             scan_label = scans - min(scans)
             offset = sub_tracks['offset_type'].xs(i, level='uid').values
+            rel_offset = sub_tracks['rel_offset_type'].xs(
+                i, level='uid').values
             inflow = sub_tracks['inflow_type'].xs(i, level='uid').values
             tilt = sub_tracks['tilt_type'].xs(i, level='uid').values
             prop = sub_tracks['propagation_type'].xs(i, level='uid').values
@@ -125,6 +134,7 @@ def get_counts(
                 uid.append(i)
                 time.append(scan_label[j]*10)
                 offset_type.append(offset[j])
+                rel_offset_type.append(rel_offset[j])
                 inflow_type.append(inflow[j])
                 tilt_dir.append(tilt[j])
                 prop_dir.append(prop[j])
@@ -166,7 +176,7 @@ def get_colors():
     return colors
 
 
-def set_ticks(ax1, ax2, leg_columns=3):
+def set_ticks(ax1, ax2, maximum_count, leg_columns=3):
     plt.sca(ax1)
     plt.xticks(np.arange(30, 310, 30))
     plt.ylabel('Count [-]')
@@ -175,16 +185,24 @@ def set_ticks(ax1, ax2, leg_columns=3):
         loc='lower center', bbox_to_anchor=(1.1, -0.525),
         ncol=leg_columns, fancybox=True, shadow=True)
     plt.setp(ax1.lines, linewidth=1.75)
+    max_tick = np.ceil(maximum_count / 100) * 100
+    ax1.set_yticks(np.arange(0, max_tick+100, 100))
+    ax1.set_yticks(np.arange(0, max_tick+50, 50), minor=True)
 
     plt.sca(ax2)
     plt.xticks(np.arange(30, 310, 30))
-    plt.yticks(np.arange(0, 1.1, 0.1))
+    ax2.set_yticks(np.arange(0, 1.1, 0.1))
+    ax2.set_yticks(np.arange(0, 1.05, 0.05), minor=True)
+
     plt.ylabel('Ratio [-]')
     plt.xlabel('Time since Initiation [m]')
     plt.setp(ax2.lines, linewidth=1.75)
 
     ax1.grid(which='major', alpha=0.5, axis='both')
+    ax1.grid(which='minor', alpha=0.2, axis='y')
+
     ax2.grid(which='major', alpha=0.5, axis='both')
+    ax2.grid(which='minor', alpha=0.2, axis='y')
 
 
 def initialise_fig(length=12, height=3.5, n_subplots=2):
@@ -200,12 +218,12 @@ def get_time_str():
     return current_time
 
 
-def make_subplot_labels(axes, size=16):
+def make_subplot_labels(axes, size=16, x_shift=-0.15):
     labels = list(string.ascii_lowercase)
     labels = [label + ')' for label in labels]
     for i in range(len(axes)):
         axes[i].text(
-            -0.15, 1.0, labels[i], transform=axes[i].transAxes, size=16)
+            x_shift, 1.0, labels[i], transform=axes[i].transAxes, size=size)
 
 
 def get_save_dir(save_dir):
@@ -261,7 +279,68 @@ def plot_offsets(
         x, (LS/offset_totals).loc[x],
         label='Leading Stratiform', color=colors[1])
 
-    set_ticks(ax1, ax2)
+    set_ticks(ax1, ax2, np.max(offset_totals.loc[x].values))
+    totals = [y.loc[x].sum() for y in [TS, LS, LeS, RiS, offset_totals]]
+    return totals
+
+
+def plot_relative_offsets(
+        class_df, save_dir=None, append_time=False, fig=None,
+        ax1=None, ax2=None):
+    if (fig is None) or (ax1 is None) or (ax2 is None):
+        fig, (ax1, ax2) = initialise_fig()
+    save_dir = get_save_dir(save_dir)
+    colors = get_colors()
+    counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
+    counts = counts.sort_index()
+    counts_df = pd.DataFrame({'counts': counts})
+    offset_types = counts_df.groupby(['time', 'rel_offset_type']).sum()
+    TS = offset_types.xs(
+        'Relative Trailing Stratiform', level='rel_offset_type')
+    LS = offset_types.xs(
+        'Relative Leading Stratiform', level='rel_offset_type')
+    LeS = offset_types.xs(
+        'Relative Parallel Stratiform (Left)', level='rel_offset_type')
+    RiS = offset_types.xs(
+        'Relative Parallel Stratiform (Right)', level='rel_offset_type')
+    max_time = max(
+        [max(off_type.index.values) for off_type in [TS, LS, LeS, RiS]])
+    new_index = pd.Index(np.arange(0, max_time, 10), name='time')
+    [TS, LS, LeS, RiS] = [
+        off_type.reindex(new_index, fill_value=0)
+        for off_type in [TS, LS, LeS, RiS]]
+    offset_totals = TS + LS + LeS + RiS
+
+    init_fonts()
+    x = np.arange(30, 310, 10)
+    ax1.plot(
+        x, TS.loc[x], label='Relative Trailing Stratiform', color=colors[0])
+    ax1.plot(
+        x, LS.loc[x], label='Relative Leading Stratiform', color=colors[1])
+    ax1.plot(
+        x, LeS.loc[x], label='Relative Parallel Stratiform (Left)',
+        color=colors[2])
+    ax1.plot(
+        x, RiS.loc[x], label='Relative Parallel Stratiform (Right)',
+        color=colors[4])
+    ax1.plot(x, offset_totals.loc[x], label='Total', color=colors[3])
+
+    ax2.plot(
+        x, (TS/offset_totals).loc[x],
+        label='Relative Trailing Stratiform', color=colors[0])
+    ax2.plot(
+        x, (LeS/offset_totals).loc[x],
+        label='Relative Parallel Stratiform (Left)',
+        color=colors[2])
+    ax2.plot(
+        x, (RiS/offset_totals).loc[x],
+        label='Relative Parallel Stratiform (Right)',
+        color=colors[4])
+    ax2.plot(
+        x, (LS/offset_totals).loc[x],
+        label='Relative Leading Stratiform', color=colors[1])
+
+    set_ticks(ax1, ax2, np.max(offset_totals.loc[x].values))
     totals = [y.loc[x].sum() for y in [TS, LS, LeS, RiS, offset_totals]]
     return totals
 
@@ -309,7 +388,7 @@ def plot_inflows(
         x, (RiF/inflow_totals).loc[x], label='Parallel Fed (Right)',
         color=colors[4])
     ax2.plot(x, (A/inflow_totals).loc[x], label='Ambiguous', color=colors[5])
-    set_ticks(ax1, ax2)
+    set_ticks(ax1, ax2, np.max(inflow_totals.loc[x].values))
 
     totals = [y.loc[x].sum() for y in [FF, RF, LeF, RiF, A, inflow_totals]]
     return totals
@@ -351,7 +430,7 @@ def plot_tilts(
         x, (DST/tilt_totals).loc[x], label='Down-Shear Tilted',
         color=colors[1])
     ax2.plot(x, (A/tilt_totals).loc[x], label='Ambiguous', color=colors[5])
-    set_ticks(ax1, ax2, leg_columns=2)
+    set_ticks(ax1, ax2, np.max(tilt_totals.loc[x].values), leg_columns=2)
 
     totals = [y.loc[x].sum() for y in [UST, DST, A, tilt_totals]]
     return totals
@@ -398,17 +477,7 @@ def plot_propagations(
         x, (A/prop_totals).loc[x], label='Ambiguous',
         color=colors[5])
 
-    set_ticks(ax1, ax2, leg_columns=2)
-    # make_subplot_labels(ax1, ax2)
-
-    # current_time = get_time_str()
-    # if append_time:
-    #     fn = 'propagations_{}.png'.format(current_time)
-    # else:
-    #     fn = 'propagations.png'
-    # plt.savefig(
-    #     save_dir + fn, dpi=200, facecolor='w', edgecolor='white',
-    #     bbox_inches='tight')
+    set_ticks(ax1, ax2, np.max(prop_totals.loc[x].values), leg_columns=2)
 
     totals = [y.loc[x].sum() for y in [DSP, USP, A, prop_totals]]
     return totals
@@ -435,11 +504,13 @@ def plot_all():
 
     test = []
     [TS, LS, LeS, RiS, offset_total] = [[] for i in range(5)]
+    [RTS, RLS, RLeS, RRiS, rel_offset_total] = [[] for i in range(5)]
     [FF, RF, LeF, RiF, A_inflow, inflow_total] = [[] for i in range(6)]
     [UST, DST, A_tilt, tilt_total] = [[] for i in range(4)]
     [USP, DSP, A_prop, prop_total] = [[] for i in range(4)]
 
-    for i in range(len(test_dir)):
+    # for i in range(len(test_dir)):
+    for i in [0]:
         base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
         class_path = base_dir + 'TINT_tracks/'
         class_path += '{}_classes.pkl'.format(test_dir[i])
@@ -449,7 +520,7 @@ def plot_all():
             class_df = pickle.load(f)
         test.append(test_names[i])
 
-        fig, axes = initialise_fig(height=8, n_subplots=4)
+        fig, axes = initialise_fig(height=12, n_subplots=6)
 
         offset_summary = plot_offsets(
             class_df, fig_dir, fig=fig, ax1=axes[0][0], ax2=axes[0][1])
@@ -459,8 +530,16 @@ def plot_all():
         RiS.append(offset_summary[3].values[0])
         offset_total.append(offset_summary[4].values[0])
 
-        inflow_summary = plot_inflows(
+        rel_offset_summary = plot_relative_offsets(
             class_df, fig_dir, fig=fig, ax1=axes[1][0], ax2=axes[1][1])
+        RTS.append(offset_summary[0].values[0])
+        RLS.append(offset_summary[1].values[0])
+        RLeS.append(offset_summary[2].values[0])
+        RRiS.append(offset_summary[3].values[0])
+        rel_offset_total.append(rel_offset_summary[4].values[0])
+
+        inflow_summary = plot_inflows(
+            class_df, fig_dir, fig=fig, ax1=axes[2][0], ax2=axes[2][1])
         FF.append(inflow_summary[0].values[0])
         RF.append(inflow_summary[1].values[0])
         LeF.append(inflow_summary[2].values[0])
