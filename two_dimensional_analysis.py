@@ -59,14 +59,16 @@ def shear_versus_orientation(class_thresh=None, excl_thresh=None):
         excluded = np.logical_or(np.any(excluded, 1), quad_bound)
         included = np.logical_not(excluded)
 
+        # import pdb; pdb.set_trace()
+
         sub_classes = tracks_obj.tracks_class.where(included == True).dropna()
         inds_all = sub_classes.index.values
         sub_tracks_all = tracks_obj.tracks.loc[inds_all]
         sub_tracks_all = sub_tracks_all.xs(0, level='level')
 
         sub_tracks_FFTS_UST = get_FFTS_UST(sub_classes, tracks_obj)
-        sub_tracks_TS = get_TS(sub_classes, tracks_obj)
-        sub_tracks_LS = get_LS(sub_classes, tracks_obj)
+        sub_tracks_TS = get_rel_TS(sub_classes, tracks_obj)
+        sub_tracks_LS = get_rel_LS(sub_classes, tracks_obj)
 
         # import pdb; pdb.set_trace()
 
@@ -187,41 +189,67 @@ def get_LS(sub_classes, tracks_obj):
     return sub_tracks
 
 
-def shear_angle_versus_orientation_scatter(shear_angle_list, orientation_list):
+def get_rel_TS(sub_classes, tracks_obj):
 
-    init_fonts()
+    cond = sub_classes['rel_offset_type'] == 'Relative Trailing Stratiform'
 
-    shear = np.mod(np.array(shear_angle_list), 360)
-    line_normal = np.mod(np.array(orientation_list)+90, 360)
+    inds = sub_classes.where(cond == True).dropna()
+    inds = inds.index.values
 
-    for i in range(len(shear)):
-        if shear[i] - line_normal[i] > 180:
-            line_normal[i] += 360
-        elif shear[i] - line_normal[i] < -180:
-            line_normal[i] -= 360
+    sub_tracks = tracks_obj.tracks.loc[inds]
+    sub_tracks = sub_tracks.xs(0, level='level')
 
-    # shear = np.array(shear_angle_list)
-    # line_normal = np.array(orientation_list)
+    return sub_tracks
 
-    linreg = stats.linregress(shear, line_normal)
-    fig, ax = plt.subplots(1, 1, figsize=(4, 4))
-    # plt.sca(ax)
-    ax.scatter(shear, line_normal, marker='.', s=.75)
 
-    dx = 0.5
-    x = np.arange(0, 360+dx, dx)
+def get_rel_LS(sub_classes, tracks_obj):
 
-    ax.plot(
-        x, linreg.intercept + linreg.slope*x, 'r',
-        label='Least Squares')
-    stats_lab = 'slope = {:.2f},   r = {:.2f},   p = {:.2e}'.format(
-        linreg.slope, linreg.rvalue, linreg.pvalue)
-    ax.text(0.05, 1.025, stats_lab, transform=ax.transAxes, size=12)
+    cond = sub_classes['rel_offset_type'] == 'Relative Leading Stratiform'
 
-    plt.xticks(np.arange(0, 360+45, 45))
-    plt.yticks(np.arange(-180, 360+5*45, 45))
-    plt.xlabel('Shear Direction [Degrees]')
-    plt.ylabel('Line Normal Direction [Degrees]')
+    inds = sub_classes.where(cond == True).dropna()
+    inds = inds.index.values
+
+    sub_tracks = tracks_obj.tracks.loc[inds]
+    sub_tracks = sub_tracks.xs(0, level='level')
+
+    return sub_tracks
+
+#
+# def shear_angle_versus_orientation_scatter(shear_angle_list, orientation_list):
+#
+#     init_fonts()
+#
+#     shear = np.mod(np.array(shear_angle_list), 360)
+#     line_normal = np.mod(np.array(orientation_list)+90, 360)
+#
+#     for i in range(len(shear)):
+#         if shear[i] - line_normal[i] > 180:
+#             line_normal[i] += 360
+#         elif shear[i] - line_normal[i] < -180:
+#             line_normal[i] -= 360
+#
+#     # shear = np.array(shear_angle_list)
+#     # line_normal = np.array(orientation_list)
+#
+#     linreg = stats.linregress(shear, line_normal)
+#     fig, ax = plt.subplots(1, 1, figsize=(4, 4))
+#     # plt.sca(ax)
+#     ax.scatter(shear, line_normal, marker='.', s=.75)
+#
+#     dx = 0.5
+#     x = np.arange(0, 360+dx, dx)
+#
+#     ax.plot(
+#         x, linreg.intercept + linreg.slope*x, 'r',
+#         label='Least Squares')
+#     stats_lab = 'slope = {:.2f},   r = {:.2f},   p = {:.2e}'.format(
+#         linreg.slope, linreg.rvalue, linreg.pvalue)
+#     ax.text(0.05, 1.025, stats_lab, transform=ax.transAxes, size=12)
+#
+#     plt.xticks(np.arange(0, 360+45, 45))
+#     plt.yticks(np.arange(-180, 360+5*45, 45))
+#     plt.xlabel('Shear Direction [Degrees]')
+#     plt.ylabel('Line Normal Direction [Degrees]')
 
 
 def shear_angle_versus_orientation_hist(dicts, data='base'):

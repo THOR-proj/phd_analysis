@@ -64,9 +64,6 @@ def get_sub_tracks(tracks_obj, non_linear=False):
     amb = 'Ambiguous (On Quadrant Boundary)'
     quad_bound = tracks_obj.tracks_class['offset_type'] == amb
     excluded = np.logical_or(np.any(excluded, 1), quad_bound)
-    quad_bound = tracks_obj.tracks_class['rel_offset_type'] == amb
-    import pdb; pdb.set_trace()
-    excluded = np.logical_or(excluded, quad_bound)
     included = np.logical_not(excluded)
     sub_tracks = tracks_obj.tracks_class.where(included == True).dropna()
     if len(sub_tracks) == 0:
@@ -141,7 +138,8 @@ def get_counts(
                 pope_regime.append(int(pope[j]))
     class_dic = {
         'year': year_list, 'uid': uid, 'time': time,
-        'offset_type': offset_type, 'inflow_type': inflow_type,
+        'offset_type': offset_type, 'rel_offset_type': rel_offset_type,
+        'inflow_type': inflow_type,
         'tilt_dir': tilt_dir, 'prop_dir': prop_dir,
         'pope_regime': pope_regime}
     class_df = pd.DataFrame(class_dic)
@@ -149,23 +147,21 @@ def get_counts(
     class_df.sort_index(inplace=True)
 
     class_df['inflow_type'] = class_df['inflow_type'].str.replace(
-        'Ambiguous (Low Relative Velocity)', 'Ambiguous',
-        regex=False)
+        'Ambiguous (Low Relative Velocity)', 'Ambiguous', regex=False)
     class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
-        'Ambiguous (Shear Parallel to Stratiform Offset)', 'Ambiguous',
-        regex=False)
+        'Ambiguous (Perpendicular Shear)', 'Perpendicular Shear', regex=False)
     class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
-        'Ambiguous (Small Shear)', 'Ambiguous',
-        regex=False)
+        'Ambiguous (Low Shear)', 'Ambiguous', regex=False)
+    class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
+        'Ambiguous (Small Stratiform Offset)', 'Ambiguous', regex=False)
+    class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
+        'Ambiguous (On Quadrant Boundary)', 'Ambiguous', regex=False)
     class_df['prop_dir'] = class_df['prop_dir'].str.replace(
-        'Ambiguous (Parallel Shear)', 'Ambiguous',
-        regex=False)
+        'Ambiguous (Perpendicular Shear)', 'Perpendicular Shear', regex=False)
     class_df['prop_dir'] = class_df['prop_dir'].str.replace(
-        'Ambiguous (Low Shear)', 'Ambiguous',
-        regex=False)
+        'Ambiguous (Low Shear)', 'Ambiguous', regex=False)
     class_df['prop_dir'] = class_df['prop_dir'].str.replace(
-        'Ambiguous (Low Relative Velocity)', 'Ambiguous',
-        regex=False)
+        'Ambiguous (Low Relative Velocity)', 'Ambiguous', regex=False)
 
     return class_df
 
@@ -182,7 +178,7 @@ def set_ticks(ax1, ax2, maximum_count, leg_columns=3):
     plt.ylabel('Count [-]')
     plt.xlabel('Time since Initiation [m]')
     ax1.legend(
-        loc='lower center', bbox_to_anchor=(1.1, -0.525),
+        loc='lower center', bbox_to_anchor=(1.1, -0.685),
         ncol=leg_columns, fancybox=True, shadow=True)
     plt.setp(ax1.lines, linewidth=1.75)
     max_tick = np.ceil(maximum_count / 100) * 100
@@ -261,19 +257,19 @@ def plot_offsets(
     ax1.plot(x, TS.loc[x], label='Trailing Stratiform', color=colors[0])
     ax1.plot(x, LS.loc[x], label='Leading Stratiform', color=colors[1])
     ax1.plot(
-        x, LeS.loc[x], label='Parallel Stratiform (Left)', color=colors[2])
+        x, LeS.loc[x], label='Left Stratiform', color=colors[2])
     ax1.plot(
-        x, RiS.loc[x], label='Parallel Stratiform (Right)', color=colors[4])
+        x, RiS.loc[x], label='Right Stratiform', color=colors[4])
     ax1.plot(x, offset_totals.loc[x], label='Total', color=colors[3])
 
     ax2.plot(
         x, (TS/offset_totals).loc[x],
         label='Trailing Stratiform', color=colors[0])
     ax2.plot(
-        x, (LeS/offset_totals).loc[x], label='Parallel Stratiform (Left)',
+        x, (LeS/offset_totals).loc[x], label='Left Stratiform',
         color=colors[2])
     ax2.plot(
-        x, (RiS/offset_totals).loc[x], label='Parallel Stratiform (Right)',
+        x, (RiS/offset_totals).loc[x], label='Right Stratiform',
         color=colors[4])
     ax2.plot(
         x, (LS/offset_totals).loc[x],
@@ -318,10 +314,10 @@ def plot_relative_offsets(
     ax1.plot(
         x, LS.loc[x], label='Relative Leading Stratiform', color=colors[1])
     ax1.plot(
-        x, LeS.loc[x], label='Relative Parallel Stratiform (Left)',
+        x, LeS.loc[x], label='Relative Left Stratiform',
         color=colors[2])
     ax1.plot(
-        x, RiS.loc[x], label='Relative Parallel Stratiform (Right)',
+        x, RiS.loc[x], label='Relative Right Stratiform',
         color=colors[4])
     ax1.plot(x, offset_totals.loc[x], label='Total', color=colors[3])
 
@@ -330,11 +326,11 @@ def plot_relative_offsets(
         label='Relative Trailing Stratiform', color=colors[0])
     ax2.plot(
         x, (LeS/offset_totals).loc[x],
-        label='Relative Parallel Stratiform (Left)',
+        label='Relative Left Stratiform',
         color=colors[2])
     ax2.plot(
         x, (RiS/offset_totals).loc[x],
-        label='Relative Parallel Stratiform (Right)',
+        label='Relative Right Stratiform',
         color=colors[4])
     ax2.plot(
         x, (LS/offset_totals).loc[x],
@@ -373,8 +369,8 @@ def plot_inflows(
     x = np.arange(30, 310, 10)
     ax1.plot(x, FF.loc[x], label='Front Fed', color=colors[0])
     ax1.plot(x, RF.loc[x], label='Rear Fed', color=colors[1])
-    ax1.plot(x, LeF.loc[x], label='Parallel Fed (Left)', color=colors[2])
-    ax1.plot(x, RiF.loc[x], label='Parallel Fed (Right)', color=colors[4])
+    ax1.plot(x, LeF.loc[x], label='Left Fed', color=colors[2])
+    ax1.plot(x, RiF.loc[x], label='Right Fed', color=colors[4])
     ax1.plot(x, A.loc[x], label='Ambiguous', color=colors[5])
     ax1.plot(x, inflow_totals.loc[x], label='Total', color=colors[3])
 
@@ -382,10 +378,10 @@ def plot_inflows(
         x, (FF/inflow_totals).loc[x], label='Front Fed', color=colors[0])
     ax2.plot(x, (RF/inflow_totals).loc[x], label='Rear Fed', color=colors[1])
     ax2.plot(
-        x, (LeF/inflow_totals).loc[x], label='Parallel Fed (Left)',
+        x, (LeF/inflow_totals).loc[x], label='Left Fed',
         color=colors[2])
     ax2.plot(
-        x, (RiF/inflow_totals).loc[x], label='Parallel Fed (Right)',
+        x, (RiF/inflow_totals).loc[x], label='Right Fed',
         color=colors[4])
     ax2.plot(x, (A/inflow_totals).loc[x], label='Ambiguous', color=colors[5])
     set_ticks(ax1, ax2, np.max(inflow_totals.loc[x].values))
@@ -405,22 +401,22 @@ def plot_tilts(
     counts = counts.sort_index()
     counts_df = pd.DataFrame({'counts': counts})
     tilt_types = counts_df.groupby(['time', 'tilt_dir']).sum()
-    A = tilt_types.xs('Ambiguous', level='tilt_dir')
+    SP = tilt_types.xs('Perpendicular Shear', level='tilt_dir')
     UST = tilt_types.xs('Up-Shear Tilted', level='tilt_dir')
     DST = tilt_types.xs('Down-Shear Tilted', level='tilt_dir')
     max_time = max(
-        [max(off_type.index.values) for off_type in [A, UST, DST]])
+        [max(off_type.index.values) for off_type in [SP, UST, DST]])
     new_index = pd.Index(np.arange(0, max_time, 10), name='time')
-    [A, UST, DST] = [
+    [SP, UST, DST] = [
         off_type.reindex(new_index, fill_value=0)
-        for off_type in [A, UST, DST]]
-    tilt_totals = A + UST + DST
+        for off_type in [SP, UST, DST]]
+    tilt_totals = SP + UST + DST
 
     init_fonts()
     x = np.arange(30, 310, 10)
     ax1.plot(x, UST.loc[x], label='Up-Shear Tilted', color=colors[0])
     ax1.plot(x, DST.loc[x], label='Down-Shear Tilted', color=colors[1])
-    ax1.plot(x, A.loc[x], label='Ambiguous', color=colors[5])
+    ax1.plot(x, SP.loc[x], label='Shear Perpendicular', color=colors[5])
     ax1.plot(x, tilt_totals.loc[x], label='Total', color=colors[3])
 
     ax2.plot(
@@ -429,10 +425,10 @@ def plot_tilts(
     ax2.plot(
         x, (DST/tilt_totals).loc[x], label='Down-Shear Tilted',
         color=colors[1])
-    ax2.plot(x, (A/tilt_totals).loc[x], label='Ambiguous', color=colors[5])
+    ax2.plot(x, (SP/tilt_totals).loc[x], label='Ambiguous', color=colors[5])
     set_ticks(ax1, ax2, np.max(tilt_totals.loc[x].values), leg_columns=2)
 
-    totals = [y.loc[x].sum() for y in [UST, DST, A, tilt_totals]]
+    totals = [y.loc[x].sum() for y in [UST, DST, SP, tilt_totals]]
     return totals
 
 
@@ -447,23 +443,23 @@ def plot_propagations(
     counts = counts.sort_index()
     counts_df = pd.DataFrame({'counts': counts})
     tilt_types = counts_df.groupby(['time', 'prop_dir']).sum()
-    A = tilt_types.xs('Ambiguous', level='prop_dir')
+    SP = tilt_types.xs('Perpendicular Shear', level='prop_dir')
     USP = tilt_types.xs('Up-Shear Propagating', level='prop_dir')
     DSP = tilt_types.xs('Down-Shear Propagating', level='prop_dir')
     max_time = max(
-        [max(off_type.index.values) for off_type in [A, USP, DSP]])
+        [max(off_type.index.values) for off_type in [SP, USP, DSP]])
     new_index = pd.Index(np.arange(0, max_time, 10), name='time')
-    [A, USP, DSP] = [
+    [SP, USP, DSP] = [
         off_type.reindex(new_index, fill_value=0)
-        for off_type in [A, USP, DSP]]
-    prop_totals = A + USP + DSP
+        for off_type in [SP, USP, DSP]]
+    prop_totals = SP + USP + DSP
 
     init_fonts()
     # fig, (ax1, ax2) = initialise_fig()
     x = np.arange(30, 310, 10)
     ax1.plot(x, DSP.loc[x], label='Down-Shear Propagating', color=colors[0])
     ax1.plot(x, USP.loc[x], label='Up-Shear Propagating', color=colors[1])
-    ax1.plot(x, A.loc[x], label='Ambiguous', color=colors[5])
+    ax1.plot(x, SP.loc[x], label='Shear Perpendicular', color=colors[5])
     ax1.plot(
         x, prop_totals.loc[x], label='Total', color=colors[3])
 
@@ -474,12 +470,12 @@ def plot_propagations(
         x, (USP/prop_totals).loc[x], label='Up-Shear Propagating',
         color=colors[1])
     ax2.plot(
-        x, (A/prop_totals).loc[x], label='Ambiguous',
+        x, (SP/prop_totals).loc[x], label='Shear Perpendicular',
         color=colors[5])
 
     set_ticks(ax1, ax2, np.max(prop_totals.loc[x].values), leg_columns=2)
 
-    totals = [y.loc[x].sum() for y in [DSP, USP, A, prop_totals]]
+    totals = [y.loc[x].sum() for y in [DSP, USP, SP, prop_totals]]
     return totals
 
 
@@ -509,8 +505,8 @@ def plot_all():
     [UST, DST, A_tilt, tilt_total] = [[] for i in range(4)]
     [USP, DSP, A_prop, prop_total] = [[] for i in range(4)]
 
-    # for i in range(len(test_dir)):
-    for i in [0]:
+    for i in range(len(test_dir)):
+    # for i in [0]:
         base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
         class_path = base_dir + 'TINT_tracks/'
         class_path += '{}_classes.pkl'.format(test_dir[i])
@@ -520,7 +516,7 @@ def plot_all():
             class_df = pickle.load(f)
         test.append(test_names[i])
 
-        fig, axes = initialise_fig(height=12, n_subplots=6)
+        fig, axes = initialise_fig(height=10, n_subplots=6)
 
         offset_summary = plot_offsets(
             class_df, fig_dir, fig=fig, ax1=axes[0][0], ax2=axes[0][1])
@@ -532,10 +528,10 @@ def plot_all():
 
         rel_offset_summary = plot_relative_offsets(
             class_df, fig_dir, fig=fig, ax1=axes[1][0], ax2=axes[1][1])
-        RTS.append(offset_summary[0].values[0])
-        RLS.append(offset_summary[1].values[0])
-        RLeS.append(offset_summary[2].values[0])
-        RRiS.append(offset_summary[3].values[0])
+        RTS.append(rel_offset_summary[0].values[0])
+        RLS.append(rel_offset_summary[1].values[0])
+        RLeS.append(rel_offset_summary[2].values[0])
+        RRiS.append(rel_offset_summary[3].values[0])
         rel_offset_total.append(rel_offset_summary[4].values[0])
 
         inflow_summary = plot_inflows(
@@ -547,14 +543,14 @@ def plot_all():
         A_inflow.append(inflow_summary[4].values[0])
         inflow_total.append(inflow_summary[5].values[0])
 
-        plt.subplots_adjust(hspace=0.65)
+        plt.subplots_adjust(hspace=0.775)
         make_subplot_labels(axes.flatten())
 
         plt.savefig(
             fig_dir + 'offsets_inflows.png', dpi=200, facecolor='w',
             edgecolor='white', bbox_inches='tight')
 
-        fig, axes = initialise_fig(height=8, n_subplots=4)
+        fig, axes = initialise_fig(height=6, n_subplots=4)
 
         tilt_summary = plot_tilts(
             class_df, fig_dir, fig=fig, ax1=axes[0][0], ax2=axes[0][1])
@@ -571,7 +567,7 @@ def plot_all():
         prop_total.append(prop_summary[3].values[0])
 
         make_subplot_labels(axes.flatten())
-        plt.subplots_adjust(hspace=0.65)
+        plt.subplots_adjust(hspace=0.775)
 
         plt.savefig(
             fig_dir + 'tilts_propagations.png', dpi=200, facecolor='w',
@@ -581,39 +577,47 @@ def plot_all():
 
     offset_sensitivity_df = pd.DataFrame({
         'Test': test, 'Trailing Stratiform': TS,
-        'Leading Stratiform': LS, 'Parallel Stratiform (Left)': LeS,
-        'Parallel Stratiform (Right)': RiS, 'Total': offset_total})
+        'Leading Stratiform': LS, 'Left Stratiform': LeS,
+        'Right Stratiform': RiS, 'Total': offset_total})
     offset_sensitivity_df = offset_sensitivity_df.set_index('Test')
 
     inflow_sensitivity_df = pd.DataFrame({
         'Test': test, 'Front Fed': FF,
-        'Rear Fed': RF, 'Parallel Fed (Left)': LeF,
-        'Parallel Fed (Right)': RiF, 'Ambiguous': A_inflow,
+        'Rear Fed': RF, 'Left Fed': LeF,
+        'Right Fed': RiF, 'Ambiguous': A_inflow,
         'Total': inflow_total})
     inflow_sensitivity_df = inflow_sensitivity_df.set_index('Test')
 
     tilt_sensitivity_df = pd.DataFrame({
         'Test': test, 'Up-Shear Tilted': UST,
-        'Down-Shear Tilted': DST, 'Ambiguous': A_tilt,
+        'Down-Shear Tilted': DST, 'Shear Perpendicular': A_tilt,
         'Total': tilt_total})
     tilt_sensitivity_df = tilt_sensitivity_df.set_index('Test')
 
     prop_sensitivity_df = pd.DataFrame({
         'Test': test, 'Down-Shear Propagating': DSP,
-        'Up-Shear Propagating': USP, 'Ambiguous': A_prop,
+        'Up-Shear Propagating': USP, 'Shear Perpendicular': A_prop,
         'Total': prop_total})
     prop_sensitivity_df = prop_sensitivity_df.set_index('Test')
 
+    rel_offset_sensitivity_df = pd.DataFrame({
+        'Test': test, 'Relative Trailing Stratiform': RTS,
+        'Relative Leading Stratiform': RLS,
+        'Relative Left Stratiform': RLeS,
+        'Relative Right Stratiform': RRiS,
+        'Total': rel_offset_total})
+    rel_offset_sensitivity_df = rel_offset_sensitivity_df.set_index('Test')
+
     sen_dfs = [
         offset_sensitivity_df, inflow_sensitivity_df,
-        tilt_sensitivity_df, prop_sensitivity_df]
+        tilt_sensitivity_df, prop_sensitivity_df, rel_offset_sensitivity_df]
 
     return sen_dfs
 
 
 def plot_sensitivities(sen_dfs):
 
-    fig, axes = plt.subplots(2, 2, figsize=(13, 8.5))
+    fig, axes = plt.subplots(3, 2, figsize=(13, 10))
     init_fonts()
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
@@ -621,9 +625,11 @@ def plot_sensitivities(sen_dfs):
     inflow_c = [colors[i] for i in [0, 1, 2, 4, 5]]
     tilt_c = [colors[i] for i in [0, 1, 5]]
     prop_c = [colors[i] for i in [0, 1, 5]]
-    clists = [offset_c, inflow_c, tilt_c, prop_c]
-    leg_offset = [-.45, -.55, -.45, -.45]
-    labels = ['a)', 'b)', 'c)', 'd)']
+    clists = [offset_c, inflow_c, tilt_c, prop_c, offset_c]
+    offset_1 = -.575
+    leg_offset = [offset_1, offset_1, offset_1, offset_1, offset_1]
+    leg_offset_x = [.475] * 4 + [.475]
+    leg_columns = [2, 3, 2, 2, 2]
     for i in range(len(sen_dfs)):
         base_ratios = sen_dfs[i].drop('Total', axis=1)
         c_list = clists[i]
@@ -648,13 +654,16 @@ def plot_sensitivities(sen_dfs):
         ax.xaxis.set_label_coords(.5, -0.15)
         ax.set_ylabel('Ratio [-]', fontsize=14)
         ax.legend(
-            loc='lower center', bbox_to_anchor=(.475, leg_offset[i]),
-            ncol=2, fancybox=True, shadow=True)
+            loc='lower center',
+            bbox_to_anchor=(leg_offset_x[i], leg_offset[i]),
+            ncol=leg_columns[i], fancybox=True, shadow=True)
         ax.set_yticks(np.arange(0, max_rat+0.05, 0.05), minor=True)
         ax.grid(which='minor', alpha=0.2, axis='y')
         ax.grid(which='major', alpha=0.5, axis='y')
-        ax.text(-0.15, 1.0, labels[i], transform=ax.transAxes, size=16)
+
+    category_breakdown(fig=fig, ax=axes[2, 1], leg_offset_h=-.71)
     plt.subplots_adjust(hspace=0.65)
+    make_subplot_labels(axes.flatten())
 
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
     fig_dir = base_dir + 'TINT_figures/'
@@ -663,7 +672,7 @@ def plot_sensitivities(sen_dfs):
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
 
-def category_breakdown():
+def category_breakdown(fig=None, ax=None, leg_offset_h=-0.45):
 
     test_dir = [
         'base', 'lower_conv_level', 'higher_conv_level', 'four_levels',
@@ -702,10 +711,10 @@ def category_breakdown():
             for i in range(len(can_classes))]
 
     tilt_sensitivity_df = pd.DataFrame({
-        'Test': test, 'Relative TS': TS,
-        'Relative LS': LS,
-        'Relative PS (Left)': LeS,
-        'Relative PS (Right)': RiS, 'Ambiguous': can_A,
+        'Test': test, 'Trailing Stratiform Class': TS,
+        'Leading Stratiform Class': LS,
+        'Left Stratiform Class': LeS,
+        'Right Stratiform Class': RiS, 'Ambiguous Inflow': can_A,
         'Total': can_totals})
     tilt_sensitivity_df = tilt_sensitivity_df.set_index('Test')
 
@@ -720,7 +729,9 @@ def category_breakdown():
     colors = prop_cycle.by_key()['color']
     colors = [colors[i] for i in [0, 1, 2, 4, 5]]
 
-    fig, ax = plt.subplots(1, 1, figsize=(6, 3.5))
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=(6, 3.5))
+
     init_fonts()
     tilt_sensitivity_df.plot(
         kind='bar', stacked=False, rot=0,
@@ -730,10 +741,9 @@ def category_breakdown():
     plt.ylabel('Ratio [-]', fontsize=14)
     plt.xlabel(None)
     ax.legend(
-        loc='lower center', bbox_to_anchor=(0.5, -0.5),
+        loc='lower center', bbox_to_anchor=(0.475, leg_offset_h),
         ncol=2, fancybox=True, shadow=True)
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
-    fig_dir = base_dir + 'TINT_figures/'
 
     ax.set_yticks(np.arange(0, 0.7, 0.1))
     ax.set_yticks(np.arange(0, .65, 0.05), minor='True')
@@ -741,9 +751,10 @@ def category_breakdown():
     ax.grid(which='major', alpha=0.5, axis='y')
     ax.grid(which='minor', alpha=0.2, axis='y')
 
-    plt.savefig(
-        fig_dir + 'relative_stratiform_breakdown.png', dpi=200, facecolor='w',
-        edgecolor='white', bbox_inches='tight')
+    # fig_dir = base_dir + 'TINT_figures/'
+    # plt.savefig(
+    #     fig_dir + 'relative_stratiform_breakdown.png', dpi=200, facecolor='w',
+    #     edgecolor='white', bbox_inches='tight')
 
     return tilt_sensitivity_df
 
@@ -825,14 +836,13 @@ def plot_categories(class_df=None, pope_regime=None, fig=None, ax=None):
     ratio = counts_df['count']/counts_df['count'].sum()
     counts_df['ratio'] = ratio
     grouped_counts = counts_df.groupby(['offset_type', 'inflow_type']).sum()
+
     pivot_counts = grouped_counts.pivot_table(
         'ratio', ['offset_type'], 'inflow_type')
     pivot_counts.columns.name = None
     pivot_counts = pivot_counts.reindex([
         'Trailing Stratiform', 'Leading Stratiform',
         'Parallel Stratiform (Left)', 'Parallel Stratiform (Right)'])
-
-    # import pdb; pdb.set_trace()
 
     columns = pivot_counts.columns.values
     required_columns = [
@@ -848,8 +858,14 @@ def plot_categories(class_df=None, pope_regime=None, fig=None, ax=None):
         'Parallel Fed (Left)', 'Parallel Fed (Right)',
         'Ambiguous']]
     pivot_counts = pivot_counts.reset_index()
-    pivot_counts.loc[:, 'offset_type'] = ['TS', 'LS', 'LeS', 'RiS']
+    pivot_counts.loc[:, 'offset_type'] = [
+        'Trailing', 'Leading', 'Left', 'Right']
     pivot_counts = pivot_counts.set_index('offset_type')
+
+    pivot_counts = pivot_counts.rename({
+        'Parallel Fed (Left)': 'Left Fed',
+        'Parallel Fed (Right)': 'Right Fed',
+        'Ambiguous': 'Ambiguous Inflow'}, axis=1)
 
     pivot_counts.plot(
         kind='bar', stacked=False, rot=0, ax=ax,
@@ -869,10 +885,11 @@ def plot_categories(class_df=None, pope_regime=None, fig=None, ax=None):
     ax.grid(which='major', alpha=0.5, axis='y')
     ax.grid(which='minor', alpha=0.2, axis='y')
 
-    total = grouped_counts.sum().sum()
+    total = grouped_counts['count'].sum()
+
     ax.text(
-        0.775, .91, 'Total = ' + str(int(total)),
-        transform=ax.transAxes, size=12)
+        0.775, .87, 'Total = {}'.format(int(np.round(total))),
+        transform=ax.transAxes, size=12, backgroundcolor='1')
 
     # plt.savefig(
     #     fig_dir + 'categories.png', dpi=200, facecolor='w',
@@ -888,7 +905,7 @@ def pope_comparison(class_df=None):
             class_df = pickle.load(f)
     fig_dir = base_dir + 'TINT_figures/'
 
-    fig, axes = plt.subplots(3, 2, figsize=(12, 8.5))
+    fig, axes = plt.subplots(3, 2, figsize=(12, 7))
 
     init_fonts()
 
@@ -911,7 +928,7 @@ def pope_comparison(class_df=None):
     plt.xlabel('Stratiform Offset Category')
 
     axes.flatten()[-2].legend(
-        loc='lower center', bbox_to_anchor=(1.1, -0.55),
+        loc='lower center', bbox_to_anchor=(1.1, -0.6),
         ncol=5, fancybox=True, shadow=True)
 
     plt.savefig(
@@ -966,7 +983,9 @@ def monsoon_comparison(class_df=None, fig=None, ax=None, legend=True):
         # c_df['total_ratio'] = total_ratio
 
         c_df = c_df.drop('Ambiguous', level='inflow_type')
+        c_df = c_df.drop('Perpendicular Shear', level='tilt_dir')
         c_df = c_df.drop('Ambiguous', level='tilt_dir')
+        c_df = c_df.drop('Perpendicular Shear', level='prop_dir')
         c_df = c_df.drop('Ambiguous', level='prop_dir')
 
         required_types = [
@@ -1024,10 +1043,16 @@ def monsoon_comparison(class_df=None, fig=None, ax=None, legend=True):
     ax.grid(which='minor', alpha=0.2, axis='y')
     ax.grid(which='major', alpha=0.5, axis='y')
 
-    lab_h = 0.925
+    lab_h = 0.90
     tot_lab = ['Total = {}'.format(tot) for tot in total]
-    ax.text(0.05, lab_h, tot_lab[0], transform=ax.transAxes, size=12)
-    ax.text(0.35, lab_h, tot_lab[1], transform=ax.transAxes, size=12)
-    ax.text(0.7, lab_h, tot_lab[2], transform=ax.transAxes, size=12)
+    ax.text(
+        0.05, lab_h, tot_lab[0], transform=ax.transAxes, size=12,
+        backgroundcolor='1')
+    ax.text(
+        0.35, lab_h, tot_lab[1], transform=ax.transAxes, size=12,
+        backgroundcolor='1')
+    ax.text(
+        0.7, lab_h, tot_lab[2], transform=ax.transAxes, size=12,
+        backgroundcolor='1')
 
     return ratios_df
