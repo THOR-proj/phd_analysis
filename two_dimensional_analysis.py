@@ -265,6 +265,8 @@ def shear_angle_versus_orientation_hist(dicts, data='base'):
     fig, axes = plt.subplots(
         int(np.ceil(len(dicts) / 2)), 2, figsize=(12, 6))
 
+    first_nine = []
+
     for i in range(len(dicts)):
         shear = np.mod(np.array(dicts[i]['shear_angle_list']), 360)
         line_normal = np.mod(np.array(dicts[i]['orientation_list'])+90, 360)
@@ -276,16 +278,9 @@ def shear_angle_versus_orientation_hist(dicts, data='base'):
         db = 5
         bins = np.arange(0, 180+db, db)
 
-        ax.hist(
+        hist = ax.hist(
             angles, bins=bins, density=True, color=colors[0])
-
-        # angle_1 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
-        # angle_2 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
-        # random_cosines = np.cos(angle_2-angle_1)
-        # random_angles = np.arccos(random_cosines) * 180 / np.pi
-        # ax.hist(
-        #     random_angles, bins=bins, density=True, histtype=u'step',
-        #     color=colors[3], linewidth=2, alpha=0.75)
+        first_five.append(hist[0][:9].sum()/hist[0].sum())
 
         minor_ticks = np.arange(0, 180+db, db)
         ax.set_xticks(minor_ticks, minor=True)
@@ -312,7 +307,7 @@ def shear_angle_versus_orientation_hist(dicts, data='base'):
         fig_dir + 'shear_versus_orientation_{}.png'.format(data),
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
-    return cosines
+    return first_five
 
 
 def shear_angle_versus_propagation_hist(dicts, data='base'):
@@ -328,6 +323,8 @@ def shear_angle_versus_propagation_hist(dicts, data='base'):
     fig, axes = plt.subplots(
         int(np.ceil(len(dicts) / 2)), 2, figsize=(12, 6))
 
+    first_nine = []
+
     for i in range(len(dicts)):
         shear = np.mod(np.array(dicts[i]['shear_angle_list']), 360)
         line_normal = np.mod(np.array(dicts[i]['prop_angle_list']), 360)
@@ -339,8 +336,9 @@ def shear_angle_versus_propagation_hist(dicts, data='base'):
         db = 5
         bins = np.arange(0, 180+db, db)
 
-        ax.hist(
+        hist = ax.hist(
             angles, bins=bins, density=True, color=colors[0])
+        first_nine.append(hist[0][:9].sum()/hist[0].sum())
 
         # angle_1 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
         # angle_2 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
@@ -375,4 +373,4 @@ def shear_angle_versus_propagation_hist(dicts, data='base'):
         fig_dir + 'shear_versus_propagation_{}.png'.format(data),
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
-    return cosines
+    return first_nine
