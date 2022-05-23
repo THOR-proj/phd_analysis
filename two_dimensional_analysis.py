@@ -252,7 +252,7 @@ def get_rel_LS(sub_classes, tracks_obj):
 #     plt.ylabel('Line Normal Direction [Degrees]')
 
 
-def shear_angle_versus_orientation_hist(dicts, data='base'):
+def shear_angle_versus_orientation_hist(dicts, data='base', titles=None):
 
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
     fig_dir = base_dir + 'TINT_figures/'
@@ -265,7 +265,9 @@ def shear_angle_versus_orientation_hist(dicts, data='base'):
     fig, axes = plt.subplots(
         int(np.ceil(len(dicts) / 2)), 2, figsize=(12, 6))
 
-    first_nine = []
+    first_five = []
+    if titles is None:
+        titles = ['']*len(dicts)
 
     for i in range(len(dicts)):
         shear = np.mod(np.array(dicts[i]['shear_angle_list']), 360)
@@ -296,12 +298,18 @@ def shear_angle_versus_orientation_hist(dicts, data='base'):
         ax.grid(which='minor', alpha=0.2, axis='y')
 
         total_lab = 'Total = {}'.format(len(dicts[i]['shear_angle_list']))
+
+        ax.text(
+            0.5, 1.035, titles[i],
+            transform=ax.transAxes, size=12, ha='center')
         ax.text(
             0.75, .89, total_lab, transform=ax.transAxes, size=12,
             backgroundcolor='1')
 
     plt.subplots_adjust(hspace=0.35)
     cl.make_subplot_labels(axes.flatten(), size=16, x_shift=-0.175)
+
+    plt.subplots_adjust(hspace=0.45)
 
     plt.savefig(
         fig_dir + 'shear_versus_orientation_{}.png'.format(data),
@@ -310,7 +318,7 @@ def shear_angle_versus_orientation_hist(dicts, data='base'):
     return first_five
 
 
-def shear_angle_versus_propagation_hist(dicts, data='base'):
+def shear_angle_versus_propagation_hist(dicts, data='base', titles=None):
 
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
     fig_dir = base_dir + 'TINT_figures/'
@@ -324,6 +332,8 @@ def shear_angle_versus_propagation_hist(dicts, data='base'):
         int(np.ceil(len(dicts) / 2)), 2, figsize=(12, 6))
 
     first_nine = []
+    if titles is None:
+        titles = ['']*len(dicts)
 
     for i in range(len(dicts)):
         shear = np.mod(np.array(dicts[i]['shear_angle_list']), 360)
@@ -361,6 +371,10 @@ def shear_angle_versus_propagation_hist(dicts, data='base'):
         ax.grid(which='major', alpha=0.5, axis='y')
         ax.grid(which='minor', alpha=0.2, axis='y')
 
+        ax.text(
+            0.5, 1.035, titles[i],
+            transform=ax.transAxes, size=12, ha='center')
+
         total_lab = 'Total = {}'.format(len(dicts[i]['shear_angle_list']))
         ax.text(
             0.75, .89, total_lab, transform=ax.transAxes, size=12,
@@ -368,6 +382,8 @@ def shear_angle_versus_propagation_hist(dicts, data='base'):
 
     plt.subplots_adjust(hspace=0.35)
     cl.make_subplot_labels(axes.flatten(), size=16, x_shift=-0.175)
+
+    plt.subplots_adjust(hspace=0.45)
 
     plt.savefig(
         fig_dir + 'shear_versus_propagation_{}.png'.format(data),

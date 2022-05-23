@@ -812,7 +812,8 @@ def canonical_class_breakdown(class_df):
     return ratios + [total]
 
 
-def plot_categories(class_df=None, pope_regime=None, fig=None, ax=None):
+def plot_categories(
+        class_df=None, pope_regime=None, fig=None, ax=None, title=''):
 
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
     if class_df is None:
@@ -888,6 +889,10 @@ def plot_categories(class_df=None, pope_regime=None, fig=None, ax=None):
     total = grouped_counts['count'].sum()
 
     ax.text(
+        0.5, .87, title, ha='center',
+        transform=ax.transAxes, size=12, backgroundcolor='1')
+
+    ax.text(
         0.775, .87, 'Total = {}'.format(int(np.round(total))),
         transform=ax.transAxes, size=12, backgroundcolor='1')
 
@@ -909,12 +914,19 @@ def pope_comparison(class_df=None):
 
     init_fonts()
 
+    titles = [
+        'All Regimes', 'Regime 1 (Dry East)', 'Regime 2 (Deep West)',
+        'Regime 3 (East)', 'Regime 4 (Shallow West)',
+        'Regime 5 (Moist East)']
+
     plot_categories(
-        class_df=class_df, pope_regime=None, fig=fig, ax=axes.flatten()[0])
+        class_df=class_df, pope_regime=None, fig=fig, ax=axes.flatten()[0],
+        title=titles[0])
 
     for i in range(1, 6):
         plot_categories(
-            class_df=class_df, pope_regime=i, fig=fig, ax=axes.flatten()[i])
+            class_df=class_df, pope_regime=i, fig=fig, ax=axes.flatten()[i],
+            title=titles[i])
 
     # axes.flatten()[0].legend(
     #     loc='upper right',  # bbox_to_anchor=(0.475, -0.575),
@@ -936,7 +948,8 @@ def pope_comparison(class_df=None):
         edgecolor='white', bbox_inches='tight')
 
 
-def monsoon_comparison(class_df=None, fig=None, ax=None, legend=True):
+def monsoon_comparison(
+        class_df=None, fig=None, ax=None, legend=True, title=''):
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
     if class_df is None:
         class_path = base_dir + 'TINT_tracks/'
@@ -958,7 +971,7 @@ def monsoon_comparison(class_df=None, fig=None, ax=None, legend=True):
     pope = counts_df['pope_regime'].values
     pope_dic = {0: 'Not Classified'}
     for i in range(1, 6):
-        pope_dic[i] = 'Inactive Monsoon'
+        pope_dic[i] = 'Weak Monsoon'
     pope_dic[2] = 'Active Monsoon'
     monsoon = [pope_dic[p_num] for p_num in pope]
     counts_df['pope_regime'] = monsoon
@@ -968,7 +981,7 @@ def monsoon_comparison(class_df=None, fig=None, ax=None, legend=True):
         'tilt_dir', 'prop_dir', 'pope_regime']).sum()
     counts_df = counts_df.drop('Not Classified', level='pope_regime')
 
-    counts_df_inactive = counts_df.xs('Inactive Monsoon', level='pope_regime')
+    counts_df_inactive = counts_df.xs('Weak Monsoon', level='pope_regime')
     counts_df_active = counts_df.xs('Active Monsoon', level='pope_regime')
 
     [
@@ -1021,7 +1034,7 @@ def monsoon_comparison(class_df=None, fig=None, ax=None, legend=True):
         FFTS_DST_USP.append(c_df.loc[required_types[2], 'ratio'])
         RFTS_UST_USP.append(c_df.loc[required_types[3], 'ratio'])
 
-    categories = ['All', 'Inactive Monsoon', 'Active Monsoon']
+    categories = ['All', 'Weak Monsoon', 'Active Monsoon']
     ratios_df = pd.DataFrame({
         'Wet Season Regime': categories, 'FFTS UST DSP': FFTS_UST_DSP,
         'FFLS DST DSP': FFLS_DST_DSP, 'FFTS DST USP': FFTS_DST_USP,
@@ -1045,6 +1058,8 @@ def monsoon_comparison(class_df=None, fig=None, ax=None, legend=True):
 
     lab_h = 0.90
     tot_lab = ['Total = {}'.format(tot) for tot in total]
+    ax.text(
+        0.45, 1.04, title, transform=ax.transAxes, size=12, ha='center')
     ax.text(
         0.05, lab_h, tot_lab[0], transform=ax.transAxes, size=12,
         backgroundcolor='1')
