@@ -131,7 +131,8 @@ def get_CPOL_season(
         'MIN_SIZE': [80, 800],
         'ISO_THRESH': [10, 10],
         'AMBIENT': 'ERA5',
-        'AMBIENT_BASE_DIR': ERA5_dir}
+        'AMBIENT_BASE_DIR': ERA5_dir,
+        'AMBIENT_TIMESTEP': 6}  # hours
 
     tracks_obj = tint.Tracks(params=params)
 

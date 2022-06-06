@@ -482,14 +482,14 @@ def plot_propagations(
 def plot_all():
 
     test_dir = [
-        'base', 'lower_conv_level', 'higher_conv_level',
+        'base', 'lower_conv_level', 'higher_conv_level', 'two_levels',
         'four_levels', 'no_steiner', 'lower_ref_thresh',
         'higher_shear_thresh', 'higher_rel_vel_thresh', 'higher_theta_e',
         'higher_offset_thresh',
         'higher_area_thresh', 'higher_border_thresh', 'linear_50',
         'linear_25', 'combined']
     test_names = [
-        'Base', 'Lower Convective Level', 'Higher Convective Level',
+        'Base', 'Lower Convective Level', 'Higher Convective Level', 'Two Levels',
         'Four Levels', 'No Steiner', 'Lower Reflectivitiy Thresholds',
         'Higher Shear Threshold', 'Higher Relative Velocity Threshold',
         'Higher Quadrant Buffer', 'Higher Stratiform Offset Threshold',
@@ -639,8 +639,8 @@ def plot_sensitivities(sen_dfs):
 
         base_ratios = base_ratios.reset_index(drop=True)
         base_ratios.loc[:, 'Test'] = np.array([
-            'Base', 'C2', 'C4', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15', 'S15',
-            'A2', 'B5', 'L50', 'L25', 'C'])
+            'Base', 'C2', 'C4', '2L', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15',
+            'S15', 'A2', 'B5', 'L50', 'L25', 'C'])
         base_ratios = base_ratios.set_index('Test')
         max_rat = np.ceil(base_ratios.max().max()*10)/10
 
@@ -675,13 +675,15 @@ def plot_sensitivities(sen_dfs):
 def category_breakdown(fig=None, ax=None, leg_offset_h=-0.45):
 
     test_dir = [
-        'base', 'lower_conv_level', 'higher_conv_level', 'four_levels',
+        'base', 'lower_conv_level', 'higher_conv_level', 'two_levels',
+        'four_levels',
         'no_steiner', 'lower_ref_thresh', 'higher_shear_thresh',
         'higher_rel_vel_thresh', 'higher_theta_e', 'higher_offset_thresh',
         'higher_area_thresh', 'higher_border_thresh', 'linear_50',
         'linear_25', 'combined']
     test_names = [
         'Base', 'Lower Convective Level', 'Higher Convective Level',
+        'Two Levels',
         'Four Levels', 'No Steiner', 'Lower reflectivity Thresholds',
         'Higher Shear Threshold',
         'Higher Relative Velocity Threshold',
@@ -721,7 +723,7 @@ def category_breakdown(fig=None, ax=None, leg_offset_h=-0.45):
     tilt_sensitivity_df = tilt_sensitivity_df.drop('Total', axis=1)
     tilt_sensitivity_df = tilt_sensitivity_df.reset_index(drop=True)
     tilt_sensitivity_df.loc[:, 'Test'] = np.array([
-        'Base', 'C2', 'C4', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15', 'S15',
+        'Base', 'C2', 'C4', '2L', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15', 'S15',
         'A2', 'B5', 'L50', 'L25', 'C'])
     tilt_sensitivity_df = tilt_sensitivity_df.set_index('Test')
 
