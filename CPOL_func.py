@@ -105,8 +105,8 @@ def get_CPOL_season(
         save_dir = '/g/data/w40/esh563/TINT_tracks/'
 
     dates = np.arange(
-        np.datetime64('{}-12-30 00:00'.format(str(year))),
-        np.datetime64('{}-01-02 00:00'.format(str(year+1))),
+        np.datetime64('{}-10-01 00:00'.format(str(year))),
+        np.datetime64('{}-05-01 00:00'.format(str(year+1))),
         np.timedelta64(10, 'm'))
 
     filenames, start_time, end_time = CPOL_files_from_datetime_list(
@@ -121,7 +121,6 @@ def get_CPOL_season(
     #     'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir}
 
     params = {
-        'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
         'GS_ALT': 1000,
         'LEVELS': np.array(
             [[1000, 1500], [500, 20000]]),
@@ -132,7 +131,8 @@ def get_CPOL_season(
         'ISO_THRESH': [10, 10],
         'AMBIENT': 'ERA5',
         'AMBIENT_BASE_DIR': ERA5_dir,
-        'AMBIENT_TIMESTEP': 6}  # hours
+        'AMBIENT_TIMESTEP': 6,
+        'SAVE_DIR': save_dir}
 
     tracks_obj = tint.Tracks(params=params)
 
