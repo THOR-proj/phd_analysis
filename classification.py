@@ -96,14 +96,14 @@ def redo_exclusions(tracks_obj, class_thresh=None, excl_thresh=None):
 
 def get_counts(
         base_dir=None, tracks_dir='base',
-        non_linear=False, class_thresh=None, excl_thresh=None):
+        non_linear=False, class_thresh=None, excl_thresh=None,
+        years=sorted(list(set(range(1998, 2016)) - {2000, 2007, 2008}))):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
     [
         year_list, uid, time, offset_type, rel_offset_type, inflow_type,
         tilt_dir, prop_dir, pope_regime] = [
         [] for i in range(9)]
-    years = sorted(list(set(range(1998, 2016)) - {2000, 2007, 2008}))
     for year in years:
         tracks_obj = load_year(year, tracks_dir=tracks_dir)
         print('Getting new exclusions.')
@@ -479,24 +479,26 @@ def plot_propagations(
     return totals
 
 
-def plot_all():
+def plot_all(test_dir=None, test_names=None):
 
-    test_dir = [
-        'base', 'lower_conv_level', 'higher_conv_level', 'two_levels',
-        'four_levels', 'no_steiner', 'lower_ref_thresh',
-        'higher_shear_thresh', 'higher_rel_vel_thresh', 'higher_theta_e',
-        'higher_offset_thresh',
-        'higher_area_thresh', 'higher_border_thresh', 'linear_50',
-        'linear_25', 'combined']
-    test_names = [
-        'Base', 'Lower Convective Level', 'Higher Convective Level', 'Two Levels',
-        'Four Levels', 'No Steiner', 'Lower Reflectivitiy Thresholds',
-        'Higher Shear Threshold', 'Higher Relative Velocity Threshold',
-        'Higher Quadrant Buffer', 'Higher Stratiform Offset Threshold',
-        'Higher Minimum Area Threshold',
-        'Stricter Border Intersection Threshold',
-        '50 km Linearity Threshold',
-        '25 km Reduced Axis Ratio Linearity Threshold', 'Combined']
+    if (test_dir is None) or (test_names is None):
+        test_dir = [
+            'base', 'lower_conv_level', 'higher_conv_level', 'two_levels',
+            'four_levels', 'no_steiner', 'lower_ref_thresh',
+            'higher_shear_thresh', 'higher_rel_vel_thresh', 'higher_theta_e',
+            'higher_offset_thresh',
+            'higher_area_thresh', 'higher_border_thresh', 'linear_50',
+            'linear_25', 'combined']
+        test_names = [
+            'Base', 'Lower Convective Level', 'Higher Convective Level',
+            'Two Levels',
+            'Four Levels', 'No Steiner', 'Lower Reflectivitiy Thresholds',
+            'Higher Shear Threshold', 'Higher Relative Velocity Threshold',
+            'Higher Quadrant Buffer', 'Higher Stratiform Offset Threshold',
+            'Higher Minimum Area Threshold',
+            'Stricter Border Intersection Threshold',
+            '50 km Linearity Threshold',
+            '25 km Reduced Axis Ratio Linearity Threshold', 'Combined']
 
     test = []
     [TS, LS, LeS, RiS, offset_total] = [[] for i in range(5)]

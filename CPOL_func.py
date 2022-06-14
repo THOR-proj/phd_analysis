@@ -149,6 +149,50 @@ def get_CPOL_season(
     return tracks_obj
 
 
+def get_ACCESS_season(
+        radar, base_dir=None, ERA5_dir=None, b_path=None, save_dir=None):
+    if base_dir is None:
+        base_dir = '/g/data/hj10/cpol/cpol_level_1b/v2020/'
+        base_dir += 'gridded/grid_150km_2500m/'
+    if ERA5_dir is None:
+        ERA5_dir = '/g/data/w40/esh563/era5/pressure-levels/reanalysis/'
+    if b_path is None:
+        b_path = '/home/563/esh563/CPOL_analysis/circ_b_ind_set.pkl'
+    if save_dir is None:
+        save_dir = '/g/data/w40/esh563/TINT_tracks/'
+
+    datetimes = np.loadtxt(
+        '/home/563/esh563/CPOL_analysis/ACCESS_radar_common_times.csv',
+        dtype=str).astype(np.datetime64)
+
+    tracks_obj = tint.Tracks(params={
+        'AMBIENT': 'ACCESS', 'AMBIENT_BASE_DIR': None,
+        'GS_ALT': 0,
+        'LEVELS': np.array(
+            [[0, 0.5], [1, 1.5]]),
+        'WIND_LEVELS': np.array(
+            [[500, 3500], [500, 20000]]),
+        'FIELD_THRESH': ['convective', 15],
+        'MIN_SIZE': [80, 800],
+        'ISO_THRESH': [10, 10],
+        'INPUT_TYPE': 'ACCESS_DATETIMES',
+        'SAVE_DIR': save_dir,
+        'REFERENCE_GRID_FORMAT': 'ODIM',
+        'RESET_NEW_DAY': True,
+        'REFERENCE_RADAR': radar})
+
+    grids = (
+        date for date in datetimes)
+
+    tracks_obj.get_tracks(grids, b_path=b_path)
+
+    out_file_name = save_dir + '{}_20201001_20210501.pkl'.format(radar)
+    with open(out_file_name, 'wb') as f:
+        pickle.dump(tracks_obj, f)
+
+    return tracks_obj
+
+
 def combine_tracks(years=list(range(1998, 2016)), base_dir=None):
     if base_dir is None:
         base_dir = '/home/student.unimelb.edu.au/shorte1/'
