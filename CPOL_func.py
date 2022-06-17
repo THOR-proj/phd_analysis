@@ -225,12 +225,12 @@ def get_oper_month(
         'ISO_THRESH': [10, 10],
         'AMBIENT': 'ERA5',
         'AMBIENT_BASE_DIR': ERA5_dir,
-        'AMBIENT_TIMESTEP': 1,
+        'AMBIENT_TIMESTEP': 6,
         'SAVE_DIR': save_dir,
         'RESET_NEW_DAY': True,
         'REFERENCE_GRID_FORMAT': 'ODIM',
         'INPUT_TYPE': 'OPER_DATETIMES',
-        'REFERENCE_RADAR': 63,
+        'REFERENCE_RADAR': radar,
         'REMOTE': True})
 
     grids = (
