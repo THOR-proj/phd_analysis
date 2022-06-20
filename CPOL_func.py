@@ -150,20 +150,23 @@ def get_CPOL_season(
 
 
 def get_ACCESS_season(
-        radar, base_dir=None, ERA5_dir=None, b_path=None, save_dir=None):
+        radar, year=2020, base_dir=None, b_path=None, save_dir=None):
     if base_dir is None:
         base_dir = '/g/data/hj10/cpol/cpol_level_1b/v2020/'
         base_dir += 'gridded/grid_150km_2500m/'
-    if ERA5_dir is None:
-        ERA5_dir = '/g/data/w40/esh563/era5/pressure-levels/reanalysis/'
     if b_path is None:
         b_path = '/home/563/esh563/CPOL_analysis/circ_b_ind_set.pkl'
     if save_dir is None:
         save_dir = '/g/data/w40/esh563/TINT_tracks/'
 
-    datetimes = np.loadtxt(
+    common_times = np.loadtxt(
         '/home/563/esh563/CPOL_analysis/ACCESS_radar_common_times.csv',
         dtype=str).astype(np.datetime64)
+
+    start = np.datetime64('{}-10-01T00:00:00'.format(year))
+    end = np.datetime64('{}-05-01T00:00:00'.format(year+1))
+    datetimes = np.arange(start, end, np.timedelta64(10, 'm'))
+    datetimes = sorted([d for d in datetimes if d in common_times])
 
     tracks_obj = tint.Tracks(params={
         'AMBIENT': 'ACCESS', 'AMBIENT_BASE_DIR': None,
@@ -186,7 +189,8 @@ def get_ACCESS_season(
 
     tracks_obj.get_tracks(grids, b_path=b_path)
 
-    out_file_name = save_dir + '{}_20201001_20210501.pkl'.format(radar)
+    out_file_name = save_dir + '{}_{}1001_{}0501.pkl'.format(
+        radar, year, year+1)
     with open(out_file_name, 'wb') as f:
         pickle.dump(tracks_obj, f)
 
