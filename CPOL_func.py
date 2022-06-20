@@ -182,7 +182,8 @@ def get_ACCESS_season(
         'SAVE_DIR': save_dir,
         'REFERENCE_GRID_FORMAT': 'ODIM',
         'RESET_NEW_DAY': True,
-        'REFERENCE_RADAR': radar})
+        'REFERENCE_RADAR': radar,
+        'REMOTE': True})
 
     grids = (
         date for date in datetimes)
