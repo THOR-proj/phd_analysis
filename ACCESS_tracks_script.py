@@ -6,10 +6,10 @@ sys.path.insert(0, '/home/563/esh563/TINT')
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
-    '--radar', '-r', type=str, default='63',
+    '--radar', '-r', type=int, default=63,
     help='radar domain to get tracks for')
 parser.add_argument(
-    '--year', '-y', type=str, default='63',
+    '--year', '-y', type=int, default=63,
     help='radar domain to get tracks for')
 
 args = parser.parse_args()
