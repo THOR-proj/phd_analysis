@@ -212,7 +212,7 @@ def get_oper_month(
         save_dir = '/g/data/w40/esh563/TINT_tracks/'
 
     common_datetimes = np.loadtxt(
-        '/home/563/esh563/CPOL_analysis/ACCESS_radar_common_times.csv',
+        '/home/563/esh563/CPOL_analysis/radar_common_times.csv',
         dtype=str).astype(np.datetime64)
 
     datetimes = sorted([
