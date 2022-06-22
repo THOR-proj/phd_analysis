@@ -243,7 +243,7 @@ def get_oper_month(
 
     tracks_obj.get_tracks(grids, b_path=b_path)
 
-    out_file_name = save_dir + '{}_{}_{}.pkl'.format(
+    out_file_name = save_dir + '{:02d}_{:04d}_{:02d}.pkl'.format(
         radar, year, month)
     with open(out_file_name, 'wb') as f:
         pickle.dump(tracks_obj, f)

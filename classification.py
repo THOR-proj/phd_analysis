@@ -172,17 +172,24 @@ def get_colors():
     return colors
 
 
-def set_ticks(ax1, ax2, maximum_count, leg_columns=3):
+def set_ticks(ax1, ax2, maximum_count, leg_columns=3, legend=True):
     plt.sca(ax1)
     plt.xticks(np.arange(30, 310, 30))
     plt.ylabel('Count [-]')
     plt.xlabel('Time since Initiation [m]')
-    ax1.legend(
-        loc='lower center', bbox_to_anchor=(1.1, -0.685),
-        ncol=leg_columns, fancybox=True, shadow=True)
+
+    handles, labels = ax1.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+
+    if legend:
+        ax1.legend(
+            by_label.values(), by_label.keys(),
+            loc='lower center', bbox_to_anchor=(1.1, -0.685),
+            ncol=leg_columns, fancybox=True, shadow=True)
     plt.setp(ax1.lines, linewidth=1.75)
-    max_tick = np.ceil(maximum_count / 100) * 100
-    ax1.set_yticks(np.arange(0, max_tick+100, 100))
+
+    max_tick = int(np.ceil(maximum_count / 100) * 100)
+    ax1.set_yticks(np.arange(0, max_tick+100, 100), minor=False)
     ax1.set_yticks(np.arange(0, max_tick+50, 50), minor=True)
 
     plt.sca(ax2)
@@ -231,7 +238,7 @@ def get_save_dir(save_dir):
 
 def plot_offsets(
         class_df, save_dir=None, append_time=False, fig=None,
-        ax1=None, ax2=None):
+        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -254,35 +261,45 @@ def plot_offsets(
 
     init_fonts()
     x = np.arange(30, 310, 10)
-    ax1.plot(x, TS.loc[x], label='Trailing Stratiform', color=colors[0])
-    ax1.plot(x, LS.loc[x], label='Leading Stratiform', color=colors[1])
     ax1.plot(
-        x, LeS.loc[x], label='Left Stratiform', color=colors[2])
+        x, TS.loc[x], label='Trailing Stratiform', color=colors[0],
+        linestyle=linestyle)
     ax1.plot(
-        x, RiS.loc[x], label='Right Stratiform', color=colors[4])
-    ax1.plot(x, offset_totals.loc[x], label='Total', color=colors[3])
+        x, LS.loc[x], label='Leading Stratiform', color=colors[1],
+        linestyle=linestyle)
+    ax1.plot(
+        x, LeS.loc[x], label='Left Stratiform', color=colors[2],
+        linestyle=linestyle)
+    ax1.plot(
+        x, RiS.loc[x], label='Right Stratiform', color=colors[4],
+        linestyle=linestyle)
+    ax1.plot(
+        x, offset_totals.loc[x], label='Total', color=colors[3],
+        linestyle=linestyle)
 
     ax2.plot(
         x, (TS/offset_totals).loc[x],
-        label='Trailing Stratiform', color=colors[0])
+        label='Trailing Stratiform', color=colors[0], linestyle=linestyle)
     ax2.plot(
         x, (LeS/offset_totals).loc[x], label='Left Stratiform',
-        color=colors[2])
+        color=colors[2], linestyle=linestyle)
     ax2.plot(
         x, (RiS/offset_totals).loc[x], label='Right Stratiform',
-        color=colors[4])
+        color=colors[4], linestyle=linestyle)
     ax2.plot(
         x, (LS/offset_totals).loc[x],
-        label='Leading Stratiform', color=colors[1])
+        label='Leading Stratiform', color=colors[1], linestyle=linestyle)
 
-    set_ticks(ax1, ax2, np.max(offset_totals.loc[x].values))
+    set_ticks(
+        ax1, ax2, max(np.max(offset_totals.loc[x].values), maximum),
+        legend=legend)
     totals = [y.loc[x].sum() for y in [TS, LS, LeS, RiS, offset_totals]]
     return totals
 
 
 def plot_relative_offsets(
         class_df, save_dir=None, append_time=False, fig=None,
-        ax1=None, ax2=None):
+        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -310,40 +327,48 @@ def plot_relative_offsets(
     init_fonts()
     x = np.arange(30, 310, 10)
     ax1.plot(
-        x, TS.loc[x], label='Relative Trailing Stratiform', color=colors[0])
+        x, TS.loc[x], label='Relative Trailing Stratiform', color=colors[0],
+        linestyle=linestyle)
     ax1.plot(
-        x, LS.loc[x], label='Relative Leading Stratiform', color=colors[1])
+        x, LS.loc[x], label='Relative Leading Stratiform', color=colors[1],
+        linestyle=linestyle)
     ax1.plot(
         x, LeS.loc[x], label='Relative Left Stratiform',
-        color=colors[2])
+        color=colors[2], linestyle=linestyle)
     ax1.plot(
         x, RiS.loc[x], label='Relative Right Stratiform',
-        color=colors[4])
-    ax1.plot(x, offset_totals.loc[x], label='Total', color=colors[3])
+        color=colors[4], linestyle=linestyle)
+    ax1.plot(
+        x, offset_totals.loc[x], label='Total', color=colors[3],
+        linestyle=linestyle)
 
     ax2.plot(
         x, (TS/offset_totals).loc[x],
-        label='Relative Trailing Stratiform', color=colors[0])
+        label='Relative Trailing Stratiform', color=colors[0],
+        linestyle=linestyle)
     ax2.plot(
         x, (LeS/offset_totals).loc[x],
         label='Relative Left Stratiform',
-        color=colors[2])
+        color=colors[2], linestyle=linestyle)
     ax2.plot(
         x, (RiS/offset_totals).loc[x],
         label='Relative Right Stratiform',
-        color=colors[4])
+        color=colors[4], linestyle=linestyle)
     ax2.plot(
         x, (LS/offset_totals).loc[x],
-        label='Relative Leading Stratiform', color=colors[1])
+        label='Relative Leading Stratiform', color=colors[1],
+        linestyle=linestyle)
 
-    set_ticks(ax1, ax2, np.max(offset_totals.loc[x].values))
+    set_ticks(
+        ax1, ax2, max(np.max(offset_totals.loc[x].values), maximum),
+        legend=legend)
     totals = [y.loc[x].sum() for y in [TS, LS, LeS, RiS, offset_totals]]
     return totals
 
 
 def plot_inflows(
         class_df, save_dir=None, append_time=False, fig=None,
-        ax1=None, ax2=None):
+        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -367,24 +392,42 @@ def plot_inflows(
 
     init_fonts()
     x = np.arange(30, 310, 10)
-    ax1.plot(x, FF.loc[x], label='Front Fed', color=colors[0])
-    ax1.plot(x, RF.loc[x], label='Rear Fed', color=colors[1])
-    ax1.plot(x, LeF.loc[x], label='Left Fed', color=colors[2])
-    ax1.plot(x, RiF.loc[x], label='Right Fed', color=colors[4])
-    ax1.plot(x, A.loc[x], label='Ambiguous', color=colors[5])
-    ax1.plot(x, inflow_totals.loc[x], label='Total', color=colors[3])
+    ax1.plot(
+        x, FF.loc[x], label='Front Fed', color=colors[0],
+        linestyle=linestyle)
+    ax1.plot(
+        x, RF.loc[x], label='Rear Fed', color=colors[1], linestyle=linestyle)
+    ax1.plot(
+        x, LeF.loc[x], label='Left Fed', color=colors[2],
+        linestyle=linestyle)
+    ax1.plot(
+        x, RiF.loc[x], label='Right Fed', color=colors[4],
+        linestyle=linestyle)
+    ax1.plot(
+        x, A.loc[x], label='Ambiguous', color=colors[5],
+        linestyle=linestyle)
+    ax1.plot(
+        x, inflow_totals.loc[x], label='Total', color=colors[3],
+        linestyle=linestyle)
 
     ax2.plot(
-        x, (FF/inflow_totals).loc[x], label='Front Fed', color=colors[0])
-    ax2.plot(x, (RF/inflow_totals).loc[x], label='Rear Fed', color=colors[1])
+        x, (FF/inflow_totals).loc[x], label='Front Fed', color=colors[0],
+        linestyle=linestyle)
+    ax2.plot(
+        x, (RF/inflow_totals).loc[x], label='Rear Fed', color=colors[1],
+        linestyle=linestyle)
     ax2.plot(
         x, (LeF/inflow_totals).loc[x], label='Left Fed',
-        color=colors[2])
+        color=colors[2], linestyle=linestyle)
     ax2.plot(
         x, (RiF/inflow_totals).loc[x], label='Right Fed',
-        color=colors[4])
-    ax2.plot(x, (A/inflow_totals).loc[x], label='Ambiguous', color=colors[5])
-    set_ticks(ax1, ax2, np.max(inflow_totals.loc[x].values))
+        color=colors[4], linestyle=linestyle)
+    ax2.plot(
+        x, (A/inflow_totals).loc[x], label='Ambiguous', color=colors[5],
+        linestyle=linestyle)
+    set_ticks(
+        ax1, ax2, max(np.max(inflow_totals.loc[x].values), maximum),
+        legend=legend)
 
     totals = [y.loc[x].sum() for y in [FF, RF, LeF, RiF, A, inflow_totals]]
     return totals
@@ -392,7 +435,7 @@ def plot_inflows(
 
 def plot_tilts(
         class_df, save_dir=None, append_time=False, fig=None,
-        ax1=None, ax2=None):
+        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -414,19 +457,31 @@ def plot_tilts(
 
     init_fonts()
     x = np.arange(30, 310, 10)
-    ax1.plot(x, UST.loc[x], label='Up-Shear Tilted', color=colors[0])
-    ax1.plot(x, DST.loc[x], label='Down-Shear Tilted', color=colors[1])
-    ax1.plot(x, SP.loc[x], label='Shear Perpendicular', color=colors[5])
-    ax1.plot(x, tilt_totals.loc[x], label='Total', color=colors[3])
+    ax1.plot(
+        x, UST.loc[x], label='Up-Shear Tilted', color=colors[0],
+        linestyle=linestyle)
+    ax1.plot(
+        x, DST.loc[x], label='Down-Shear Tilted', color=colors[1],
+        linestyle=linestyle)
+    ax1.plot(
+        x, SP.loc[x], label='Shear Perpendicular', color=colors[5],
+        linestyle=linestyle)
+    ax1.plot(
+        x, tilt_totals.loc[x], label='Total', color=colors[3],
+        linestyle=linestyle)
 
     ax2.plot(
         x, (UST/tilt_totals).loc[x], label='Up-Shear Tilted',
-        color=colors[0])
+        color=colors[0], linestyle=linestyle)
     ax2.plot(
         x, (DST/tilt_totals).loc[x], label='Down-Shear Tilted',
-        color=colors[1])
-    ax2.plot(x, (SP/tilt_totals).loc[x], label='Ambiguous', color=colors[5])
-    set_ticks(ax1, ax2, np.max(tilt_totals.loc[x].values), leg_columns=2)
+        color=colors[1], linestyle=linestyle)
+    ax2.plot(
+        x, (SP/tilt_totals).loc[x], label='Ambiguous', color=colors[5],
+        linestyle=linestyle)
+    set_ticks(
+        ax1, ax2, max(np.max(tilt_totals.loc[x].values), maximum),
+        leg_columns=2, legend=legend)
 
     totals = [y.loc[x].sum() for y in [UST, DST, SP, tilt_totals]]
     return totals
@@ -434,7 +489,7 @@ def plot_tilts(
 
 def plot_propagations(
         class_df, save_dir=None, append_time=False, fig=None,
-        ax1=None, ax2=None):
+        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -457,26 +512,94 @@ def plot_propagations(
     init_fonts()
     # fig, (ax1, ax2) = initialise_fig()
     x = np.arange(30, 310, 10)
-    ax1.plot(x, DSP.loc[x], label='Down-Shear Propagating', color=colors[0])
-    ax1.plot(x, USP.loc[x], label='Up-Shear Propagating', color=colors[1])
-    ax1.plot(x, SP.loc[x], label='Shear Perpendicular', color=colors[5])
     ax1.plot(
-        x, prop_totals.loc[x], label='Total', color=colors[3])
+        x, DSP.loc[x], label='Down-Shear Propagating', color=colors[0],
+        linestyle=linestyle)
+    ax1.plot(
+        x, USP.loc[x], label='Up-Shear Propagating', color=colors[1],
+        linestyle=linestyle)
+    ax1.plot(
+        x, SP.loc[x], label='Shear Perpendicular', color=colors[5],
+        linestyle=linestyle)
+    ax1.plot(
+        x, prop_totals.loc[x], label='Total', color=colors[3],
+        linestyle=linestyle)
 
     ax2.plot(
         x, (DSP/prop_totals).loc[x], label='Down-Shear Propagating',
-        color=colors[0])
+        color=colors[0], linestyle=linestyle)
     ax2.plot(
         x, (USP/prop_totals).loc[x], label='Up-Shear Propagating',
-        color=colors[1])
+        color=colors[1], linestyle=linestyle)
     ax2.plot(
         x, (SP/prop_totals).loc[x], label='Shear Perpendicular',
-        color=colors[5])
+        color=colors[5], linestyle=linestyle)
 
-    set_ticks(ax1, ax2, np.max(prop_totals.loc[x].values), leg_columns=2)
+    set_ticks(
+        ax1, ax2, max(np.max(prop_totals.loc[x].values), maximum),
+        leg_columns=2, legend=legend)
 
     totals = [y.loc[x].sum() for y in [DSP, USP, SP, prop_totals]]
     return totals
+
+
+def plot_comparison():
+    test_dir = ['base', 'two_levels']
+    linestyles = ['-', '--']
+    legends = [True, False]
+
+    fig_1, axes_1 = initialise_fig(height=10, n_subplots=6)
+    fig_2, axes_2 = initialise_fig(height=6, n_subplots=4)
+
+    for i in range(len(test_dir)):
+        base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+        class_path = base_dir + 'TINT_tracks/'
+        class_path += '{}_classes.pkl'.format(test_dir[i])
+        fig_dir = base_dir + 'TINT_figures/'
+        fig_dir += test_dir[i] + '/'
+        with open(class_path, 'rb') as f:
+            class_df = pickle.load(f)
+
+        plot_offsets(
+            class_df, fig_dir, fig=fig_1, ax1=axes_1[0][0], ax2=axes_1[0][1],
+            linestyle=linestyles[i], legend=legends[i], maximum=800)
+
+        # import pdb; pdb.set_trace()
+
+        plot_relative_offsets(
+            class_df, fig_dir, fig=fig_1, ax1=axes_1[1][0], ax2=axes_1[1][1],
+            linestyle=linestyles[i], legend=legends[i],
+            maximum=600)
+
+        plot_inflows(
+            class_df, fig_dir, fig=fig_1, ax1=axes_1[2][0], ax2=axes_1[2][1],
+            linestyle=linestyles[i], legend=legends[i], maximum=800)
+
+        plt.subplots_adjust(hspace=0.775)
+        make_subplot_labels(axes_1.flatten())
+
+        plt.savefig(
+            fig_dir + 'offsets_inflows_comparison.png', dpi=200, facecolor='w',
+            edgecolor='white', bbox_inches='tight')
+
+        plot_tilts(
+            class_df, fig_dir, fig=fig_2, ax1=axes_2[0][0], ax2=axes_2[0][1],
+            linestyle=linestyles[i], legend=legends[i], maximum=600)
+
+        plot_propagations(
+            class_df, fig_dir, fig=fig_2, ax1=axes_2[1][0], ax2=axes_2[1][1],
+            linestyle=linestyles[i], legend=legends[i],
+            maximum=600)
+
+        make_subplot_labels(axes_2.flatten())
+        plt.subplots_adjust(hspace=0.775)
+
+        plt.savefig(
+            fig_dir + 'tilts_propagations_comparison.png', dpi=200,
+            facecolor='w',
+            edgecolor='white', bbox_inches='tight')
+
+        plt.close('all')
 
 
 def plot_all(test_dir=None, test_names=None):
