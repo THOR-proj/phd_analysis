@@ -53,6 +53,16 @@ def load_year(year, tracks_dir='base'):
     return tracks_obj
 
 
+def load_op_month(year, month, radar, tracks_dir='base'):
+    print('Processing year {}, month {}, radar, {}'.format(year, month, radar))
+    save_dir = '/home/student.unimelb.edu.au/shorte1/'
+    save_dir += 'Documents/TINT_tracks/{}/'.format(tracks_dir)
+    filename = save_dir + '{:02}_{:04}_{:02}.pkl'.format(radar, year, month)
+    with open(filename, 'rb') as f:
+        tracks_obj = pickle.load(f)
+    return tracks_obj
+
+
 def get_sub_tracks(tracks_obj, non_linear=False):
     exclusions = [
         'small_area', 'large_area', 'intersect_border',
@@ -144,6 +154,87 @@ def get_counts(
         'pope_regime': pope_regime}
     class_df = pd.DataFrame(class_dic)
     class_df.set_index(['year', 'uid', 'time'], inplace=True)
+    class_df.sort_index(inplace=True)
+
+    class_df['inflow_type'] = class_df['inflow_type'].str.replace(
+        'Ambiguous (Low Relative Velocity)', 'Ambiguous', regex=False)
+    class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
+        'Ambiguous (Perpendicular Shear)', 'Perpendicular Shear', regex=False)
+    class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
+        'Ambiguous (Low Shear)', 'Ambiguous', regex=False)
+    class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
+        'Ambiguous (Small Stratiform Offset)', 'Ambiguous', regex=False)
+    class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
+        'Ambiguous (On Quadrant Boundary)', 'Ambiguous', regex=False)
+    class_df['prop_dir'] = class_df['prop_dir'].str.replace(
+        'Ambiguous (Perpendicular Shear)', 'Perpendicular Shear', regex=False)
+    class_df['prop_dir'] = class_df['prop_dir'].str.replace(
+        'Ambiguous (Low Shear)', 'Ambiguous', regex=False)
+    class_df['prop_dir'] = class_df['prop_dir'].str.replace(
+        'Ambiguous (Low Relative Velocity)', 'Ambiguous', regex=False)
+
+    return class_df
+
+
+def get_counts_radar(
+        base_dir=None, tracks_dir='base',
+        non_linear=False, class_thresh=None, excl_thresh=None,
+        years=[2020, 2021], radar=63):
+    if base_dir is None:
+        base_dir = '/g/data/w40/esh563/CPOL_analysis/'
+    [
+        year_list, month_list, uid, time, offset_type, rel_offset_type,
+        inflow_type, tilt_dir, prop_dir, pope_regime] = [
+        [] for i in range(10)]
+    for base_year in years:
+        year_month = [
+            [base_year, 10], [base_year, 11], [base_year, 12],
+            [base_year+1, 1], [base_year+1, 2], [base_year+1, 3],
+            [base_year+1, 4]]
+        for ym in year_month:
+            year = ym[0]
+            month = ym[1]
+            tracks_obj = load_op_month(
+                year, month, radar, tracks_dir=tracks_dir)
+            print('Getting new exclusions.')
+            tracks_obj = redo_exclusions(tracks_obj, class_thresh, excl_thresh)
+            print('Adding Pope monsoon regime.')
+            tracks_obj = add_monsoon_regime(tracks_obj, base_dir=base_dir)
+            sub_tracks = get_sub_tracks(tracks_obj, non_linear=non_linear)
+            if sub_tracks is None:
+                print('No tracks satisfying conditions. Skipping year.')
+                continue
+            sub_uids = get_sub_uids(sub_tracks)
+            for i in sub_uids:
+                obj = sub_tracks.xs(i, level='uid').reset_index(level='time')
+                scans = obj.index.values
+                scan_label = scans - min(scans)
+                offset = sub_tracks['offset_type'].xs(i, level='uid').values
+                rel_offset = sub_tracks['rel_offset_type'].xs(
+                    i, level='uid').values
+                inflow = sub_tracks['inflow_type'].xs(i, level='uid').values
+                tilt = sub_tracks['tilt_type'].xs(i, level='uid').values
+                prop = sub_tracks['propagation_type'].xs(i, level='uid').values
+                pope = sub_tracks['pope_regime'].xs(i, level='uid').values
+                for j in range(len(scan_label)):
+                    year_list.append(year)
+                    month_list.append(month)
+                    uid.append(i)
+                    time.append(scan_label[j]*10)
+                    offset_type.append(offset[j])
+                    rel_offset_type.append(rel_offset[j])
+                    inflow_type.append(inflow[j])
+                    tilt_dir.append(tilt[j])
+                    prop_dir.append(prop[j])
+                    pope_regime.append(int(pope[j]))
+    class_dic = {
+        'year': year_list, 'month': month_list, 'uid': uid, 'time': time,
+        'offset_type': offset_type, 'rel_offset_type': rel_offset_type,
+        'inflow_type': inflow_type,
+        'tilt_dir': tilt_dir, 'prop_dir': prop_dir,
+        'pope_regime': pope_regime}
+    class_df = pd.DataFrame(class_dic)
+    class_df.set_index(['year', 'month', 'uid', 'time'], inplace=True)
     class_df.sort_index(inplace=True)
 
     class_df['inflow_type'] = class_df['inflow_type'].str.replace(
