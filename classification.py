@@ -17,11 +17,17 @@ ERA5_dir += 'pressure-levels/reanalysis/'
 WRF_dir = '/media/shorte1/Ewan\'s Hard Drive/phd/data/caine_WRF_data/'
 
 
-def add_monsoon_regime(tracks_obj, base_dir=None):
+def add_monsoon_regime(tracks_obj, base_dir=None, fake_pope=False):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
-    pope = pd.read_csv(
-        base_dir + 'Pope_regimes.csv', index_col=0, names=['date', 'regime'])
+    if fake_pope:
+        pope = pd.read_csv(
+            base_dir + 'fake_pope_regimes.csv', index_col=0,
+            names=['date', 'regime'])
+    else:
+        pope = pd.read_csv(
+            base_dir + 'Pope_regimes.csv', index_col=0,
+            names=['date', 'regime'])
     pope.index = pd.to_datetime(pope.index)
     regimes = []
     np.datetime64(tracks_obj.tracks_class.index[0][1].date())
@@ -107,7 +113,8 @@ def redo_exclusions(tracks_obj, class_thresh=None, excl_thresh=None):
 def get_counts(
         base_dir=None, tracks_dir='base',
         non_linear=False, class_thresh=None, excl_thresh=None,
-        years=sorted(list(set(range(1998, 2016)) - {2000, 2007, 2008}))):
+        years=sorted(list(set(range(1998, 2016)) - {2000, 2007, 2008})),
+        fake_pope=False):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
     [
@@ -119,7 +126,8 @@ def get_counts(
         print('Getting new exclusions.')
         tracks_obj = redo_exclusions(tracks_obj, class_thresh, excl_thresh)
         print('Adding Pope monsoon regime.')
-        tracks_obj = add_monsoon_regime(tracks_obj, base_dir=base_dir)
+        tracks_obj = add_monsoon_regime(
+            tracks_obj, base_dir=base_dir, fake_pope=fake_pope)
         sub_tracks = get_sub_tracks(tracks_obj, non_linear=non_linear)
         if sub_tracks is None:
             print('No tracks satisfying conditions. Skipping year.')
@@ -179,7 +187,7 @@ def get_counts(
 def get_counts_radar(
         base_dir=None, tracks_dir='base',
         non_linear=False, class_thresh=None, excl_thresh=None,
-        years=[2020, 2021], radar=63):
+        years=[2020, 2021], radar=63, fake_pope=True):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
     [
@@ -199,7 +207,8 @@ def get_counts_radar(
             print('Getting new exclusions.')
             tracks_obj = redo_exclusions(tracks_obj, class_thresh, excl_thresh)
             print('Adding Pope monsoon regime.')
-            tracks_obj = add_monsoon_regime(tracks_obj, base_dir=base_dir)
+            tracks_obj = add_monsoon_regime(
+                tracks_obj, base_dir=base_dir, fake_pope=fake_pope)
             sub_tracks = get_sub_tracks(tracks_obj, non_linear=non_linear)
             if sub_tracks is None:
                 print('No tracks satisfying conditions. Skipping year.')
@@ -342,8 +351,9 @@ def plot_offsets(
     LS = offset_types.xs('Leading Stratiform', level='offset_type')
     LeS = offset_types.xs('Parallel Stratiform (Left)', level='offset_type')
     RiS = offset_types.xs('Parallel Stratiform (Right)', level='offset_type')
-    max_time = max(
-        [max(off_type.index.values) for off_type in [TS, LS, LeS, RiS]])
+    # max_time = max(
+    #     [max(off_type.index.values) for off_type in [TS, LS, LeS, RiS]])
+    max_time = 400
     new_index = pd.Index(np.arange(0, max_time, 10), name='time')
     [TS, LS, LeS, RiS] = [
         off_type.reindex(new_index, fill_value=0)
@@ -407,8 +417,9 @@ def plot_relative_offsets(
         'Relative Parallel Stratiform (Left)', level='rel_offset_type')
     RiS = offset_types.xs(
         'Relative Parallel Stratiform (Right)', level='rel_offset_type')
-    max_time = max(
-        [max(off_type.index.values) for off_type in [TS, LS, LeS, RiS]])
+    # max_time = max(
+    #     [max(off_type.index.values) for off_type in [TS, LS, LeS, RiS]])
+    max_time = 400
     new_index = pd.Index(np.arange(0, max_time, 10), name='time')
     [TS, LS, LeS, RiS] = [
         off_type.reindex(new_index, fill_value=0)
@@ -473,8 +484,9 @@ def plot_inflows(
     RF = inflow_types.xs('Rear Fed', level='inflow_type')
     LeF = inflow_types.xs('Parallel Fed (Left)', level='inflow_type')
     RiF = inflow_types.xs('Parallel Fed (Right)', level='inflow_type')
-    max_time = max(
-        [max(off_type.index.values) for off_type in [A, FF, RF, LeF, RiF]])
+    # max_time = max(
+    #     [max(off_type.index.values) for off_type in [A, FF, RF, LeF, RiF]])
+    max_time = 400
     new_index = pd.Index(np.arange(0, max_time, 10), name='time')
     [A, FF, RF, LeF, RiF] = [
         off_type.reindex(new_index, fill_value=0)
@@ -538,8 +550,9 @@ def plot_tilts(
     SP = tilt_types.xs('Perpendicular Shear', level='tilt_dir')
     UST = tilt_types.xs('Up-Shear Tilted', level='tilt_dir')
     DST = tilt_types.xs('Down-Shear Tilted', level='tilt_dir')
-    max_time = max(
-        [max(off_type.index.values) for off_type in [SP, UST, DST]])
+    # max_time = max(
+    #     [max(off_type.index.values) for off_type in [SP, UST, DST]])
+    max_time = 400
     new_index = pd.Index(np.arange(0, max_time, 10), name='time')
     [SP, UST, DST] = [
         off_type.reindex(new_index, fill_value=0)
@@ -592,8 +605,9 @@ def plot_propagations(
     SP = tilt_types.xs('Perpendicular Shear', level='prop_dir')
     USP = tilt_types.xs('Up-Shear Propagating', level='prop_dir')
     DSP = tilt_types.xs('Down-Shear Propagating', level='prop_dir')
-    max_time = max(
-        [max(off_type.index.values) for off_type in [SP, USP, DSP]])
+    # max_time = max(
+    #     [max(off_type.index.values) for off_type in [SP, USP, DSP]])
+    max_time = 400
     new_index = pd.Index(np.arange(0, max_time, 10), name='time')
     [SP, USP, DSP] = [
         off_type.reindex(new_index, fill_value=0)
@@ -1166,22 +1180,81 @@ def pope_comparison(class_df=None):
         edgecolor='white', bbox_inches='tight')
 
 
+def pope_comparison_radar(class_df=None):
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    class_path = base_dir + 'TINT_tracks/'
+    class_path + 'combined_radar_classes.pkl'
+    with open(class_path + 'combined_radar_classes.pkl', 'rb') as f:
+        class_df_rad = pickle.load(f)
+    with open(class_path + 'combined_ACCESS_classes.pkl', 'rb') as f:
+        class_df_ACCESS = pickle.load(f)
+    fig_dir = base_dir + 'TINT_figures/'
+
+    fig, axes = plt.subplots(3, 2, figsize=(12, 7))
+
+    init_fonts()
+
+    titles_radar = [
+        'Radar: All Regimes', 'Radar: Weak Monsoon',
+        'Radar: Active Monsoon']
+
+    titles_ACCESS = [
+        'ACCESS-C: All Regimes', 'ACCESS-C: Weak Monsoon',
+        'ACCESS-C: Active Monsoon']
+
+    plot_categories(
+        class_df=class_df_rad, pope_regime=None, fig=fig, ax=axes[0, 0],
+        title=titles_radar[0])
+
+    plot_categories(
+        class_df=class_df_ACCESS, pope_regime=None, fig=fig, ax=axes[0, 1],
+        title=titles_ACCESS[0])
+
+    for i in range(1, 3):
+        plot_categories(
+            class_df=class_df_rad, pope_regime=i, fig=fig, ax=axes[i, 0],
+            title=titles_radar[i])
+        plot_categories(
+            class_df=class_df_ACCESS, pope_regime=i, fig=fig,
+            ax=axes[i, 1], title=titles_ACCESS[i])
+
+    # axes.flatten()[0].legend(
+    #     loc='upper right',  # bbox_to_anchor=(0.475, -0.575),
+    #     ncol=1, fancybox=True, shadow=True)
+
+    make_subplot_labels(axes.flatten())
+
+    plt.sca(axes.flatten()[-2])
+    plt.xlabel('Stratiform Offset Category')
+    plt.sca(axes.flatten()[-1])
+    plt.xlabel('Stratiform Offset Category')
+
+    axes.flatten()[-2].legend(
+        loc='lower center', bbox_to_anchor=(1.1, -0.6),
+        ncol=5, fancybox=True, shadow=True)
+
+    plt.savefig(
+        fig_dir + 'pope_breakdown_radar.png', dpi=200, facecolor='w',
+        edgecolor='white', bbox_inches='tight')
+
+
 def monsoon_comparison(
-        class_df=None, fig=None, ax=None, legend=True, title=''):
+        class_df=None, fig=None, ax=None, legend=True, title='',
+        required_types=None, titles=None, colors=None):
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
     if class_df is None:
         class_path = base_dir + 'TINT_tracks/'
         class_path += 'base_classes.pkl'
         with open(class_path, 'rb') as f:
             class_df = pickle.load(f)
-    fig_dir = base_dir + 'TINT_figures/'
 
     if fig is None or ax is None:
         fig, ax = plt.subplots(1, 1, figsize=(5, 3))
 
-    prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
-    colors = [colors[i] for i in [0, 1, 2, 4]]
+    if colors is None:
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        colors = prop_cycle.by_key()['color']
+        colors = [colors[i] for i in [0, 1, 2, 4]]
 
     counts_df = pd.DataFrame({'count': class_df.value_counts()})
     counts_df = counts_df.reset_index('pope_regime')
@@ -1197,14 +1270,34 @@ def monsoon_comparison(
     counts_df = counts_df.groupby([
         'offset_type', 'inflow_type',
         'tilt_dir', 'prop_dir', 'pope_regime']).sum()
-    counts_df = counts_df.drop('Not Classified', level='pope_regime')
+    try:
+        counts_df = counts_df.drop('Not Classified', level='pope_regime')
+    except KeyError:
+        print('No unclassified regime cases.')
 
     counts_df_inactive = counts_df.xs('Weak Monsoon', level='pope_regime')
     counts_df_active = counts_df.xs('Active Monsoon', level='pope_regime')
 
-    [
-        total, FFTS_UST_DSP, FFLS_DST_DSP,
-        FFTS_DST_USP, RFTS_UST_USP] = [[] for i in range(5)]
+    if required_types is None:
+        required_types = [
+            (
+                'Trailing Stratiform', 'Front Fed',
+                'Up-Shear Tilted', 'Down-Shear Propagating'),
+            (
+                'Leading Stratiform', 'Front Fed',
+                'Down-Shear Tilted', 'Down-Shear Propagating'),
+            (
+                'Trailing Stratiform', 'Front Fed',
+                'Down-Shear Tilted', 'Up-Shear Propagating'),
+            (
+                'Trailing Stratiform', 'Rear Fed',
+                'Up-Shear Tilted', 'Up-Shear Propagating')]
+        titles = [
+            'FFTS UST DSP', 'FFLS DST DSP', 'FFTS DST USP',
+            'RFTS UST USP']
+
+    total = []
+    types = [[] for i in range(len(required_types))]
 
     for c_df in [counts_df, counts_df_inactive, counts_df_active]:
 
@@ -1219,21 +1312,6 @@ def monsoon_comparison(
         c_df = c_df.drop('Perpendicular Shear', level='prop_dir')
         c_df = c_df.drop('Ambiguous', level='prop_dir')
 
-        required_types = [
-            (
-                'Trailing Stratiform', 'Front Fed',
-                'Up-Shear Tilted', 'Down-Shear Propagating'),
-            (
-                'Leading Stratiform', 'Front Fed',
-                'Down-Shear Tilted', 'Down-Shear Propagating'),
-            (
-                'Trailing Stratiform', 'Front Fed',
-                'Down-Shear Tilted', 'Up-Shear Propagating'),
-            (
-                'Trailing Stratiform', 'Rear Fed',
-                'Up-Shear Tilted', 'Up-Shear Propagating')]
-
-        # import pdb; pdb.set_trace()
         for sys_type in required_types:
             if sys_type not in c_df.index.values.tolist():
                 c_df.loc[sys_type, 'count'] = 0
@@ -1247,16 +1325,14 @@ def monsoon_comparison(
 
         total.append(int(c_df['count'].sum()))
 
-        FFTS_UST_DSP.append(c_df.loc[required_types[0], 'ratio'])
-        FFLS_DST_DSP.append(c_df.loc[required_types[1], 'ratio'])
-        FFTS_DST_USP.append(c_df.loc[required_types[2], 'ratio'])
-        RFTS_UST_USP.append(c_df.loc[required_types[3], 'ratio'])
+        for i in range(len(required_types)):
+            types[i].append(c_df.loc[required_types[i], 'ratio'])
 
     categories = ['All', 'Weak Monsoon', 'Active Monsoon']
-    ratios_df = pd.DataFrame({
-        'Wet Season Regime': categories, 'FFTS UST DSP': FFTS_UST_DSP,
-        'FFLS DST DSP': FFLS_DST_DSP, 'FFTS DST USP': FFTS_DST_USP,
-        'RFTS UST USP': RFTS_UST_USP})
+    ratios_dict = {'Wet Season Regime': categories}
+    for i in range(len(required_types)):
+        ratios_dict[titles[i]] = types[i]
+    ratios_df = pd.DataFrame(ratios_dict)
     ratios_df = ratios_df.set_index('Wet Season Regime')
 
     ratios_df.plot(
