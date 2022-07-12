@@ -276,7 +276,7 @@ def set_ticks(ax1, ax2, maximum_count, leg_columns=3, legend=True):
     plt.sca(ax1)
     plt.xticks(np.arange(30, 310, 30))
     plt.ylabel('Count [-]')
-    plt.xlabel('Time since Initiation [m]')
+    plt.xlabel('Time since Detection [min]')
 
     handles, labels = ax1.get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
@@ -298,7 +298,7 @@ def set_ticks(ax1, ax2, maximum_count, leg_columns=3, legend=True):
     ax2.set_yticks(np.arange(0, 1.05, 0.05), minor=True)
 
     plt.ylabel('Ratio [-]')
-    plt.xlabel('Time since Initiation [m]')
+    plt.xlabel('Time since Detection [min]')
     plt.setp(ax2.lines, linewidth=1.75)
 
     ax1.grid(which='major', alpha=0.5, axis='both')
@@ -391,6 +391,8 @@ def plot_offsets(
         x, (LS/offset_totals).loc[x],
         label='Leading Stratiform', color=colors[1], linestyle=linestyle)
 
+    ax2.plot([180, 180], [0, 1], '--', color='gray')
+
     set_ticks(
         ax1, ax2, max(np.max(offset_totals.loc[x].values), maximum),
         legend=legend)
@@ -460,6 +462,8 @@ def plot_relative_offsets(
         x, (LS/offset_totals).loc[x],
         label='Relative Leading Stratiform', color=colors[1],
         linestyle=linestyle)
+
+    ax2.plot([120, 120], [0, 1], '--', color='gray')
 
     set_ticks(
         ax1, ax2, max(np.max(offset_totals.loc[x].values), maximum),
@@ -532,6 +536,8 @@ def plot_inflows(
         ax1, ax2, max(np.max(inflow_totals.loc[x].values), maximum),
         legend=legend)
 
+    ax2.plot([120, 120], [0, 1], '--', color='gray')
+
     totals = [y.loc[x].sum() for y in [FF, RF, LeF, RiF, A, inflow_totals]]
     return totals
 
@@ -583,6 +589,9 @@ def plot_tilts(
     ax2.plot(
         x, (SP/tilt_totals).loc[x], label='Ambiguous', color=colors[5],
         linestyle=linestyle)
+
+    ax2.plot([210, 210], [0, 1], '--', color='gray')
+
     set_ticks(
         ax1, ax2, max(np.max(tilt_totals.loc[x].values), maximum),
         leg_columns=2, legend=legend)
@@ -639,6 +648,8 @@ def plot_propagations(
     ax2.plot(
         x, (SP/prop_totals).loc[x], label='Shear Perpendicular',
         color=colors[5], linestyle=linestyle)
+
+    ax2.plot([210, 210], [0, 1], '--', color='gray')
 
     set_ticks(
         ax1, ax2, max(np.max(prop_totals.loc[x].values), maximum),
@@ -1254,7 +1265,7 @@ def monsoon_comparison(
     if colors is None:
         prop_cycle = plt.rcParams['axes.prop_cycle']
         colors = prop_cycle.by_key()['color']
-        colors = [colors[i] for i in [0, 1, 2, 4]]
+        colors = [colors[i] for i in [0, 1, 2, 4, 6, 7, 8, 5]]
 
     counts_df = pd.DataFrame({'count': class_df.value_counts()})
     counts_df = counts_df.reset_index('pope_regime')
@@ -1291,13 +1302,32 @@ def monsoon_comparison(
                 'Down-Shear Tilted', 'Up-Shear Propagating'),
             (
                 'Trailing Stratiform', 'Rear Fed',
-                'Up-Shear Tilted', 'Up-Shear Propagating')]
+                'Up-Shear Tilted', 'Up-Shear Propagating'),
+            (
+                'Trailing Stratiform', 'Parallel Fed (Left)',
+                'Up-Shear Tilted', 'Down-Shear Propagating'),
+            (
+                'Parallel Stratiform (Left)', 'Parallel Fed (Left)',
+                'Down-Shear Tilted', 'Down-Shear Propagating'),
+            (
+                'Trailing Stratiform', 'Rear Fed',
+                'Down-Shear Tilted', 'Down-Shear Propagating')]
         titles = [
-            'FFTS UST DSP', 'FFLS DST DSP', 'FFTS DST USP',
-            'RFTS UST USP']
+            'Type I: Front-Fed Trailing Stratiform, Up-Shear Tilted, Down-Shear Propagating',
+            'Type II: Front-Fed Leading Stratiform, Down-Shear Tilted, Down-Shear Propagating',
+            'Type III: Front-Fed Trailing Stratiform, Down-Shear Tilted, Up-Shear Propagating',
+            'Type IV: Rear-Fed Trailing Stratiform, Up-Shear Tilted, Up-Shear Propagating',
+            'Type V: Left-Fed Trailing Stratiform, Up-Shear Tilted, Down-Shear Propagating',
+            'Type VI: Left-Fed Left-Stratiform, Down-Shear Tilted, Down-Shear Propagating',
+            'Type VII: Rear-Fed Trailing Stratiform, Down-Shear Tilted, Down-Shear Propagating',
+            'All Other Types']
+
+        titles = [
+            'Type I', 'Type II', 'Type III', 'Type IV', 'Type V', 'Type VI',
+            'Type VII', 'All Other Types']
 
     total = []
-    types = [[] for i in range(len(required_types))]
+    types = [[] for i in range(len(required_types)+1)]
 
     for c_df in [counts_df, counts_df_inactive, counts_df_active]:
 
@@ -1328,16 +1358,20 @@ def monsoon_comparison(
         for i in range(len(required_types)):
             types[i].append(c_df.loc[required_types[i], 'ratio'])
 
+        types[-1].append(
+            1 - c_df.loc[[rt for rt in required_types]]['ratio'].sum())
+
     categories = ['All', 'Weak Monsoon', 'Active Monsoon']
     ratios_dict = {'Wet Season Regime': categories}
     for i in range(len(required_types)):
         ratios_dict[titles[i]] = types[i]
+    ratios_dict[titles[-1]] = types[-1]
     ratios_df = pd.DataFrame(ratios_dict)
     ratios_df = ratios_df.set_index('Wet Season Regime')
 
     ratios_df.plot(
         kind='bar', stacked=False, rot=0, fontsize=12, ax=ax,
-        yticks=np.arange(0, 1.1, 0.1), width=0.6*4/4,
+        yticks=np.arange(0, 1.1, 0.1), width=0.65*4/4,
         color=colors, legend=False)
     ax.set_xlabel(None)
     # ax.xaxis.set_label_coords(.5, -0.15)

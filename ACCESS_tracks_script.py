@@ -9,7 +9,7 @@ parser.add_argument(
     '--radar', '-r', type=int, default=63,
     help='radar domain to get tracks for')
 parser.add_argument(
-    '--year', '-y', type=int, default=63,
+    '--year', '-y', type=int, default=2020,
     help='radar domain to get tracks for')
 
 args = parser.parse_args()

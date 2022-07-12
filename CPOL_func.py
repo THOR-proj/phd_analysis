@@ -160,7 +160,7 @@ def get_ACCESS_season(
         save_dir = '/g/data/w40/esh563/TINT_tracks/'
 
     common_times = np.loadtxt(
-        '/home/563/esh563/CPOL_analysis/ACCESS_radar_common_times.csv',
+        '/g/data/w40/esh563/ACCESS_radar_common_times.csv',
         dtype=str).astype(np.datetime64)
 
     start = np.datetime64('{}-10-01T00:00:00'.format(year))
