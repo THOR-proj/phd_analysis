@@ -4,8 +4,10 @@ import pandas as pd
 import pickle
 import pyart
 import sys
-sys.path.insert(0, '/home/563/esh563/TINT')
 import tint
+import matplotlib.pyplot as plt
+import datetime
+sys.path.insert(0, '/home/563/esh563/TINT')
 
 
 def CPOL_files_from_datetime_list(datetimes, base_dir=None):
@@ -251,6 +253,60 @@ def get_oper_month(
     return tracks_obj
 
 
+def gen_ACCESS_verification_figures(save_dir, fig_dir, radar=63, year=2020):
+
+    path = save_dir + 'ACCESS_{}/{}1001_{}0501.pkl'.format(
+        radar, year, year+1)
+    with open(path, 'rb') as f:
+        tracks_obj = pickle.load(f)
+
+    start_time = np.datetime64('{}-10-01T00:00:00'.format(year))
+    end_time = np.datetime64('{}-05-01T00:00:00'.format(year+1))
+
+    exclusions = [
+        'small_area', 'large_area', 'intersect_border',
+        'intersect_border_convective', 'duration_cond',
+        'small_velocity', 'small_offset']
+
+    excluded = tracks_obj.exclusions[exclusions]
+    excluded = excluded.xs(0, level='level')
+    excluded = np.any(excluded, 1)
+    # excluded = excluded.where(excluded==False).dropna()
+    # len(excluded)/3
+
+    included = np.logical_not(excluded)
+    included = included.where(included==True).dropna()
+    scans = included.loc[:, slice(start_time, end_time), :]
+    scans = sorted(np.unique(scans.index.get_level_values(1).values))
+
+    for s in scans[0:2]:
+
+        ACCESS_refl, grid = tint.process_ACCESS.init_ACCESS_C(
+            s, tracks_obj.reference_grid, gadi=False)
+
+        current_time = str(datetime.datetime.now())[0:-7]
+        current_time = current_time.replace(" ", "_").replace(":", "_")
+        current_time = current_time.replace("-", "")
+
+        params = {
+            'uid_ind': None, 'line_coords': False, 'center_cell': False,
+            'cell_ind': 10, 'winds': False, 'winds_fn': None,
+            'crosshair': True, 'fontsize': 18, 'colorbar_flag': True,
+            'leg_loc': 2, 'label_type': 'velocities',
+            'system_winds': ['shift', 'ambient_mean', 'relative'],
+            'boundary': True}
+
+        tint.visualisation.figures.two_level(
+            tracks_obj, grid, params=params, alt1=0, alt2=1)
+        save_path = fig_dir + '/ACCESS_{}_{}_verification_scans/{}.png'.format(
+            radar, year, s)
+        plt.savefig(
+            save_path, dpi=200, facecolor='w', edgecolor='white',
+            bbox_inches='tight')
+    #     plt.show()
+        plt.close('all')
+
+
 def combine_tracks(years=list(range(1998, 2016)), base_dir=None):
     if base_dir is None:
         base_dir = '/home/student.unimelb.edu.au/shorte1/'
@@ -299,22 +355,6 @@ def combine_tracks(years=list(range(1998, 2016)), base_dir=None):
         sys_uids += max_uid
         class_uids += max_uid
         excl_uids += max_uid
-
-        # import pdb; pdb.set_trace()
-
-        # # Fix tracks merger values
-        # for i in range(len(tracks_obj.tracks)):
-        #     m_uid = tracks_obj.tracks.mergers.values[i]
-        #     new_m_uid = np.array(list(m_uid)).astype(int) + max_uid
-        #     new_m_uid = set(new_m_uid.astype(str).tolist())
-        #     tracks_obj.tracks.mergers.values[i] = new_m_uid
-        #
-        # # Fix system_tracks merger values
-        # for i in range(len(tracks_obj.system_tracks)):
-        #     m_uid = tracks_obj.system_tracks.mergers.values[i]
-        #     new_m_uid = np.array(list(m_uid)).astype(int) + max_uid
-        #     new_m_uid = set(new_m_uid.astype(str).tolist())
-        #     tracks_obj.system_tracks.mergers.values[i] = new_m_uid
 
         max_uid = uids.max()+1
 
