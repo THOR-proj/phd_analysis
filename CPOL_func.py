@@ -4,7 +4,7 @@ import pandas as pd
 import pickle
 import pyart
 import sys
-sys.path.insert(0, '/home/563/esh563/TINT/visualisation')
+sys.path.insert(0, '/home/563/esh563/TINT/tint/visualisation')
 sys.path.insert(0, '/home/563/esh563/TINT')
 import tint
 import matplotlib.pyplot as plt
