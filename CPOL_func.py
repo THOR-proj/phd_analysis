@@ -4,10 +4,10 @@ import pandas as pd
 import pickle
 import pyart
 import sys
+sys.path.insert(0, '/home/563/esh563/TINT')
 import tint
 import matplotlib.pyplot as plt
 import datetime
-sys.path.insert(0, '/home/563/esh563/TINT')
 
 
 def CPOL_files_from_datetime_list(datetimes, base_dir=None):
