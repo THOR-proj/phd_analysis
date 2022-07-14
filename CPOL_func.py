@@ -297,7 +297,7 @@ def gen_ACCESS_verification_figures(save_dir, fig_dir, radar=63, year=2020):
             'system_winds': ['shift', 'ambient_mean', 'relative'],
             'boundary': True}
 
-        tint.visualisation.figures.two_level(
+        figures.two_level(
             tracks_obj, grid, params=params, alt1=0, alt2=1)
         save_path = fig_dir + '/ACCESS_{}_{}_verification_scans/{}.png'.format(
             radar, year, s)
