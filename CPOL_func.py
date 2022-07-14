@@ -282,7 +282,7 @@ def gen_ACCESS_verification_figures(save_dir, fig_dir, radar=63, year=2020):
     for s in scans:
 
         ACCESS_refl, grid = tint.process_ACCESS.init_ACCESS_C(
-            s, tracks_obj.reference_grid, gadi=False)
+            s, tracks_obj.reference_grid, gadi=True)
 
         current_time = str(datetime.datetime.now())[0:-7]
         current_time = current_time.replace(" ", "_").replace(":", "_")
