@@ -10,6 +10,7 @@ from tint.visualisation import figures
 import matplotlib.pyplot as plt
 import datetime
 import tempfile
+import shutil
 
 
 def CPOL_files_from_datetime_list(datetimes, base_dir=None):
@@ -312,7 +313,7 @@ def gen_ACCESS_verification_figures(save_dir, fig_dir, radar=63, year=2020):
 def gen_operational_verification_figures(
         save_dir, fig_dir, radar=63, year=2020, month=10):
 
-    path = save_dir + 'radar_{}/{}_{}_{}.pkl'.format(
+    path = save_dir + 'radar_{}/{}_{}_{:02}.pkl'.format(
         radar, radar, year, month)
     with open(path, 'rb') as f:
         tracks_obj = pickle.load(f)
@@ -340,8 +341,8 @@ def gen_operational_verification_figures(
     for s in scans:
 
         grid, file_list = tint.process_operational_radar.get_grid(
-            s, tracks_obj.params,
-            tracks_obj.reference_grid, tmp_dir, file_list)
+            s, tracks_obj.params, tracks_obj.reference_grid,
+            tmp_dir, file_list)
 
         current_time = str(datetime.datetime.now())[0:-7]
         current_time = current_time.replace(" ", "_").replace(":", "_")
@@ -363,6 +364,8 @@ def gen_operational_verification_figures(
             save_path, dpi=200, facecolor='w', edgecolor='white',
             bbox_inches='tight')
         plt.close('all')
+
+    shutil.rmtree(tmp_dir)
 
 
 def combine_tracks(years=list(range(1998, 2016)), base_dir=None):
