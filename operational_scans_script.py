@@ -9,7 +9,7 @@ parser.add_argument(
     help='year to generate verification scans for')
 
 parser.add_argument(
-    '--year', '-m', type=int, default=2020,
+    '--month', '-m', type=int, default=10,
     help='month to generate verification scans for')
 
 parser.add_argument(
