@@ -311,59 +311,67 @@ def gen_ACCESS_verification_figures(save_dir, fig_dir, radar=63, year=2020):
 
 
 def gen_operational_verification_figures(
-        save_dir, fig_dir, radar=63, year=2020, month=10):
+        save_dir, fig_dir, radar=63, year=2020):
 
-    path = save_dir + 'radar_{}/{}_{}_{:02}.pkl'.format(
-        radar, radar, year, month)
-    with open(path, 'rb') as f:
-        tracks_obj = pickle.load(f)
+    years_months = [
+        [year, 10], [year, 11], [year, 12],
+        [year+1, 1], [year+1, 2], [year+1, 3],
+        [year+1, 4]]
 
-    exclusions = [
-        'small_area', 'large_area', 'intersect_border',
-        'intersect_border_convective', 'duration_cond',
-        'small_velocity', 'small_offset']
+    for year_month in years_months:
 
-    excluded = tracks_obj.exclusions[exclusions]
-    excluded = excluded.xs(0, level='level')
-    excluded = np.any(excluded, 1)
-    # excluded = excluded.where(excluded==False).dropna()
-    # len(excluded)/3
+        path = save_dir + 'radar_{}/{}_{}_{:02}.pkl'.format(
+            radar, radar, year_month[0], year_month[1])
+        with open(path, 'rb') as f:
+            tracks_obj = pickle.load(f)
 
-    included = np.logical_not(excluded)
-    included = included.where(included==True).dropna()
-    scans = included
-    scans = sorted(np.unique(scans.index.get_level_values(1).values))
+        exclusions = [
+            'small_area', 'large_area', 'intersect_border',
+            'intersect_border_convective', 'duration_cond',
+            'small_velocity', 'small_offset']
 
-    file_list = None
-    tmp_dir = tempfile.mkdtemp(dir=save_dir)
-    tracks_obj.params['REMOTE'] = True
+        excluded = tracks_obj.exclusions[exclusions]
+        excluded = excluded.xs(0, level='level')
+        excluded = np.any(excluded, 1)
+        # excluded = excluded.where(excluded==False).dropna()
+        # len(excluded)/3
 
-    for s in scans:
+        included = np.logical_not(excluded)
+        included = included.where(included==True).dropna()
+        scans = included
+        scans = sorted(np.unique(scans.index.get_level_values(1).values))
 
-        grid, file_list = tint.process_operational_radar.get_grid(
-            s, tracks_obj.params, tracks_obj.reference_grid,
-            tmp_dir, file_list)
+        file_list = None
+        tmp_dir = tempfile.mkdtemp(dir=save_dir)
+        tracks_obj.params['REMOTE'] = True
 
-        current_time = str(datetime.datetime.now())[0:-7]
-        current_time = current_time.replace(" ", "_").replace(":", "_")
-        current_time = current_time.replace("-", "")
+        for s in scans:
 
-        params = {
-            'uid_ind': None, 'line_coords': False, 'center_cell': False,
-            'cell_ind': 10, 'winds': False, 'winds_fn': None,
-            'crosshair': True, 'fontsize': 18, 'colorbar_flag': True,
-            'leg_loc': 2, 'label_type': 'velocities',
-            'system_winds': ['shift', 'ambient_mean', 'relative'],
-            'boundary': True}
+            grid, file_list = tint.process_operational_radar.get_grid(
+                s, tracks_obj.params, tracks_obj.reference_grid,
+                tmp_dir, file_list)
 
-        figures.two_level(
-            tracks_obj, grid, params=params, alt1=1000, alt2='col_max')
-        save_path = fig_dir + '/radar_{}_{}_verification_scans/{}.png'.format(
-            radar, year, s)
-        plt.savefig(
-            save_path, dpi=200, facecolor='w', edgecolor='white',
-            bbox_inches='tight')
-        plt.close('all')
+            current_time = str(datetime.datetime.now())[0:-7]
+            current_time = current_time.replace(" ", "_").replace(":", "_")
+            current_time = current_time.replace("-", "")
+
+            params = {
+                'uid_ind': None, 'line_coords': False, 'center_cell': False,
+                'cell_ind': 10, 'winds': False, 'winds_fn': None,
+                'crosshair': True, 'fontsize': 18, 'colorbar_flag': True,
+                'leg_loc': 2, 'label_type': 'velocities',
+                'system_winds': ['shift', 'ambient_mean', 'relative'],
+                'boundary': True}
+
+            figures.two_level(
+                tracks_obj, grid, params=params, alt1=1000, alt2='col_max')
+            save_path = fig_dir
+            save_path += '/radar_{}_{}_verification_scans/{}.png'.format(
+                radar, year, s)
+            plt.savefig(
+                save_path, dpi=200, facecolor='w', edgecolor='white',
+                bbox_inches='tight')
+            plt.close('all')
 
     shutil.rmtree(tmp_dir)
 
