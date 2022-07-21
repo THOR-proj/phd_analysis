@@ -336,7 +336,8 @@ def gen_operational_verification_figures(
         included = np.logical_not(excluded)
         included = included.where(included==True).dropna()
         scans = included
-        scans = sorted(np.unique(tracks_obj.index.get_level_values(1).values))
+        scans = sorted(np.unique(
+            tracks_obj.tracks.index.get_level_values(1).values))
 
         file_list = None
         tmp_dir = tempfile.mkdtemp(dir=save_dir)
