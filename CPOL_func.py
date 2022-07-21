@@ -325,10 +325,7 @@ def gen_operational_verification_figures(
         with open(path, 'rb') as f:
             tracks_obj = pickle.load(f)
 
-        exclusions = [
-            'small_area', 'large_area', 'intersect_border',
-            'intersect_border_convective', 'duration_cond',
-            'small_velocity', 'small_offset']
+        exclusions = ['duration_cond']
 
         excluded = tracks_obj.exclusions[exclusions]
         excluded = excluded.xs(0, level='level')
