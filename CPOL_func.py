@@ -325,7 +325,7 @@ def gen_operational_verification_figures(
         with open(path, 'rb') as f:
             tracks_obj = pickle.load(f)
 
-        exclusions = ['duration_cond']
+        exclusions = ['simple_duration_cond']
 
         excluded = tracks_obj.exclusions[exclusions]
         excluded = excluded.xs(0, level='level')
@@ -336,8 +336,7 @@ def gen_operational_verification_figures(
         included = np.logical_not(excluded)
         included = included.where(included==True).dropna()
         scans = included
-        scans = sorted(np.unique(
-            tracks_obj.tracks.index.get_level_values(1).values))
+        scans = sorted(np.unique(scans.index.get_level_values(1).values))
 
         file_list = None
         tmp_dir = tempfile.mkdtemp(dir=save_dir)
@@ -356,10 +355,10 @@ def gen_operational_verification_figures(
             params = {
                 'uid_ind': None, 'line_coords': False, 'center_cell': False,
                 'cell_ind': 10, 'winds': False, 'winds_fn': None,
-                'crosshair': True, 'fontsize': 18, 'colorbar_flag': True,
+                'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
                 'leg_loc': 2, 'label_type': 'velocities',
                 'system_winds': ['shift', 'ambient_mean', 'relative'],
-                'boundary': True}
+                'boundary': True, 'exclude': False}
 
             figures.two_level(
                 tracks_obj, grid, params=params, alt1=1000, alt2='col_max')
