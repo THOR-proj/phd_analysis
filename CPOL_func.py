@@ -302,7 +302,7 @@ def gen_ACCESS_verification_figures(
         params = {
             'uid_ind': None, 'line_coords': False, 'center_cell': False,
             'cell_ind': 10, 'winds': False, 'winds_fn': None,
-            'crosshair': True, 'fontsize': 18, 'colorbar_flag': True,
+            'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
             'leg_loc': 2, 'label_type': 'velocities',
             'system_winds': ['shift', 'ambient_mean', 'relative'],
             'boundary': True, 'exclude': exclude}
