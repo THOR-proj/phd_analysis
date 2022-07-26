@@ -311,12 +311,19 @@ def gen_ACCESS_verification_figures(save_dir, fig_dir, radar=63, year=2020):
 
 
 def gen_operational_verification_figures(
-        save_dir, fig_dir, radar=63, year=2020):
+        save_dir, fig_dir, radar=63, year=2020, exclusions=None, suffix='',
+        start_date=None, end_date=None):
 
     years_months = [
         [year, 10], [year, 11], [year, 12],
         [year+1, 1], [year+1, 2], [year+1, 3],
         [year+1, 4]]
+
+    if exclusions is None:
+        exclusions = [
+            'small_area', 'large_area', 'intersect_border',
+            'intersect_border_convective', 'duration_cond',
+            'small_velocity', 'small_offset']
 
     for year_month in years_months:
 
@@ -324,11 +331,6 @@ def gen_operational_verification_figures(
             radar, radar, year_month[0], year_month[1])
         with open(path, 'rb') as f:
             tracks_obj = pickle.load(f)
-
-        exclusions = [
-            'small_area', 'large_area', 'intersect_border',
-            'intersect_border_convective', 'duration_cond',
-            'small_velocity', 'small_offset']
 
         excluded = tracks_obj.exclusions[exclusions]
         excluded = excluded.xs(0, level='level')
@@ -339,6 +341,8 @@ def gen_operational_verification_figures(
         included = np.logical_not(excluded)
         included = included.where(included==True).dropna()
         scans = included
+        if start_date is not None and end_date is not None:
+            scans = scans.sel(time=slice(start_date, end_date))
         scans = sorted(np.unique(scans.index.get_level_values(1).values))
 
         file_list = None
@@ -366,8 +370,8 @@ def gen_operational_verification_figures(
             figures.two_level(
                 tracks_obj, grid, params=params, alt1=1000, alt2='col_max')
             save_path = fig_dir
-            save_path += '/radar_{}_{}_verification_scans/{}.png'.format(
-                radar, year, s)
+            save_path += '/radar_{}_{}_verification_scans{}/{}.png'.format(
+                radar, year, suffix, s)
             plt.savefig(
                 save_path, dpi=200, facecolor='w', edgecolor='white',
                 bbox_inches='tight')
