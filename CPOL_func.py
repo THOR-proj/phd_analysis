@@ -258,20 +258,22 @@ def get_oper_month(
     return tracks_obj
 
 
-def gen_ACCESS_verification_figures(save_dir, fig_dir, radar=63, year=2020):
+def gen_ACCESS_verification_figures(
+        save_dir, fig_dir, radar=63, year=2020, exclusions=None, suffix='',
+        start_date=None, end_date=None, exclude=True):
 
     path = save_dir + 'ACCESS_{}/{}1001_{}0501.pkl'.format(
         radar, year, year+1)
     with open(path, 'rb') as f:
         tracks_obj = pickle.load(f)
 
-    start_time = np.datetime64('{}-10-01T00:00:00'.format(year))
-    end_time = np.datetime64('{}-05-01T00:00:00'.format(year+1))
+    tracks_obj = cl.redo_exclusions(tracks_obj)
 
-    exclusions = [
-        'small_area', 'large_area', 'intersect_border',
-        'intersect_border_convective', 'duration_cond',
-        'small_velocity', 'small_offset']
+    if exclusions is None:
+        exclusions = [
+            'small_area', 'large_area', 'intersect_border',
+            'intersect_border_convective', 'duration_cond',
+            'small_velocity', 'small_offset']
 
     excluded = tracks_obj.exclusions[exclusions]
     excluded = excluded.xs(0, level='level')
@@ -281,7 +283,11 @@ def gen_ACCESS_verification_figures(save_dir, fig_dir, radar=63, year=2020):
 
     included = np.logical_not(excluded)
     included = included.where(included==True).dropna()
-    scans = included.loc[:, slice(start_time, end_time), :]
+    scans = included
+
+    if start_date is not None and end_date is not None:
+        scans = scans.loc[:, slice(start_date, end_date), :, :]
+
     scans = sorted(np.unique(scans.index.get_level_values(1).values))
 
     for s in scans:
@@ -299,12 +305,12 @@ def gen_ACCESS_verification_figures(save_dir, fig_dir, radar=63, year=2020):
             'crosshair': True, 'fontsize': 18, 'colorbar_flag': True,
             'leg_loc': 2, 'label_type': 'velocities',
             'system_winds': ['shift', 'ambient_mean', 'relative'],
-            'boundary': True}
+            'boundary': True, 'exclude': exclude}
 
         figures.two_level(
             tracks_obj, grid, params=params, alt1=0, alt2=1)
-        save_path = fig_dir + '/ACCESS_{}_{}_verification_scans/{}.png'.format(
-            radar, year, s)
+        save_path = fig_dir + '/ACCESS_{}_{}_verification_scans{}/{}.png'.format(
+            radar, year, suffix, s)
         plt.savefig(
             save_path, dpi=200, facecolor='w', edgecolor='white',
             bbox_inches='tight')
