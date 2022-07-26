@@ -5,12 +5,14 @@ import pickle
 import pyart
 import sys
 sys.path.insert(0, '/home/563/esh563/TINT')
+sys.path.insert(0, '/home/563/esh563/CPOL_analysis')
 import tint
 from tint.visualisation import figures
 import matplotlib.pyplot as plt
 import datetime
 import tempfile
 import shutil
+import classification as cl
 
 
 def CPOL_files_from_datetime_list(datetimes, base_dir=None):
@@ -312,7 +314,7 @@ def gen_ACCESS_verification_figures(save_dir, fig_dir, radar=63, year=2020):
 
 def gen_operational_verification_figures(
         save_dir, fig_dir, radar=63, year=2020, exclusions=None, suffix='',
-        start_date=None, end_date=None):
+        start_date=None, end_date=None, exclude=True):
 
     years_months = [
         [year, 10], [year, 11], [year, 12],
@@ -332,6 +334,8 @@ def gen_operational_verification_figures(
         with open(path, 'rb') as f:
             tracks_obj = pickle.load(f)
 
+        tracks_obj = cl.redo_exclusions(tracks_obj)
+
         excluded = tracks_obj.exclusions[exclusions]
         excluded = excluded.xs(0, level='level')
         excluded = np.any(excluded, 1)
@@ -342,7 +346,7 @@ def gen_operational_verification_figures(
         included = included.where(included==True).dropna()
         scans = included
         if start_date is not None and end_date is not None:
-            scans = scans.sel(time=slice(start_date, end_date))
+            scans = scans.loc[:, slice(start_date, end_date), :, :]
         scans = sorted(np.unique(scans.index.get_level_values(1).values))
 
         file_list = None
@@ -365,7 +369,7 @@ def gen_operational_verification_figures(
                 'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
                 'leg_loc': 2, 'label_type': 'velocities',
                 'system_winds': ['shift', 'ambient_mean', 'relative'],
-                'boundary': True, 'exclude': False}
+                'boundary': True, 'exclude': exclude}
 
             figures.two_level(
                 tracks_obj, grid, params=params, alt1=1000, alt2='col_max')

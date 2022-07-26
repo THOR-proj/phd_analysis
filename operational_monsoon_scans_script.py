@@ -21,6 +21,6 @@ fig_dir = '/g/data/w40/esh563/TINT_figures/'
 print('Getting year {}'.format(args.year))
 cf.gen_operational_verification_figures(
     save_dir, fig_dir, radar=args.radar,
-    year=2020, exclusions=['simple_duraction_cond'],
+    year=2020, exclusions=['simple_duration_cond'],
     suffix='_monsoon', start_date=np.datetime64('2021-01-24'),
-    end_date=np.datetime64('2021-02-01'))
+    end_date=np.datetime64('2021-02-01'), exclude=False)
