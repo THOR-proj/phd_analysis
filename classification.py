@@ -41,11 +41,11 @@ def add_monsoon_regime(tracks_obj, base_dir=None, fake_pope=False):
     return tracks_obj
 
 
-def init_fonts():
+def init_fonts(fontsize=12):
     rcParams.update({'font.family': 'serif'})
     rcParams.update({'font.serif': 'Liberation Serif'})
     rcParams.update({'mathtext.fontset': 'dejavuserif'})
-    rcParams.update({'font.size': 12})
+    rcParams.update({'font.size': fontsize})
 
 
 def load_year(year, tracks_dir='base'):
