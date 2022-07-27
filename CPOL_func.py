@@ -260,7 +260,7 @@ def get_oper_month(
 
 def gen_ACCESS_verification_figures(
         save_dir, fig_dir, radar=63, year=2020, exclusions=None, suffix='',
-        start_date=None, end_date=None, exclude=True):
+        start_date=None, end_date=None):
 
     path = save_dir + 'ACCESS_{}/{}1001_{}0501.pkl'.format(
         radar, year, year+1)
@@ -305,7 +305,7 @@ def gen_ACCESS_verification_figures(
             'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
             'leg_loc': 2, 'label_type': 'velocities',
             'system_winds': ['shift', 'ambient_mean', 'relative'],
-            'boundary': True, 'exclude': exclude}
+            'boundary': True, 'exclude': True, 'exclusions': exclusions}
 
         figures.two_level(
             tracks_obj, grid, params=params, alt1=0, alt2=1)
@@ -320,7 +320,7 @@ def gen_ACCESS_verification_figures(
 
 def gen_operational_verification_figures(
         save_dir, fig_dir, radar=63, year=2020, exclusions=None, suffix='',
-        start_date=None, end_date=None, exclude=True):
+        start_date=None, end_date=None):
 
     years_months = [
         [year, 10], [year, 11], [year, 12],
@@ -375,7 +375,7 @@ def gen_operational_verification_figures(
                 'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
                 'leg_loc': 2, 'label_type': 'velocities',
                 'system_winds': ['shift', 'ambient_mean', 'relative'],
-                'boundary': True, 'exclude': exclude}
+                'boundary': True, 'exclude': True, 'exclusions': exclusions}
 
             figures.two_level(
                 tracks_obj, grid, params=params, alt1=1000, alt2='col_max')
