@@ -22,5 +22,5 @@ print('Getting year {}'.format(args.year))
 cf.gen_ACCESS_verification_figures(
     save_dir, fig_dir, radar=args.radar,
     year=2020, exclusions=['simple_duration_cond'],
-    suffix='_monsoon', start_date=np.datetime64('2021-01-24'),
-    end_date=np.datetime64('2021-02-01'))
+    suffix='_monsoon_alt', start_date=np.datetime64('2021-02-06'),
+    end_date=np.datetime64('2021-02-13'))
