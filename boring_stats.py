@@ -23,6 +23,7 @@ def get_boring_radar_stats(
     v_shift = []
     orientation = []
     eccentricity = []
+    offset_mag = []
 
     count = 0
     system_count = 0
@@ -71,6 +72,17 @@ def get_boring_radar_stats(
                     conv_area += list(sub_tracks_conv['proj_area'].values)
                     strat_area += list(sub_tracks_strat['proj_area'].values)
 
+                    # x_offset = tracks_obj.system_tracks['x_vert_disp']
+                    # y_offset = tracks_obj.system_tracks['y_vert_disp']
+                    # offset_mag = np.sqrt(x_offset**2 + y_offset**2).values
+
+                    pos_0 = sub_tracks_conv[['grid_x', 'grid_y']]
+                    pos_1 = sub_tracks_strat[['grid_x', 'grid_y']]
+                    mag = pos_1-pos_0
+                    mag_num = np.sqrt(
+                        mag['grid_x'].values**2 + mag['grid_y'].values**2)
+                    offset_mag += list(mag_num)
+
                     u_shift += list(sub_tracks_conv['u_shift'].values)
                     v_shift += list(sub_tracks_conv['v_shift'].values)
                     orientation += list(
@@ -89,7 +101,7 @@ def get_boring_radar_stats(
 
     out = [
         conv_area, strat_area, times, count, system_count,
-        u_shift, v_shift, orientation, eccentricity]
+        u_shift, v_shift, orientation, eccentricity, offset_mag]
 
     return out
 
@@ -108,6 +120,7 @@ def get_boring_ACCESS_stats(
     v_shift = []
     orientation = []
     eccentricity = []
+    offset_mag = []
 
     count = 0
     system_count = 0
@@ -151,6 +164,13 @@ def get_boring_ACCESS_stats(
                 conv_area += list(sub_tracks_conv['proj_area'].values)
                 strat_area += list(sub_tracks_strat['proj_area'].values)
 
+                pos_0 = sub_tracks_conv[['grid_x', 'grid_y']]
+                pos_1 = sub_tracks_strat[['grid_x', 'grid_y']]
+                mag = pos_1-pos_0
+                mag_num = np.sqrt(
+                    mag['grid_x'].values**2 + mag['grid_y'].values**2)
+                offset_mag += list(mag_num)
+
                 u_shift += list(sub_tracks_conv['u_shift'].values)
                 v_shift += list(sub_tracks_conv['v_shift'].values)
                 orientation += list(
@@ -169,7 +189,7 @@ def get_boring_ACCESS_stats(
 
     out = [
         conv_area, strat_area, times, count, system_count,
-        u_shift, v_shift, orientation, eccentricity]
+        u_shift, v_shift, orientation, eccentricity, offset_mag]
 
     return out
 
@@ -180,7 +200,7 @@ def plot_counts(
         QC_obs_radar, QC_obs_weak_radar, QC_obs_active_radar,
         QC_obs_ACCESS, QC_obs_weak_ACCESS, QC_obs_active_ACCESS):
 
-    fig, ax = plt.subplots(2, 2, figsize=(12,6))
+    fig, ax = plt.subplots(2, 2, figsize=(12, 6))
     cl.init_fonts()
 
     labels = ['All', 'Weak Monsoon', 'Active Monsoon']
@@ -212,7 +232,7 @@ def plot_counts(
     ax.flatten()[0].grid(which='major', alpha=0.5, axis='y')
 
     ax.flatten()[1].set_ylabel('Count [-]')
-    ax.flatten()[1].set_title('Restricted Observation Count')
+    ax.flatten()[1].set_title('Restricted Sample Observation Count')
     ax.flatten()[1].set_xticks(x)
     ax.flatten()[1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
     ax.flatten()[1].set_yticks(np.arange(0, 7000, 1000))
@@ -244,7 +264,7 @@ def plot_counts(
     ax.flatten()[2].grid(which='major', alpha=0.5, axis='y')
 
     ax.flatten()[3].set_ylabel('Count [-]')
-    ax.flatten()[3].set_title('Restricted System Count')
+    ax.flatten()[3].set_title('Restricted Sample System Count')
     ax.flatten()[3].set_xticks(x)
     ax.flatten()[3].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
     ax.flatten()[3].set_yticks(np.arange(0, 900, 100))
@@ -279,7 +299,7 @@ def compare_sizes(
         bins=np.arange(80, 2500, 160), label=['Radar', 'ACCESS-C'],
         density=density)
 
-    ax.flatten()[1].set_title('Restricted Convective Areas')
+    ax.flatten()[1].set_title('Restricted Sample Convective Areas')
 
     ax.flatten()[2].hist(
         [all_obs_radar[1], all_obs_ACCESS[1]],
@@ -293,7 +313,7 @@ def compare_sizes(
         bins=np.arange(800, 15000, 800), label=['Radar', 'ACCESS-C'],
         density=density)
 
-    ax.flatten()[3].set_title('Restricted Stratiform Areas')
+    ax.flatten()[3].set_title('Restricted Sample Stratiform Areas')
 
     ax.flatten()[2].legend(
         loc='lower center', bbox_to_anchor=(1.1, -0.4),
@@ -303,7 +323,10 @@ def compare_sizes(
         ax.flatten()[i].ticklabel_format(
             axis='y', style='sci', scilimits=(0, 0))
         ax.flatten()[i].grid(which='major', alpha=0.5, axis='y')
-        ax.flatten()[i].set_ylabel('Density [-]')
+        if density:
+            ax.flatten()[i].set_ylabel('Density [-]')
+        else:
+            ax.flatten()[i].set_ylabel('Count [-]')
         ax.flatten()[i].set_xlabel('Area [km$^2$]', labelpad=0)
 
     cl.make_subplot_labels(ax.flatten(), x_shift=-.1)
@@ -311,8 +334,6 @@ def compare_sizes(
 
     if title is not None:
         plt.suptitle(title, fontsize=14)
-
-    plt.show()
 
 
 def compare_velocities(
@@ -322,33 +343,33 @@ def compare_velocities(
     fig, ax = plt.subplots(2, 2, figsize=(12, 6))
     cl.init_fonts()
 
-    h1 = ax.flatten()[0].hist(
+    ax.flatten()[0].hist(
         [all_obs_radar[5], all_obs_ACCESS[5]],
         bins=np.arange(-20, 22, 2), label=['Radar', 'ACCESS-C'],
         density=density)
 
     ax.flatten()[0].set_title('Raw Zonal Velocities')
 
-    h2 = ax.flatten()[1].hist(
+    ax.flatten()[1].hist(
         [QC_obs_radar[5], QC_obs_ACCESS[5]],
         bins=np.arange(-20, 22, 2), label=['Radar', 'ACCESS-C'],
         density=density)
 
-    ax.flatten()[1].set_title('Restricted Zonal Velocities')
+    ax.flatten()[1].set_title('Restricted Sample Zonal Velocities')
 
-    h3 = ax.flatten()[2].hist(
+    ax.flatten()[2].hist(
         [all_obs_radar[6], all_obs_ACCESS[6]],
         bins=np.arange(-20, 22, 2), label=['Radar', 'ACCESS-C'],
         density=density)
 
     ax.flatten()[2].set_title('Raw Meridional Velocities')
 
-    h4 = ax.flatten()[3].hist(
+    ax.flatten()[3].hist(
         [QC_obs_radar[6], QC_obs_ACCESS[6]],
         bins=np.arange(-20, 22, 2), label=['Radar', 'ACCESS-C'],
         density=density)
 
-    ax.flatten()[3].set_title('Restricted Meridional Velocities')
+    ax.flatten()[3].set_title('Restricted Sample Meridional Velocities')
 
     ax.flatten()[2].legend(
         loc='lower center', bbox_to_anchor=(1.1, -0.5),
@@ -358,7 +379,10 @@ def compare_velocities(
         ax.flatten()[i].ticklabel_format(
             axis='y', style='sci', scilimits=(0, 0))
         ax.flatten()[i].grid(which='major', alpha=0.5, axis='y')
-        ax.flatten()[i].set_ylabel('Density [-]')
+        if density:
+            ax.flatten()[i].set_ylabel('Density [-]')
+        else:
+            ax.flatten()[i].set_ylabel('Count [-]')
         ax.flatten()[i].set_xlabel('Velocity [m/s]', labelpad=0)
 
     cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
@@ -366,8 +390,6 @@ def compare_velocities(
 
     if title is not None:
         plt.suptitle(title, fontsize=14)
-
-    plt.show()
 
 
 def compare_shape(
@@ -379,17 +401,19 @@ def compare_shape(
 
     ax.flatten()[0].hist(
         [all_obs_radar[7], all_obs_ACCESS[7]],
-        bins=np.arange(0, 390, 10), label=['Radar', 'ACCESS-C'],
+        bins=np.arange(0, 391.25, 11.25), label=['Radar', 'ACCESS-C'],
         density=density)
 
     ax.flatten()[0].set_title('Raw Orientations')
+    ax.flatten()[0].set_xticks(np.arange(0, 405, 45))
 
     ax.flatten()[1].hist(
         [QC_obs_radar[7], QC_obs_ACCESS[7]],
-        bins=np.arange(0, 390, 10), label=['Radar', 'ACCESS-C'],
+        bins=np.arange(0, 391.25, 11.25), label=['Radar', 'ACCESS-C'],
         density=density)
 
     ax.flatten()[1].set_title('Restricted Sample Orientations')
+    ax.flatten()[1].set_xticks(np.arange(0, 405, 45))
 
     ax.flatten()[2].hist(
         [all_obs_radar[8], all_obs_ACCESS[8]],
@@ -413,12 +437,15 @@ def compare_shape(
         ax.flatten()[i].ticklabel_format(
             axis='y', style='sci', scilimits=(0, 0))
         ax.flatten()[i].grid(which='major', alpha=0.5, axis='y')
-        ax.flatten()[i].set_ylabel('Density [-]')
+        if density:
+            ax.flatten()[i].set_ylabel('Density [-]')
+        else:
+            ax.flatten()[i].set_ylabel('Count [-]')
 
-    ax.flatten()[0].set_xlabel('Eccentricity [-]', labelpad=0)
-    ax.flatten()[1].set_xlabel('Eccentricity [-]', labelpad=0)
-    ax.flatten()[2].set_xlabel('Orientation [degrees]', labelpad=0)
-    ax.flatten()[3].set_xlabel('Orientation [degrees]', labelpad=0)
+    ax.flatten()[2].set_xlabel('Eccentricity [-]', labelpad=0)
+    ax.flatten()[3].set_xlabel('Eccentricity [-]', labelpad=0)
+    ax.flatten()[0].set_xlabel('Orientation [degrees]', labelpad=0)
+    ax.flatten()[1].set_xlabel('Orientation [degrees]', labelpad=0)
 
     cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
     plt.subplots_adjust(hspace=.45)
@@ -426,4 +453,48 @@ def compare_shape(
     if title is not None:
         plt.suptitle(title, fontsize=14)
 
-    plt.show()
+
+def compare_offset(
+        all_obs_radar, all_obs_ACCESS,
+        QC_obs_radar, QC_obs_ACCESS, density=True, title=None):
+
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+    cl.init_fonts()
+
+    ax.flatten()[0].hist(
+        [all_obs_radar[9], all_obs_ACCESS[9]],
+        bins=np.arange(0, 391.25, 11.25), label=['Radar', 'ACCESS-C'],
+        density=density)
+
+    ax.flatten()[0].set_title('Raw Orientations')
+    ax.flatten()[0].set_xticks(np.arange(0, 405, 45))
+
+    ax.flatten()[1].hist(
+        [QC_obs_radar[9], QC_obs_ACCESS[9]],
+        bins=np.arange(0, 391.25, 11.25), label=['Radar', 'ACCESS-C'],
+        density=density)
+
+    ax.flatten()[1].set_title('Restricted Sample Orientations')
+    ax.flatten()[1].set_xticks(np.arange(0, 405, 45))
+
+    ax.flatten()[0].legend(
+        loc='lower center', bbox_to_anchor=(1.1, -0.5),
+        ncol=2, fancybox=True, shadow=True)
+
+    for i in range(len(ax.flatten())):
+        ax.flatten()[i].ticklabel_format(
+            axis='y', style='sci', scilimits=(0, 0))
+        ax.flatten()[i].grid(which='major', alpha=0.5, axis='y')
+        if density:
+            ax.flatten()[i].set_ylabel('Density [-]')
+        else:
+            ax.flatten()[i].set_ylabel('Count [-]')
+
+    ax.flatten()[0].set_xlabel('Stratiform Offset Magnitude [m]', labelpad=0)
+    ax.flatten()[1].set_xlabel('Stratiform Offset Magnitude [m]', labelpad=0)
+
+    cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
+    plt.subplots_adjust(hspace=.45)
+
+    if title is not None:
+        plt.suptitle(title, fontsize=14)
