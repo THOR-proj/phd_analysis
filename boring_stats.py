@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 
 
 def get_boring_radar_stats(
-        save_dir, exclusions=None, regime=None, pope_dir=None):
+        save_dir, exclusions=None, regime=None, pope_dir=None,
+        radars=[63, 42, 77]):
 
     if pope_dir is None:
         pope_dir = '/home/student.unimelb.edu.au/shorte1/'
@@ -34,7 +35,7 @@ def get_boring_radar_stats(
             'intersect_border_convective', 'duration_cond',
             'small_velocity', 'small_offset']
 
-    for radar in [63, 42, 77]:
+    for radar in radars:
         for year in [2020, 2021]:
             print('Radar {}, year {}.'.format(radar, year))
             years_months = [
@@ -72,10 +73,6 @@ def get_boring_radar_stats(
                     conv_area += list(sub_tracks_conv['proj_area'].values)
                     strat_area += list(sub_tracks_strat['proj_area'].values)
 
-                    # x_offset = tracks_obj.system_tracks['x_vert_disp']
-                    # y_offset = tracks_obj.system_tracks['y_vert_disp']
-                    # offset_mag = np.sqrt(x_offset**2 + y_offset**2).values
-
                     pos_0 = sub_tracks_conv[['grid_x', 'grid_y']]
                     pos_1 = sub_tracks_strat[['grid_x', 'grid_y']]
                     mag = pos_1-pos_0
@@ -107,7 +104,8 @@ def get_boring_radar_stats(
 
 
 def get_boring_ACCESS_stats(
-        save_dir, exclusions=None, regime=None, pope_dir=None):
+        save_dir, exclusions=None, regime=None, pope_dir=None,
+        radars=[63, 42, 77]):
 
     if pope_dir is None:
         pope_dir = '/home/student.unimelb.edu.au/shorte1/'
@@ -131,7 +129,7 @@ def get_boring_ACCESS_stats(
             'intersect_border_convective', 'duration_cond',
             'small_velocity', 'small_offset']
 
-    for radar in [63, 42, 77]:
+    for radar in radars:
         for year in [2020, 2021]:
             print('Radar {}, year {}.'.format(radar, year))
             path = save_dir + 'ACCESS_{}/{}1001_{}0501.pkl'.format(
@@ -192,6 +190,161 @@ def get_boring_ACCESS_stats(
         u_shift, v_shift, orientation, eccentricity, offset_mag]
 
     return out
+
+
+def count_radar_exclusions(
+        save_dir, regime=None, pope_dir=None,
+        radars=[63, 42, 77]):
+    if pope_dir is None:
+        pope_dir = '/home/student.unimelb.edu.au/shorte1/'
+        pope_dir += 'Documents/CPOL_analysis/'
+
+    exclusions = ['simple_duration_cond']
+    exclusions_list = [
+        'intersect_border', 'intersect_border_convective',
+        'duration_cond', 'small_velocity', 'small_offset']
+
+    exclusions_counts = [0 for i in range(len(exclusions_list)+1)]
+
+    for radar in radars:
+        for year in [2020, 2021]:
+            print('Radar {}, year {}.'.format(radar, year))
+            years_months = [
+                [year, 10], [year, 11], [year, 12],
+                [year+1, 1], [year+1, 2], [year+1, 3],
+                [year+1, 4]]
+            for year_month in years_months:
+                path = save_dir + 'radar_{}/{}_{}_{:02}.pkl'.format(
+                    radar, radar, year_month[0], year_month[1])
+                with open(path, 'rb') as f:
+                    tracks_obj = pickle.load(f)
+
+                tracks_obj = cl.redo_exclusions(tracks_obj)
+                tracks_obj = cl.add_monsoon_regime(
+                    tracks_obj, base_dir=pope_dir, fake_pope=True)
+
+                excluded = tracks_obj.exclusions[exclusions]
+                excluded = np.any(excluded, 1)
+                included = np.logical_not(excluded)
+
+                if regime is None:
+                    cond = (included == True)
+                else:
+                    cond = np.logical_and(
+                        tracks_obj.tracks_class['pope_regime'] == regime,
+                        included == True)
+
+                sub_classes = tracks_obj.tracks_class.where(cond).dropna()
+
+                inds_all = sub_classes.index.values
+                sub_exclusions = tracks_obj.exclusions.loc[inds_all]
+
+                if len(sub_exclusions) > 0:
+                    exclusions_counts[0] += len(
+                        sub_exclusions.xs(0, level='level'))
+                    for i in range(len(exclusions_list)):
+                        excl = sub_exclusions[exclusions_list[i]]
+                        excl = excl.xs(0, level='level')
+                        excl = excl.where(excl == True).dropna()
+                        exclusions_counts[i+1] += len(excl)
+
+    return exclusions_counts
+
+
+def count_ACCESS_exclusions(
+        save_dir, regime=None, pope_dir=None,
+        radars=[63, 42, 77]):
+    if pope_dir is None:
+        pope_dir = '/home/student.unimelb.edu.au/shorte1/'
+        pope_dir += 'Documents/CPOL_analysis/'
+
+    exclusions = ['simple_duration_cond']
+    exclusions_list = [
+        'intersect_border', 'intersect_border_convective',
+        'duration_cond', 'small_velocity', 'small_offset']
+
+    exclusions_counts = [0 for i in range(len(exclusions_list)+1)]
+
+    for radar in radars:
+        for year in [2020, 2021]:
+            print('Radar {}, year {}.'.format(radar, year))
+            path = save_dir + 'ACCESS_{}/{}1001_{}0501.pkl'.format(
+                radar, year, year+1)
+            with open(path, 'rb') as f:
+                tracks_obj = pickle.load(f)
+
+            tracks_obj = cl.redo_exclusions(tracks_obj)
+            tracks_obj = cl.add_monsoon_regime(
+                tracks_obj, base_dir=pope_dir, fake_pope=True)
+
+            excluded = tracks_obj.exclusions[exclusions]
+            excluded = np.any(excluded, 1)
+            included = np.logical_not(excluded)
+
+            if regime is None:
+                cond = (included == True)
+            else:
+                cond = np.logical_and(
+                    tracks_obj.tracks_class['pope_regime'] == regime,
+                    included == True)
+
+            sub_classes = tracks_obj.tracks_class.where(cond).dropna()
+
+            inds_all = sub_classes.index.values
+            sub_exclusions = tracks_obj.exclusions.loc[inds_all]
+
+            if len(sub_exclusions) > 0:
+                exclusions_counts[0] += len(
+                    sub_exclusions.xs(0, level='level'))
+                for i in range(len(exclusions_list)):
+                    excl = sub_exclusions[exclusions_list[i]]
+                    excl = excl.xs(0, level='level')
+                    excl = excl.where(excl == True).dropna()
+                    exclusions_counts[i+1] += len(excl)
+
+    return exclusions_counts
+
+
+def compare_exclusions(all_excl_radar, all_excl_ACCESS, title=None):
+    fig, axes = plt.subplots(1, 2, figsize=(12, 3))
+    cl.init_fonts()
+
+    labels = [
+        'All', 'Any Layer Intersect Border', 'Convective Layer Intersect Border',
+        'Duration Cond', 'Small Velocity', 'Small Stratiform Offset']
+    x = np.arange(len(labels))
+    width = 0.35
+
+    axes.flatten()[0].barh(x-width/2, all_excl_radar, width, label='Radar')
+    axes.flatten()[0].barh(x+width/2, all_excl_ACCESS, width, label='ACCESS-C')
+    # axes.flatten()[0].set_xticks(np.arange(0, 12e4, 2e4))
+    axes.flatten()[0].set_yticks(x)
+    axes.flatten()[0].set_yticklabels(labels)
+    axes.flatten()[0].invert_yaxis()
+    axes.flatten()[0].set_xlabel('Count [-]')
+    axes.flatten()[0].set_title('Exclusion Criteria Counts')
+    axes.flatten()[0].ticklabel_format(axis='x', style='sci', scilimits=(0, 0))
+
+    axes.flatten()[1].barh(
+        x-width/2, np.array(all_excl_radar)/all_excl_radar[0],
+        width, label='Radar')
+    axes.flatten()[1].barh(
+        x+width/2, np.array(all_excl_ACCESS)/all_excl_ACCESS[0],
+        width, label='ACCESS-C')
+    axes.flatten()[1].set_yticks(x)
+    axes.flatten()[1].set_yticklabels(labels)
+    axes.flatten()[1].invert_yaxis()
+    axes.flatten()[0].legend(
+        loc='lower center', bbox_to_anchor=(1.1, -0.45),
+        ncol=2, fancybox=True, shadow=True)
+    axes.flatten()[1].set_xlabel('Ratio [-]')
+    axes.flatten()[1].set_title('Exclusion Criteria Ratios')
+
+    plt.subplots_adjust(wspace=.75)
+    cl.make_subplot_labels(axes.flatten(), x_shift=-.15)
+
+    if title is not None:
+        plt.suptitle(title)
 
 
 def plot_counts(
@@ -458,27 +611,27 @@ def compare_offset(
         all_obs_radar, all_obs_ACCESS,
         QC_obs_radar, QC_obs_ACCESS, density=True, title=None):
 
-    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+    fig, ax = plt.subplots(1, 2, figsize=(12, 4))
     cl.init_fonts()
 
     ax.flatten()[0].hist(
-        [all_obs_radar[9], all_obs_ACCESS[9]],
-        bins=np.arange(0, 391.25, 11.25), label=['Radar', 'ACCESS-C'],
+        [np.array(all_obs_radar[9])/1e3, np.array(all_obs_ACCESS[9])/1e3],
+        bins=np.arange(0, 105, 5), label=['Radar', 'ACCESS-C'],
         density=density)
 
-    ax.flatten()[0].set_title('Raw Orientations')
-    ax.flatten()[0].set_xticks(np.arange(0, 405, 45))
+    ax.flatten()[0].set_title('Raw Stratiform Offset Length')
+    ax.flatten()[0].set_xticks(np.arange(0, 110, 10))
 
     ax.flatten()[1].hist(
-        [QC_obs_radar[9], QC_obs_ACCESS[9]],
-        bins=np.arange(0, 391.25, 11.25), label=['Radar', 'ACCESS-C'],
+        [np.array(QC_obs_radar[9])/1e3, np.array(QC_obs_ACCESS[9])/1e3],
+        bins=np.arange(0, 105, 5), label=['Radar', 'ACCESS-C'],
         density=density)
 
-    ax.flatten()[1].set_title('Restricted Sample Orientations')
-    ax.flatten()[1].set_xticks(np.arange(0, 405, 45))
+    ax.flatten()[1].set_title('Restricted Sample Stratiform Offset Length')
+    ax.flatten()[1].set_xticks(np.arange(0, 110, 10))
 
     ax.flatten()[0].legend(
-        loc='lower center', bbox_to_anchor=(1.1, -0.5),
+        loc='lower center', bbox_to_anchor=(1.1, -0.3),
         ncol=2, fancybox=True, shadow=True)
 
     for i in range(len(ax.flatten())):
