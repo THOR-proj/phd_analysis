@@ -166,6 +166,8 @@ def get_ACCESS_season(
     if save_dir is None:
         save_dir = '/g/data/w40/esh563/TINT_tracks/'
 
+    # REMEMBER SETTINGS CHANGED FOR SENSITIVITY TESTS
+
     common_times = np.loadtxt(
         '/g/data/w40/esh563/ACCESS_radar_common_times.csv',
         dtype=str).astype(np.datetime64)
@@ -175,8 +177,10 @@ def get_ACCESS_season(
     datetimes = np.arange(start, end, np.timedelta64(10, 'm'))
     datetimes = sorted([d for d in datetimes if d in common_times])
 
+    ERA5_dir = '/g/data/w40/esh563/era5/pressure-levels/reanalysis/'
+
     tracks_obj = tint.Tracks(params={
-        'AMBIENT': 'ACCESS', 'AMBIENT_BASE_DIR': None,
+        'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
         'GS_ALT': 0,
         'LEVELS': np.array(
             [[0, 0.5], [1, 1.5]]),
