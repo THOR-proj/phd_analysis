@@ -651,3 +651,54 @@ def compare_offset(
 
     if title is not None:
         plt.suptitle(title, fontsize=14)
+
+
+def compare_time(
+        all_obs_radar, all_obs_ACCESS,
+        QC_obs_radar, QC_obs_ACCESS, density=True, title=None):
+
+    fig, ax = plt.subplots(1, 2, figsize=(12, 4))
+    cl.init_fonts()
+
+    a_hour = [int(s.astype(str)[11:13]) for s in all_obs_radar[2]]
+    b_hour = [int(s.astype(str)[11:13]) for s in all_obs_ACCESS[2]]
+    c_hour = [int(s.astype(str)[11:13]) for s in QC_obs_radar[2]]
+    d_hour = [int(s.astype(str)[11:13]) for s in QC_obs_ACCESS[2]]
+
+    ax.flatten()[0].hist(
+        [a_hour, b_hour],
+        bins=np.arange(0, 25, 1), label=['Radar', 'ACCESS-C'],
+        density=density)
+
+    ax.flatten()[0].set_title('Raw Stratiform Offset Length')
+    ax.flatten()[0].set_xticks(np.arange(0, 25, 2))
+
+    ax.flatten()[1].hist(
+        [c_hour, d_hour],
+        bins=np.arange(0, 25, 1), label=['Radar', 'ACCESS-C'],
+        density=density)
+
+    ax.flatten()[1].set_title('Restricted Sample Stratiform Offset Length')
+    ax.flatten()[1].set_xticks(np.arange(0, 25, 2))
+
+    ax.flatten()[0].legend(
+        loc='lower center', bbox_to_anchor=(1.1, -0.3),
+        ncol=2, fancybox=True, shadow=True)
+
+    for i in range(len(ax.flatten())):
+        ax.flatten()[i].ticklabel_format(
+            axis='y', style='sci', scilimits=(0, 0))
+        ax.flatten()[i].grid(which='major', alpha=0.5, axis='y')
+        if density:
+            ax.flatten()[i].set_ylabel('Density [-]')
+        else:
+            ax.flatten()[i].set_ylabel('Count [-]')
+
+    ax.flatten()[0].set_xlabel('Time [hour UST]', labelpad=0)
+    ax.flatten()[1].set_xlabel('Time [hour UST]', labelpad=0)
+
+    cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
+    plt.subplots_adjust(hspace=.45)
+
+    if title is not None:
+        plt.suptitle(title, fontsize=14)

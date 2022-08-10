@@ -132,7 +132,7 @@ def get_CPOL_season(
         'LEVELS': np.array(
             [[1000, 1500], [500, 20000]]),
         'WIND_LEVELS': np.array(
-            [[500, 3500], [500, 20000]]),
+            [[500, 2500], [500, 20000]]),
         'FIELD_THRESH': ['convective', 15],
         'MIN_SIZE': [80, 800],
         'ISO_THRESH': [10, 10],
@@ -166,8 +166,6 @@ def get_ACCESS_season(
     if save_dir is None:
         save_dir = '/g/data/w40/esh563/TINT_tracks/'
 
-    # REMEMBER SETTINGS CHANGED FOR SENSITIVITY TESTS
-
     common_times = np.loadtxt(
         '/g/data/w40/esh563/ACCESS_radar_common_times.csv',
         dtype=str).astype(np.datetime64)
@@ -177,15 +175,13 @@ def get_ACCESS_season(
     datetimes = np.arange(start, end, np.timedelta64(10, 'm'))
     datetimes = sorted([d for d in datetimes if d in common_times])
 
-    ERA5_dir = '/g/data/w40/esh563/era5/pressure-levels/reanalysis/'
-
     tracks_obj = tint.Tracks(params={
-        'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
+        'AMBIENT': 'ACCESS', 'AMBIENT_BASE_DIR': None,
         'GS_ALT': 0,
         'LEVELS': np.array(
             [[0, 0.5], [1, 1.5]]),
         'WIND_LEVELS': np.array(
-            [[500, 3500], [500, 20000]]),
+            [[500, 2500], [500, 20000]]),
         'FIELD_THRESH': ['convective', 15],
         'MIN_SIZE': [80, 800],
         'ISO_THRESH': [10, 10],
@@ -222,8 +218,6 @@ def get_oper_month(
     if save_dir is None:
         save_dir = '/g/data/w40/esh563/TINT_tracks/'
 
-    # REMEMBER MODIFICATIONS MADE FOR SENSITIVITY TESTS!!!
-
     common_datetimes = np.loadtxt(
         '/home/563/esh563/CPOL_analysis/radar_common_times.csv',
         dtype=str).astype(np.datetime64)
@@ -241,8 +235,8 @@ def get_oper_month(
         'FIELD_THRESH': ['convective', 15],
         'MIN_SIZE': [80, 800],
         'ISO_THRESH': [10, 10],
-        'AMBIENT': 'ACCESS',
-        'AMBIENT_BASE_DIR': None,
+        'AMBIENT': 'ERA5',
+        'AMBIENT_BASE_DIR': ERA5_dir,
         'AMBIENT_TIMESTEP': 6,
         'SAVE_DIR': save_dir,
         'RESET_NEW_DAY': True,

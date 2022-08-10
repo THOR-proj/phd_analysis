@@ -1190,9 +1190,10 @@ def pope_comparison(class_df=None):
         edgecolor='white', bbox_inches='tight')
 
 
-def pope_comparison_radar(class_df=None):
+def pope_comparison_radar(class_df=None, class_path=None):
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
-    class_path = base_dir + 'TINT_tracks/'
+    if class_path is None:
+        class_path = base_dir + 'TINT_tracks/'
     class_path + 'combined_radar_classes.pkl'
     with open(class_path + 'combined_radar_classes.pkl', 'rb') as f:
         class_df_rad = pickle.load(f)
