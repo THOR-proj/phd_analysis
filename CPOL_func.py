@@ -132,7 +132,7 @@ def get_CPOL_season(
         'LEVELS': np.array(
             [[1000, 1500], [500, 20000]]),
         'WIND_LEVELS': np.array(
-            [[500, 2500], [500, 20000]]),
+            [[500, 4500], [500, 20000]]),
         'FIELD_THRESH': ['convective', 15],
         'MIN_SIZE': [80, 800],
         'ISO_THRESH': [10, 10],
@@ -181,7 +181,7 @@ def get_ACCESS_season(
         'LEVELS': np.array(
             [[0, 0.5], [1, 1.5]]),
         'WIND_LEVELS': np.array(
-            [[500, 2500], [500, 20000]]),
+            [[500, 4500], [500, 20000]]),
         'FIELD_THRESH': ['convective', 15],
         'MIN_SIZE': [80, 800],
         'ISO_THRESH': [10, 10],
