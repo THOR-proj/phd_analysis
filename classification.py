@@ -7,6 +7,7 @@ import string
 import datetime
 from tint.objects import classify_tracks, get_exclusion_categories
 from tint.objects import get_system_tracks
+import os
 
 
 base_dir = '/media/shorte1/Ewan\'s Hard Drive/phd/data/CPOL/'
@@ -119,8 +120,8 @@ def get_counts(
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
     [
         year_list, uid, time, offset_type, rel_offset_type, inflow_type,
-        tilt_dir, prop_dir, pope_regime] = [
-        [] for i in range(9)]
+        tilt_dir, prop_dir, pope_regime, hour] = [
+        [] for i in range(10)]
     for year in years:
         tracks_obj = load_year(year, tracks_dir=tracks_dir)
         print('Getting new exclusions.')
@@ -144,6 +145,9 @@ def get_counts(
             tilt = sub_tracks['tilt_type'].xs(i, level='uid').values
             prop = sub_tracks['propagation_type'].xs(i, level='uid').values
             pope = sub_tracks['pope_regime'].xs(i, level='uid').values
+            hours = obj.time.values
+            hours = [int(h.astype(str)[11:13]) for h in hours]
+
             for j in range(len(scan_label)):
                 year_list.append(year)
                 uid.append(i)
@@ -154,8 +158,9 @@ def get_counts(
                 tilt_dir.append(tilt[j])
                 prop_dir.append(prop[j])
                 pope_regime.append(int(pope[j]))
+                hour.append(hours[j])
     class_dic = {
-        'year': year_list, 'uid': uid, 'time': time,
+        'year': year_list, 'uid': uid, 'time': time, 'hour': hour,
         'offset_type': offset_type, 'rel_offset_type': rel_offset_type,
         'inflow_type': inflow_type,
         'tilt_dir': tilt_dir, 'prop_dir': prop_dir,
@@ -192,8 +197,8 @@ def get_counts_radar(
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
     [
         year_list, month_list, uid, time, offset_type, rel_offset_type,
-        inflow_type, tilt_dir, prop_dir, pope_regime] = [
-        [] for i in range(10)]
+        inflow_type, tilt_dir, prop_dir, pope_regime, hour] = [
+        [] for i in range(11)]
     for base_year in years:
         year_month = [
             [base_year, 10], [base_year, 11], [base_year, 12],
@@ -225,6 +230,8 @@ def get_counts_radar(
                 tilt = sub_tracks['tilt_type'].xs(i, level='uid').values
                 prop = sub_tracks['propagation_type'].xs(i, level='uid').values
                 pope = sub_tracks['pope_regime'].xs(i, level='uid').values
+                hours = obj.time.values
+                hours = [int(h.astype(str)[11:13]) for h in hours]
                 for j in range(len(scan_label)):
                     year_list.append(year)
                     month_list.append(month)
@@ -236,10 +243,11 @@ def get_counts_radar(
                     tilt_dir.append(tilt[j])
                     prop_dir.append(prop[j])
                     pope_regime.append(int(pope[j]))
+                    hour.append(hours[j])
     class_dic = {
         'year': year_list, 'month': month_list, 'uid': uid, 'time': time,
-        'offset_type': offset_type, 'rel_offset_type': rel_offset_type,
-        'inflow_type': inflow_type,
+        'hour': hour, 'offset_type': offset_type,
+        'rel_offset_type': rel_offset_type, 'inflow_type': inflow_type,
         'tilt_dir': tilt_dir, 'prop_dir': prop_dir,
         'pope_regime': pope_regime}
     class_df = pd.DataFrame(class_dic)
@@ -341,6 +349,73 @@ def plot_offsets(
         ax1=None, ax2=None, linestyle='-', legend=True, maximum=0):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
+    save_dir = get_save_dir(save_dir)
+    colors = get_colors()
+    counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
+    counts = counts.sort_index()
+    counts_df = pd.DataFrame({'counts': counts})
+    offset_types = counts_df.groupby(['time', 'offset_type']).sum()
+    TS = offset_types.xs('Trailing Stratiform', level='offset_type')
+    LS = offset_types.xs('Leading Stratiform', level='offset_type')
+    LeS = offset_types.xs('Parallel Stratiform (Left)', level='offset_type')
+    RiS = offset_types.xs('Parallel Stratiform (Right)', level='offset_type')
+    # max_time = max(
+    #     [max(off_type.index.values) for off_type in [TS, LS, LeS, RiS]])
+    max_time = 400
+    new_index = pd.Index(np.arange(0, max_time, 10), name='time')
+    [TS, LS, LeS, RiS] = [
+        off_type.reindex(new_index, fill_value=0)
+        for off_type in [TS, LS, LeS, RiS]]
+    offset_totals = TS + LS + LeS + RiS
+
+    init_fonts()
+    x = np.arange(30, 310, 10)
+    ax1.plot(
+        x, TS.loc[x], label='Trailing Stratiform', color=colors[0],
+        linestyle=linestyle)
+    ax1.plot(
+        x, LS.loc[x], label='Leading Stratiform', color=colors[1],
+        linestyle=linestyle)
+    ax1.plot(
+        x, LeS.loc[x], label='Left Stratiform', color=colors[2],
+        linestyle=linestyle)
+    ax1.plot(
+        x, RiS.loc[x], label='Right Stratiform', color=colors[4],
+        linestyle=linestyle)
+    ax1.plot(
+        x, offset_totals.loc[x], label='Total', color=colors[3],
+        linestyle=linestyle)
+
+    ax2.plot(
+        x, (TS/offset_totals).loc[x],
+        label='Trailing Stratiform', color=colors[0], linestyle=linestyle)
+    ax2.plot(
+        x, (LeS/offset_totals).loc[x], label='Left Stratiform',
+        color=colors[2], linestyle=linestyle)
+    ax2.plot(
+        x, (RiS/offset_totals).loc[x], label='Right Stratiform',
+        color=colors[4], linestyle=linestyle)
+    ax2.plot(
+        x, (LS/offset_totals).loc[x],
+        label='Leading Stratiform', color=colors[1], linestyle=linestyle)
+
+    ax2.plot([180, 180], [0, 1], '--', color='gray')
+
+    set_ticks(
+        ax1, ax2, max(np.max(offset_totals.loc[x].values), maximum),
+        legend=legend)
+    totals = [y.loc[x].sum() for y in [TS, LS, LeS, RiS, offset_totals]]
+    return totals
+
+
+def plot_offsets_diurnal(
+        class_df, save_dir=None, append_time=False, fig=None,
+        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0):
+    if (fig is None) or (ax1 is None) or (ax2 is None):
+        fig, (ax1, ax2) = initialise_fig()
+
+    import pdb; pdb.set_trace()
+
     save_dir = get_save_dir(save_dir)
     colors = get_colors()
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
@@ -752,6 +827,10 @@ def plot_all(test_dir=None, test_names=None):
         class_path += '{}_classes.pkl'.format(test_dir[i])
         fig_dir = base_dir + 'TINT_figures/'
         fig_dir += test_dir[i] + '/'
+
+        if not os.path.exists(fig_dir):
+            os.makedirs(fig_dir)
+            print('Creating new directory.')
         with open(class_path, 'rb') as f:
             class_df = pickle.load(f)
         test.append(test_names[i])

@@ -670,7 +670,7 @@ def compare_time(
         bins=np.arange(0, 25, 1), label=['Radar', 'ACCESS-C'],
         density=density)
 
-    ax.flatten()[0].set_title('Raw Stratiform Offset Length')
+    ax.flatten()[0].set_title('Raw Observation Count')
     ax.flatten()[0].set_xticks(np.arange(0, 25, 2))
 
     ax.flatten()[1].hist(
@@ -678,7 +678,7 @@ def compare_time(
         bins=np.arange(0, 25, 1), label=['Radar', 'ACCESS-C'],
         density=density)
 
-    ax.flatten()[1].set_title('Restricted Sample Stratiform Offset Length')
+    ax.flatten()[1].set_title('Restricted Observation Count')
     ax.flatten()[1].set_xticks(np.arange(0, 25, 2))
 
     ax.flatten()[0].legend(
