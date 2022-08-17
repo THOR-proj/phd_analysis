@@ -280,11 +280,15 @@ def get_colors():
     return colors
 
 
-def set_ticks(ax1, ax2, maximum_count, leg_columns=3, legend=True):
+def set_ticks(
+        ax1, ax2, maximum_count, leg_columns=3, legend=True, diurnal=False):
     plt.sca(ax1)
-    plt.xticks(np.arange(30, 310, 30))
-    plt.ylabel('Count [-]')
-    plt.xlabel('Time since Detection [min]')
+    if diurnal:
+        plt.xticks(np.arange(0, 24, 2))
+        plt.xlabel('Time of Day [hour UTC]')
+    else:
+        plt.xticks(np.arange(30, 310, 30))
+        plt.xlabel('Time since Detection [min]')
 
     handles, labels = ax1.get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
@@ -296,17 +300,24 @@ def set_ticks(ax1, ax2, maximum_count, leg_columns=3, legend=True):
             ncol=leg_columns, fancybox=True, shadow=True)
     plt.setp(ax1.lines, linewidth=1.75)
 
+    plt.ylabel('Count [-]')
+
     max_tick = int(np.ceil(maximum_count / 100) * 100)
     ax1.set_yticks(np.arange(0, max_tick+100, 100), minor=False)
     ax1.set_yticks(np.arange(0, max_tick+50, 50), minor=True)
 
     plt.sca(ax2)
-    plt.xticks(np.arange(30, 310, 30))
+    if diurnal:
+        plt.xticks(np.arange(0, 24, 2))
+        plt.xlabel('Time of Day [hour UTC]')
+    else:
+        plt.xticks(np.arange(30, 310, 30))
+        plt.xlabel('Time since Detection [min]')
+
     ax2.set_yticks(np.arange(0, 1.1, 0.1))
     ax2.set_yticks(np.arange(0, 1.05, 0.05), minor=True)
 
     plt.ylabel('Ratio [-]')
-    plt.xlabel('Time since Detection [min]')
     plt.setp(ax2.lines, linewidth=1.75)
 
     ax1.grid(which='major', alpha=0.5, axis='both')
@@ -346,7 +357,8 @@ def get_save_dir(save_dir):
 
 def plot_offsets(
         class_df, save_dir=None, append_time=False, fig=None,
-        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0):
+        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
+        diurnal=False):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -354,22 +366,32 @@ def plot_offsets(
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
     counts = counts.sort_index()
     counts_df = pd.DataFrame({'counts': counts})
-    offset_types = counts_df.groupby(['time', 'offset_type']).sum()
+    if diurnal:
+        x_var = 'hour'
+    else:
+        x_var = 'time'
+    offset_types = counts_df.groupby([x_var, 'offset_type']).sum()
     TS = offset_types.xs('Trailing Stratiform', level='offset_type')
     LS = offset_types.xs('Leading Stratiform', level='offset_type')
     LeS = offset_types.xs('Parallel Stratiform (Left)', level='offset_type')
     RiS = offset_types.xs('Parallel Stratiform (Right)', level='offset_type')
     # max_time = max(
     #     [max(off_type.index.values) for off_type in [TS, LS, LeS, RiS]])
-    max_time = 400
-    new_index = pd.Index(np.arange(0, max_time, 10), name='time')
+    if diurnal:
+        new_index = np.arange(0, 24, 1)
+    else:
+        max_time = 400
+        new_index = pd.Index(np.arange(0, max_time, 10), name='time')
     [TS, LS, LeS, RiS] = [
         off_type.reindex(new_index, fill_value=0)
         for off_type in [TS, LS, LeS, RiS]]
     offset_totals = TS + LS + LeS + RiS
 
     init_fonts()
-    x = np.arange(30, 310, 10)
+    if diurnal:
+        x = new_index
+    else:
+        x = np.arange(30, 310, 10)
     ax1.plot(
         x, TS.loc[x], label='Trailing Stratiform', color=colors[0],
         linestyle=linestyle)
@@ -399,85 +421,19 @@ def plot_offsets(
         x, (LS/offset_totals).loc[x],
         label='Leading Stratiform', color=colors[1], linestyle=linestyle)
 
-    ax2.plot([180, 180], [0, 1], '--', color='gray')
+    # ax2.plot([180, 180], [0, 1], '--', color='gray')
 
     set_ticks(
         ax1, ax2, max(np.max(offset_totals.loc[x].values), maximum),
-        legend=legend)
-    totals = [y.loc[x].sum() for y in [TS, LS, LeS, RiS, offset_totals]]
-    return totals
-
-
-def plot_offsets_diurnal(
-        class_df, save_dir=None, append_time=False, fig=None,
-        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0):
-    if (fig is None) or (ax1 is None) or (ax2 is None):
-        fig, (ax1, ax2) = initialise_fig()
-
-    import pdb; pdb.set_trace()
-
-    save_dir = get_save_dir(save_dir)
-    colors = get_colors()
-    counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
-    counts = counts.sort_index()
-    counts_df = pd.DataFrame({'counts': counts})
-    offset_types = counts_df.groupby(['time', 'offset_type']).sum()
-    TS = offset_types.xs('Trailing Stratiform', level='offset_type')
-    LS = offset_types.xs('Leading Stratiform', level='offset_type')
-    LeS = offset_types.xs('Parallel Stratiform (Left)', level='offset_type')
-    RiS = offset_types.xs('Parallel Stratiform (Right)', level='offset_type')
-    # max_time = max(
-    #     [max(off_type.index.values) for off_type in [TS, LS, LeS, RiS]])
-    max_time = 400
-    new_index = pd.Index(np.arange(0, max_time, 10), name='time')
-    [TS, LS, LeS, RiS] = [
-        off_type.reindex(new_index, fill_value=0)
-        for off_type in [TS, LS, LeS, RiS]]
-    offset_totals = TS + LS + LeS + RiS
-
-    init_fonts()
-    x = np.arange(30, 310, 10)
-    ax1.plot(
-        x, TS.loc[x], label='Trailing Stratiform', color=colors[0],
-        linestyle=linestyle)
-    ax1.plot(
-        x, LS.loc[x], label='Leading Stratiform', color=colors[1],
-        linestyle=linestyle)
-    ax1.plot(
-        x, LeS.loc[x], label='Left Stratiform', color=colors[2],
-        linestyle=linestyle)
-    ax1.plot(
-        x, RiS.loc[x], label='Right Stratiform', color=colors[4],
-        linestyle=linestyle)
-    ax1.plot(
-        x, offset_totals.loc[x], label='Total', color=colors[3],
-        linestyle=linestyle)
-
-    ax2.plot(
-        x, (TS/offset_totals).loc[x],
-        label='Trailing Stratiform', color=colors[0], linestyle=linestyle)
-    ax2.plot(
-        x, (LeS/offset_totals).loc[x], label='Left Stratiform',
-        color=colors[2], linestyle=linestyle)
-    ax2.plot(
-        x, (RiS/offset_totals).loc[x], label='Right Stratiform',
-        color=colors[4], linestyle=linestyle)
-    ax2.plot(
-        x, (LS/offset_totals).loc[x],
-        label='Leading Stratiform', color=colors[1], linestyle=linestyle)
-
-    ax2.plot([180, 180], [0, 1], '--', color='gray')
-
-    set_ticks(
-        ax1, ax2, max(np.max(offset_totals.loc[x].values), maximum),
-        legend=legend)
+        legend=legend, diurnal=diurnal)
     totals = [y.loc[x].sum() for y in [TS, LS, LeS, RiS, offset_totals]]
     return totals
 
 
 def plot_relative_offsets(
         class_df, save_dir=None, append_time=False, fig=None,
-        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0):
+        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
+        diurnal=False):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -485,7 +441,11 @@ def plot_relative_offsets(
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
     counts = counts.sort_index()
     counts_df = pd.DataFrame({'counts': counts})
-    offset_types = counts_df.groupby(['time', 'rel_offset_type']).sum()
+    if diurnal:
+        x_var = 'hour'
+    else:
+        x_var = 'time'
+    offset_types = counts_df.groupby([x_var, 'rel_offset_type']).sum()
     TS = offset_types.xs(
         'Relative Trailing Stratiform', level='rel_offset_type')
     LS = offset_types.xs(
@@ -496,15 +456,22 @@ def plot_relative_offsets(
         'Relative Parallel Stratiform (Right)', level='rel_offset_type')
     # max_time = max(
     #     [max(off_type.index.values) for off_type in [TS, LS, LeS, RiS]])
-    max_time = 400
-    new_index = pd.Index(np.arange(0, max_time, 10), name='time')
+    if diurnal:
+        new_index = np.arange(0, 24, 1)
+    else:
+        max_time = 400
+        new_index = pd.Index(np.arange(0, max_time, 10), name='time')
+
     [TS, LS, LeS, RiS] = [
         off_type.reindex(new_index, fill_value=0)
         for off_type in [TS, LS, LeS, RiS]]
     offset_totals = TS + LS + LeS + RiS
 
     init_fonts()
-    x = np.arange(30, 310, 10)
+    if diurnal:
+        x = new_index
+    else:
+        x = np.arange(30, 310, 10)
     ax1.plot(
         x, TS.loc[x], label='Relative Trailing Stratiform', color=colors[0],
         linestyle=linestyle)
@@ -538,18 +505,19 @@ def plot_relative_offsets(
         label='Relative Leading Stratiform', color=colors[1],
         linestyle=linestyle)
 
-    ax2.plot([120, 120], [0, 1], '--', color='gray')
+    # ax2.plot([120, 120], [0, 1], '--', color='gray')
 
     set_ticks(
         ax1, ax2, max(np.max(offset_totals.loc[x].values), maximum),
-        legend=legend)
+        legend=legend, diurnal=diurnal)
     totals = [y.loc[x].sum() for y in [TS, LS, LeS, RiS, offset_totals]]
     return totals
 
 
 def plot_inflows(
         class_df, save_dir=None, append_time=False, fig=None,
-        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0):
+        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
+        diurnal=False):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -557,7 +525,11 @@ def plot_inflows(
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
     counts = counts.sort_index()
     counts_df = pd.DataFrame({'counts': counts})
-    inflow_types = counts_df.groupby(['time', 'inflow_type']).sum()
+    if diurnal:
+        x_var = 'hour'
+    else:
+        x_var = 'time'
+    inflow_types = counts_df.groupby([x_var, 'inflow_type']).sum()
     A = inflow_types.xs('Ambiguous', level='inflow_type')
     FF = inflow_types.xs('Front Fed', level='inflow_type')
     RF = inflow_types.xs('Rear Fed', level='inflow_type')
@@ -565,15 +537,23 @@ def plot_inflows(
     RiF = inflow_types.xs('Parallel Fed (Right)', level='inflow_type')
     # max_time = max(
     #     [max(off_type.index.values) for off_type in [A, FF, RF, LeF, RiF]])
-    max_time = 400
-    new_index = pd.Index(np.arange(0, max_time, 10), name='time')
+
+    if diurnal:
+        new_index = np.arange(0, 24, 1)
+    else:
+        max_time = 400
+        new_index = pd.Index(np.arange(0, max_time, 10), name='time')
+
     [A, FF, RF, LeF, RiF] = [
         off_type.reindex(new_index, fill_value=0)
         for off_type in [A, FF, RF, LeF, RiF]]
     inflow_totals = A + FF + RF + LeF + RiF
 
     init_fonts()
-    x = np.arange(30, 310, 10)
+    if diurnal:
+        x = new_index
+    else:
+        x = np.arange(30, 310, 10)
     ax1.plot(
         x, FF.loc[x], label='Front Fed', color=colors[0],
         linestyle=linestyle)
@@ -609,9 +589,9 @@ def plot_inflows(
         linestyle=linestyle)
     set_ticks(
         ax1, ax2, max(np.max(inflow_totals.loc[x].values), maximum),
-        legend=legend)
+        legend=legend, diurnal=diurnal)
 
-    ax2.plot([120, 120], [0, 1], '--', color='gray')
+    # ax2.plot([120, 120], [0, 1], '--', color='gray')
 
     totals = [y.loc[x].sum() for y in [FF, RF, LeF, RiF, A, inflow_totals]]
     return totals
@@ -619,7 +599,8 @@ def plot_inflows(
 
 def plot_tilts(
         class_df, save_dir=None, append_time=False, fig=None,
-        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0):
+        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
+        diurnal=False):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -627,21 +608,32 @@ def plot_tilts(
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
     counts = counts.sort_index()
     counts_df = pd.DataFrame({'counts': counts})
-    tilt_types = counts_df.groupby(['time', 'tilt_dir']).sum()
+    if diurnal:
+        x_var = 'hour'
+    else:
+        x_var = 'time'
+    tilt_types = counts_df.groupby([x_var, 'tilt_dir']).sum()
     SP = tilt_types.xs('Perpendicular Shear', level='tilt_dir')
     UST = tilt_types.xs('Up-Shear Tilted', level='tilt_dir')
     DST = tilt_types.xs('Down-Shear Tilted', level='tilt_dir')
     # max_time = max(
     #     [max(off_type.index.values) for off_type in [SP, UST, DST]])
-    max_time = 400
-    new_index = pd.Index(np.arange(0, max_time, 10), name='time')
+    if diurnal:
+        new_index = np.arange(0, 24, 1)
+    else:
+        max_time = 400
+        new_index = pd.Index(np.arange(0, max_time, 10), name='time')
+
     [SP, UST, DST] = [
         off_type.reindex(new_index, fill_value=0)
         for off_type in [SP, UST, DST]]
     tilt_totals = SP + UST + DST
 
     init_fonts()
-    x = np.arange(30, 310, 10)
+    if diurnal:
+        x = new_index
+    else:
+        x = np.arange(30, 310, 10)
     ax1.plot(
         x, UST.loc[x], label='Up-Shear Tilted', color=colors[0],
         linestyle=linestyle)
@@ -665,11 +657,11 @@ def plot_tilts(
         x, (SP/tilt_totals).loc[x], label='Ambiguous', color=colors[5],
         linestyle=linestyle)
 
-    ax2.plot([210, 210], [0, 1], '--', color='gray')
+    # ax2.plot([210, 210], [0, 1], '--', color='gray')
 
     set_ticks(
         ax1, ax2, max(np.max(tilt_totals.loc[x].values), maximum),
-        leg_columns=2, legend=legend)
+        leg_columns=2, legend=legend, diurnal=diurnal)
 
     totals = [y.loc[x].sum() for y in [UST, DST, SP, tilt_totals]]
     return totals
@@ -677,7 +669,8 @@ def plot_tilts(
 
 def plot_propagations(
         class_df, save_dir=None, append_time=False, fig=None,
-        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0):
+        ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
+        diurnal=False):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -685,14 +678,22 @@ def plot_propagations(
     counts = class_df.reset_index().set_index(['year', 'uid']).value_counts()
     counts = counts.sort_index()
     counts_df = pd.DataFrame({'counts': counts})
-    tilt_types = counts_df.groupby(['time', 'prop_dir']).sum()
+    if diurnal:
+        x_var = 'hour'
+    else:
+        x_var = 'time'
+    tilt_types = counts_df.groupby([x_var, 'prop_dir']).sum()
     SP = tilt_types.xs('Perpendicular Shear', level='prop_dir')
     USP = tilt_types.xs('Up-Shear Propagating', level='prop_dir')
     DSP = tilt_types.xs('Down-Shear Propagating', level='prop_dir')
     # max_time = max(
     #     [max(off_type.index.values) for off_type in [SP, USP, DSP]])
-    max_time = 400
-    new_index = pd.Index(np.arange(0, max_time, 10), name='time')
+    if diurnal:
+        new_index = np.arange(0, 24, 1)
+    else:
+        max_time = 400
+        new_index = pd.Index(np.arange(0, max_time, 10), name='time')
+
     [SP, USP, DSP] = [
         off_type.reindex(new_index, fill_value=0)
         for off_type in [SP, USP, DSP]]
@@ -700,7 +701,10 @@ def plot_propagations(
 
     init_fonts()
     # fig, (ax1, ax2) = initialise_fig()
-    x = np.arange(30, 310, 10)
+    if diurnal:
+        x = new_index
+    else:
+        x = np.arange(30, 310, 10)
     ax1.plot(
         x, DSP.loc[x], label='Down-Shear Propagating', color=colors[0],
         linestyle=linestyle)
@@ -724,11 +728,11 @@ def plot_propagations(
         x, (SP/prop_totals).loc[x], label='Shear Perpendicular',
         color=colors[5], linestyle=linestyle)
 
-    ax2.plot([210, 210], [0, 1], '--', color='gray')
+    # ax2.plot([210, 210], [0, 1], '--', color='gray')
 
     set_ticks(
         ax1, ax2, max(np.max(prop_totals.loc[x].values), maximum),
-        leg_columns=2, legend=legend)
+        leg_columns=2, legend=legend, diurnal=diurnal)
 
     totals = [y.loc[x].sum() for y in [DSP, USP, SP, prop_totals]]
     return totals
@@ -793,7 +797,7 @@ def plot_comparison():
         plt.close('all')
 
 
-def plot_all(test_dir=None, test_names=None):
+def plot_all(test_dir=None, test_names=None, diurnal=False):
 
     if (test_dir is None) or (test_names is None):
         test_dir = [
@@ -838,7 +842,8 @@ def plot_all(test_dir=None, test_names=None):
         fig, axes = initialise_fig(height=10, n_subplots=6)
 
         offset_summary = plot_offsets(
-            class_df, fig_dir, fig=fig, ax1=axes[0][0], ax2=axes[0][1])
+            class_df, fig_dir, fig=fig, ax1=axes[0][0], ax2=axes[0][1],
+            diurnal=diurnal)
         TS.append(offset_summary[0].values[0])
         LS.append(offset_summary[1].values[0])
         LeS.append(offset_summary[2].values[0])
@@ -846,7 +851,8 @@ def plot_all(test_dir=None, test_names=None):
         offset_total.append(offset_summary[4].values[0])
 
         rel_offset_summary = plot_relative_offsets(
-            class_df, fig_dir, fig=fig, ax1=axes[1][0], ax2=axes[1][1])
+            class_df, fig_dir, fig=fig, ax1=axes[1][0], ax2=axes[1][1],
+            diurnal=diurnal)
         RTS.append(rel_offset_summary[0].values[0])
         RLS.append(rel_offset_summary[1].values[0])
         RLeS.append(rel_offset_summary[2].values[0])
@@ -854,7 +860,8 @@ def plot_all(test_dir=None, test_names=None):
         rel_offset_total.append(rel_offset_summary[4].values[0])
 
         inflow_summary = plot_inflows(
-            class_df, fig_dir, fig=fig, ax1=axes[2][0], ax2=axes[2][1])
+            class_df, fig_dir, fig=fig, ax1=axes[2][0], ax2=axes[2][1],
+            diurnal=diurnal)
         FF.append(inflow_summary[0].values[0])
         RF.append(inflow_summary[1].values[0])
         LeF.append(inflow_summary[2].values[0])
@@ -866,20 +873,22 @@ def plot_all(test_dir=None, test_names=None):
         make_subplot_labels(axes.flatten())
 
         plt.savefig(
-            fig_dir + 'offsets_inflows.png', dpi=200, facecolor='w',
-            edgecolor='white', bbox_inches='tight')
+            fig_dir + 'offsets_inflows' + diurnal*'_diurnal' + '.png',
+            dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
         fig, axes = initialise_fig(height=6, n_subplots=4)
 
         tilt_summary = plot_tilts(
-            class_df, fig_dir, fig=fig, ax1=axes[0][0], ax2=axes[0][1])
+            class_df, fig_dir, fig=fig, ax1=axes[0][0], ax2=axes[0][1],
+            diurnal=diurnal)
         UST.append(tilt_summary[0].values[0])
         DST.append(tilt_summary[1].values[0])
         A_tilt.append(tilt_summary[2].values[0])
         tilt_total.append(tilt_summary[3].values[0])
 
         prop_summary = plot_propagations(
-            class_df, fig_dir, fig=fig, ax1=axes[1][0], ax2=axes[1][1])
+            class_df, fig_dir, fig=fig, ax1=axes[1][0], ax2=axes[1][1],
+            diurnal=diurnal)
         USP.append(prop_summary[1].values[0])
         DSP.append(prop_summary[0].values[0])
         A_prop.append(prop_summary[2].values[0])
@@ -889,7 +898,8 @@ def plot_all(test_dir=None, test_names=None):
         plt.subplots_adjust(hspace=0.775)
 
         plt.savefig(
-            fig_dir + 'tilts_propagations.png', dpi=200, facecolor='w',
+            fig_dir + 'tilts_propagations' + diurnal*'_diurnal' + '.png',
+            dpi=200, facecolor='w',
             edgecolor='white', bbox_inches='tight')
 
         plt.close('all')
