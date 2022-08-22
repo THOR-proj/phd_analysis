@@ -18,6 +18,113 @@ ERA5_dir += 'pressure-levels/reanalysis/'
 WRF_dir = '/media/shorte1/Ewan\'s Hard Drive/phd/data/caine_WRF_data/'
 
 
+def create_ACCESS_counts(
+        save_dir, tracks_base_dir, class_thresh=None,
+        excl_thresh=None, non_linear_conds=None):
+
+    test_names = [
+        'ACCESS_63', 'ACCESS_77', 'ACCESS_42']
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+        print('Creating new directory.')
+
+    tracks_dir = [
+        tracks_base_dir + '/ACCESS_63',
+        tracks_base_dir + '/ACCESS_77',
+        tracks_base_dir + '/ACCESS_42']
+
+    class_threshes = [
+        class_thresh, class_thresh, class_thresh]
+
+    excl_threshes = [
+        excl_thresh, excl_thresh, excl_thresh]
+
+    non_linear_conds = [
+        non_linear_conds, non_linear_conds, non_linear_conds]
+
+    for i in range(len(tracks_dir)):
+
+        print('Getting classes for test:{}.'.format(test_names[i]))
+        class_df = get_counts(
+            base_dir='/home/student.unimelb.edu.au/shorte1/Documents/CPOL_analysis/',
+            tracks_dir=tracks_dir[i],
+            class_thresh=class_threshes[i], excl_thresh=excl_threshes[i],
+            non_linear=non_linear_conds[i], years=[2020, 2021], fake_pope=True)
+
+        out_file_name = save_dir + '{}_classes.pkl'.format(test_names[i])
+        with open(out_file_name, 'wb') as f:
+            pickle.dump(class_df, f)
+
+    radar = [63, 42, 77]
+    classes = []
+    for r in radar:
+        fn = save_dir + 'ACCESS_{}_classes.pkl'.format(r)
+        with open(fn, 'rb') as f:
+            df = pickle.load(f)
+        df = pd.concat({r: df}, names=['radar'])
+        classes.append(df)
+
+    combined_classes = pd.concat(classes)
+    out_fn = save_dir + 'combined_ACCESS_classes.pkl'
+    with open(out_fn, 'wb') as f:
+        pickle.dump(combined_classes, f)
+
+
+def create_oper_radar_counts(
+        save_dir, tracks_base_dir, class_thresh=None,
+        excl_thresh=None, non_linear_conds=None):
+
+    test_names = [
+        'radar_63', 'radar_77', 'radar_42']
+
+    tracks_dir = [
+        tracks_base_dir + '/radar_63',
+        tracks_base_dir + '/radar_77',
+        tracks_base_dir + '/radar_42']
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+        print('Creating new directory.')
+
+    radar = [63, 77, 42]
+
+    class_threshes = [
+        class_thresh, class_thresh, class_thresh]
+
+    excl_threshes = [
+        excl_thresh, excl_thresh, excl_thresh]
+
+    non_linear_conds = [
+        non_linear_conds, non_linear_conds, non_linear_conds]
+
+    for i in range(len(test_names)):
+
+        print('Getting classes for test:{}.'.format(test_names[i]))
+        class_df = get_counts_radar(
+            base_dir='/home/student.unimelb.edu.au/shorte1/Documents/CPOL_analysis/',
+            tracks_dir=tracks_dir[i],
+            class_thresh=class_threshes[i], excl_thresh=excl_threshes[i],
+            non_linear=non_linear_conds[i], years=[2020, 2021], radar=radar[i])
+
+        out_file_name = save_dir + '{}_classes.pkl'.format(test_names[i])
+        with open(out_file_name, 'wb') as f:
+            pickle.dump(class_df, f)
+
+    classes = []
+    for r in radar:
+        fn = save_dir + 'radar_{}_classes.pkl'.format(r)
+        with open(fn, 'rb') as f:
+            df = pickle.load(f)
+        df = pd.concat({r: df}, names=['radar'])
+        classes.append(df)
+
+    combined_classes = pd.concat(classes)
+    out_fn = save_dir + 'combined_radar_classes.pkl'
+    with open(out_fn, 'wb') as f:
+        pickle.dump(combined_classes, f)
+
+
 def add_monsoon_regime(tracks_obj, base_dir=None, fake_pope=False):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
@@ -51,9 +158,7 @@ def init_fonts(fontsize=12):
 
 def load_year(year, tracks_dir='base'):
     print('Processing year {}'.format(year))
-    save_dir = '/home/student.unimelb.edu.au/shorte1/'
-    save_dir += 'Documents/TINT_tracks/{}/'.format(tracks_dir)
-    filename = save_dir + '{}1001_{}0501.pkl'.format(
+    filename = tracks_dir + '/{}1001_{}0501.pkl'.format(
         year, year+1)
     with open(filename, 'rb') as f:
         tracks_obj = pickle.load(f)
@@ -62,9 +167,7 @@ def load_year(year, tracks_dir='base'):
 
 def load_op_month(year, month, radar, tracks_dir='base'):
     print('Processing year {}, month {}, radar, {}'.format(year, month, radar))
-    save_dir = '/home/student.unimelb.edu.au/shorte1/'
-    save_dir += 'Documents/TINT_tracks/{}/'.format(tracks_dir)
-    filename = save_dir + '{:02}_{:04}_{:02}.pkl'.format(radar, year, month)
+    filename = tracks_dir + '/{:02}_{:04}_{:02}.pkl'.format(radar, year, month)
     with open(filename, 'rb') as f:
         tracks_obj = pickle.load(f)
     return tracks_obj
