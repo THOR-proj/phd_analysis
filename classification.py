@@ -20,7 +20,7 @@ WRF_dir = '/media/shorte1/Ewan\'s Hard Drive/phd/data/caine_WRF_data/'
 
 def create_ACCESS_counts(
         save_dir, tracks_base_dir, class_thresh=None,
-        excl_thresh=None, non_linear_conds=None):
+        excl_thresh=None, non_linear_conds=None, exclusions=None):
 
     test_names = [
         'ACCESS_63', 'ACCESS_77', 'ACCESS_42']
@@ -50,7 +50,8 @@ def create_ACCESS_counts(
             base_dir='/home/student.unimelb.edu.au/shorte1/Documents/CPOL_analysis/',
             tracks_dir=tracks_dir[i],
             class_thresh=class_threshes[i], excl_thresh=excl_threshes[i],
-            non_linear=non_linear_conds[i], years=[2020, 2021], fake_pope=True)
+            non_linear=non_linear_conds[i], years=[2020, 2021], fake_pope=True,
+            exclusions=exclusions)
 
         out_file_name = save_dir + '{}_classes.pkl'.format(test_names[i])
         with open(out_file_name, 'wb') as f:
@@ -73,7 +74,7 @@ def create_ACCESS_counts(
 
 def create_oper_radar_counts(
         save_dir, tracks_base_dir, class_thresh=None,
-        excl_thresh=None, non_linear_conds=None):
+        excl_thresh=None, non_linear_conds=None, exclusions=None):
 
     test_names = [
         'radar_63', 'radar_77', 'radar_42']
@@ -103,9 +104,9 @@ def create_oper_radar_counts(
         print('Getting classes for test:{}.'.format(test_names[i]))
         class_df = get_counts_radar(
             base_dir='/home/student.unimelb.edu.au/shorte1/Documents/CPOL_analysis/',
-            tracks_dir=tracks_dir[i],
-            class_thresh=class_threshes[i], excl_thresh=excl_threshes[i],
-            non_linear=non_linear_conds[i], years=[2020, 2021], radar=radar[i])
+            tracks_dir=tracks_dir[i], class_thresh=class_threshes[i],
+            excl_thresh=excl_threshes[i], non_linear=non_linear_conds[i],
+            years=[2020, 2021], radar=radar[i], exclusions=exclusions)
 
         out_file_name = save_dir + '{}_classes.pkl'.format(test_names[i])
         with open(out_file_name, 'wb') as f:
@@ -173,11 +174,12 @@ def load_op_month(year, month, radar, tracks_dir='base'):
     return tracks_obj
 
 
-def get_sub_tracks(tracks_obj, non_linear=False):
-    exclusions = [
-        'small_area', 'large_area', 'intersect_border',
-        'intersect_border_convective', 'duration_cond',
-        'small_velocity', 'small_offset']
+def get_sub_tracks(tracks_obj, non_linear=False, exclusions=None):
+    if exclusions is None:
+        exclusions = [
+            'small_area', 'large_area', 'intersect_border',
+            'intersect_border_convective', 'duration_cond',
+            'small_velocity', 'small_offset']
     if non_linear:
         exclusions += ['non_linear']
     excluded = tracks_obj.exclusions[exclusions]
@@ -218,7 +220,7 @@ def get_counts(
         base_dir=None, tracks_dir='base',
         non_linear=False, class_thresh=None, excl_thresh=None,
         years=sorted(list(set(range(1998, 2016)) - {2000, 2007, 2008})),
-        fake_pope=False):
+        fake_pope=False, exclusions=None):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
     [
@@ -232,7 +234,8 @@ def get_counts(
         print('Adding Pope monsoon regime.')
         tracks_obj = add_monsoon_regime(
             tracks_obj, base_dir=base_dir, fake_pope=fake_pope)
-        sub_tracks = get_sub_tracks(tracks_obj, non_linear=non_linear)
+        sub_tracks = get_sub_tracks(
+            tracks_obj, non_linear=non_linear, exclusions=exclusions)
         if sub_tracks is None:
             print('No tracks satisfying conditions. Skipping year.')
             continue
@@ -295,7 +298,7 @@ def get_counts(
 def get_counts_radar(
         base_dir=None, tracks_dir='base',
         non_linear=False, class_thresh=None, excl_thresh=None,
-        years=[2020, 2021], radar=63, fake_pope=True):
+        years=[2020, 2021], radar=63, fake_pope=True, exclusions=None):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
     [
@@ -317,7 +320,8 @@ def get_counts_radar(
             print('Adding Pope monsoon regime.')
             tracks_obj = add_monsoon_regime(
                 tracks_obj, base_dir=base_dir, fake_pope=fake_pope)
-            sub_tracks = get_sub_tracks(tracks_obj, non_linear=non_linear)
+            sub_tracks = get_sub_tracks(
+                tracks_obj, non_linear=non_linear, exclusions=exclusions)
             if sub_tracks is None:
                 print('No tracks satisfying conditions. Skipping year.')
                 continue
@@ -1047,7 +1051,12 @@ def plot_all(test_dir=None, test_names=None, diurnal=False):
     return sen_dfs
 
 
-def plot_sensitivities(sen_dfs):
+def plot_sensitivities(sen_dfs, test_dirs, name_abvs=None, suff=''):
+
+    if name_abvs is None:
+        name_abvs = [
+            'Base', 'C2', 'C4', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15',
+            'S15', 'A2', 'B5', 'L50', 'L25', 'C']
 
     fig, axes = plt.subplots(3, 2, figsize=(13, 10))
     init_fonts()
@@ -1070,9 +1079,7 @@ def plot_sensitivities(sen_dfs):
                 base_ratios.loc[:, c]/sen_dfs[i].loc[:, 'Total'])
 
         base_ratios = base_ratios.reset_index(drop=True)
-        base_ratios.loc[:, 'Test'] = np.array([
-            'Base', 'C2', 'C4', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15',
-            'S15', 'A2', 'B5', 'L50', 'L25', 'C'])
+        base_ratios.loc[:, 'Test'] = np.array(name_abvs)
         base_ratios = base_ratios.set_index('Test')
         max_rat = np.ceil(base_ratios.max().max()*10)/10
 
@@ -1093,37 +1100,135 @@ def plot_sensitivities(sen_dfs):
         ax.grid(which='minor', alpha=0.2, axis='y')
         ax.grid(which='major', alpha=0.5, axis='y')
 
-    category_breakdown(fig=fig, ax=axes[2, 1], leg_offset_h=-.71)
+    category_breakdown(
+        fig=fig, ax=axes[2, 1], leg_offset_h=-.71, test_dir=test_dirs,
+        test_names=name_abvs, name_abvs=name_abvs)
     plt.subplots_adjust(hspace=0.65)
     make_subplot_labels(axes.flatten())
 
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
     fig_dir = base_dir + 'TINT_figures/'
     plt.savefig(
-        fig_dir + 'total_ratio_sensitivities.png',
+        fig_dir + 'total_ratio_sensitivities{}.png'.format(suff),
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
 
-def category_breakdown(fig=None, ax=None, leg_offset_h=-0.45):
+def plot_sensitivities_comp(
+        sen_dfs_1, sen_dfs_2, test_dirs, name_abvs=None, suff=''):
 
-    test_dir = [
-        'base', 'lower_conv_level', 'higher_conv_level', 'two_levels',
-        'four_levels',
-        'no_steiner', 'lower_ref_thresh', 'higher_shear_thresh',
-        'higher_rel_vel_thresh', 'higher_theta_e', 'higher_offset_thresh',
-        'higher_area_thresh', 'higher_border_thresh', 'linear_50',
-        'linear_25', 'combined']
-    test_names = [
-        'Base', 'Lower Convective Level', 'Higher Convective Level',
-        'Two Levels',
-        'Four Levels', 'No Steiner', 'Lower reflectivity Thresholds',
-        'Higher Shear Threshold',
-        'Higher Relative Velocity Threshold',
-        'Higher Quadrant Buffer', 'Higher Stratiform Offset Threshold',
-        'Higher Minimum Area Threshold',
-        'Stricter Border Intersection Threshold',
-        '50 km Linearity Threshold',
-        '25 km Linearity Threshold', 'Combined']
+    if name_abvs is None:
+        name_abvs = [
+            'Base', 'C2', 'C4', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15',
+            'S15', 'A2', 'B5', 'L50', 'L25', 'C']
+
+    fig, axes = plt.subplots(6, 1, figsize=(13, 15))
+    init_fonts()
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    offset_c = [colors[i] for i in [0, 1, 2, 4]]
+    inflow_c = [colors[i] for i in [0, 1, 2, 4, 5]]
+    tilt_c = [colors[i] for i in [0, 1, 5]]
+    prop_c = [colors[i] for i in [0, 1, 5]]
+    clists = [offset_c, inflow_c, tilt_c, prop_c, offset_c]
+    offset_1 = -.55
+    leg_offset = [offset_1, offset_1, offset_1, offset_1, offset_1]
+    leg_offset_x = [.475] * 4 + [.475]
+    leg_columns = [4, 5, 3, 3, 4]
+    for i in range(len(sen_dfs_1)):
+        base_ratios_1 = sen_dfs_1[i].drop('Total', axis=1)
+        base_ratios_2 = sen_dfs_2[i].drop('Total', axis=1)
+        c_list = clists[i]
+        for c in base_ratios_1.columns:
+            base_ratios_1.loc[:, c] = (
+                base_ratios_1.loc[:, c]/sen_dfs_1[i].loc[:, 'Total'])
+            base_ratios_2.loc[:, c] = (
+                base_ratios_2.loc[:, c]/sen_dfs_2[i].loc[:, 'Total'])
+
+        base_ratios_1 = base_ratios_1.reset_index(drop=True)
+        base_ratios_1.loc[:, 'Test'] = np.array(name_abvs)
+        base_ratios_1 = base_ratios_1.set_index('Test')
+        max_rat_1 = np.ceil(base_ratios_1.max().max()*10)/10
+
+        base_ratios_2 = base_ratios_2.reset_index(drop=True)
+        base_ratios_2.loc[:, 'Test'] = np.array(name_abvs)
+        base_ratios_2 = base_ratios_2.set_index('Test')
+        max_rat_2 = np.ceil(base_ratios_2.max().max()*10)/10
+
+        max_rat = np.max([max_rat_1, max_rat_2])
+
+        ax = axes.flatten()[i]
+        ncol = len(base_ratios_1.columns)
+
+        
+
+        ax = base_ratios_1.plot(
+            kind='bar', stacked=False, fontsize=12, rot=0, ax=ax,
+            yticks=np.arange(0, max_rat+0.1, 0.1), width=0.625*ncol/8,
+            color=c_list, position=1.1)
+
+        ax = base_ratios_2.plot(
+            kind='bar', stacked=False, fontsize=12, rot=0, ax=ax,
+            yticks=np.arange(0, max_rat+0.1, 0.1), width=0.625*ncol/8,
+            color=c_list, position=-.1, edgecolor='black')
+
+        ax.set_xlim(-.5, 15.5)
+
+        ax.set_xlabel(None)
+        ax.xaxis.set_label_coords(.5, -0.15)
+        ax.set_ylabel('Ratio [-]', fontsize=14)
+
+        lines, labels = ax.get_legend_handles_labels()
+
+        ax.legend(
+            lines[:int(len(lines)/2)], labels[:int(len(lines)/2)],
+            loc='lower center',
+            bbox_to_anchor=(leg_offset_x[i], leg_offset[i]),
+            ncol=leg_columns[i], fancybox=True, shadow=True)
+        ax.set_yticks(np.arange(0, max_rat+0.05, 0.05), minor=True)
+        ax.grid(which='minor', alpha=0.2, axis='y')
+        ax.grid(which='major', alpha=0.5, axis='y')
+
+    category_breakdown(
+        fig=fig, ax=axes.flatten()[-1], leg_offset_h=-.71, test_dir=test_dirs,
+        test_names=name_abvs, name_abvs=name_abvs, ncol=5)
+    plt.subplots_adjust(hspace=0.65)
+    make_subplot_labels(axes.flatten(), x_shift=-.075)
+
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    fig_dir = base_dir + 'TINT_figures/'
+    plt.savefig(
+        fig_dir + 'total_ratio_sensitivities{}.png'.format(suff),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
+
+def category_breakdown(
+        fig=None, ax=None, leg_offset_h=-0.45, test_dir=None,
+        test_names=None, name_abvs=None, ncol=2):
+
+    if test_dir is None:
+        test_dir = [
+            'base', 'lower_conv_level', 'higher_conv_level', 'two_levels',
+            'four_levels',
+            'no_steiner', 'lower_ref_thresh', 'higher_shear_thresh',
+            'higher_rel_vel_thresh', 'higher_theta_e', 'higher_offset_thresh',
+            'higher_area_thresh', 'higher_border_thresh', 'linear_50',
+            'linear_25', 'combined']
+    if test_names is None:
+        test_names = [
+            'Base', 'Lower Convective Level', 'Higher Convective Level',
+            'Two Levels',
+            'Four Levels', 'No Steiner', 'Lower reflectivity Thresholds',
+            'Higher Shear Threshold',
+            'Higher Relative Velocity Threshold',
+            'Higher Quadrant Buffer', 'Higher Stratiform Offset Threshold',
+            'Higher Minimum Area Threshold',
+            'Stricter Border Intersection Threshold',
+            '50 km Linearity Threshold',
+            '25 km Linearity Threshold', 'Combined']
+    if name_abvs is None:
+        name_abvs = [
+            'Base', 'C2', 'C4', '2L', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15',
+            'S15', 'A2', 'B5', 'L50', 'L25', 'C']
 
     can_classes = [TS, LS, LeS, RiS, can_A, can_totals] = [
         [] for i in range(6)]
@@ -1154,9 +1259,7 @@ def category_breakdown(fig=None, ax=None, leg_offset_h=-0.45):
 
     tilt_sensitivity_df = tilt_sensitivity_df.drop('Total', axis=1)
     tilt_sensitivity_df = tilt_sensitivity_df.reset_index(drop=True)
-    tilt_sensitivity_df.loc[:, 'Test'] = np.array([
-        'Base', 'C2', 'C4', '2L', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15', 'S15',
-        'A2', 'B5', 'L50', 'L25', 'C'])
+    tilt_sensitivity_df.loc[:, 'Test'] = np.array(name_abvs)
     tilt_sensitivity_df = tilt_sensitivity_df.set_index('Test')
 
     prop_cycle = plt.rcParams['axes.prop_cycle']
@@ -1176,7 +1279,7 @@ def category_breakdown(fig=None, ax=None, leg_offset_h=-0.45):
     plt.xlabel(None)
     ax.legend(
         loc='lower center', bbox_to_anchor=(0.475, leg_offset_h),
-        ncol=2, fancybox=True, shadow=True)
+        ncol=ncol, fancybox=True, shadow=True)
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
 
     ax.set_yticks(np.arange(0, 0.7, 0.1))
@@ -1391,7 +1494,8 @@ def pope_comparison_radar(class_df=None, class_path=None):
         class_df_rad = pickle.load(f)
     with open(class_path + 'combined_ACCESS_classes.pkl', 'rb') as f:
         class_df_ACCESS = pickle.load(f)
-    fig_dir = base_dir + 'TINT_figures/'
+    sub_dir = class_path.split('/')[-2]
+    fig_dir = base_dir + '/TINT_figures/' + sub_dir + '/'
 
     fig, axes = plt.subplots(3, 2, figsize=(12, 7))
 
