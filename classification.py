@@ -410,8 +410,13 @@ def set_ticks(
     plt.ylabel('Count [-]')
 
     max_tick = int(np.ceil(maximum_count / 100) * 100)
-    ax1.set_yticks(np.arange(0, max_tick+100, 100), minor=False)
-    ax1.set_yticks(np.arange(0, max_tick+50, 50), minor=True)
+
+    if max_tick < 250:
+        ax1.set_yticks(np.arange(0, max_tick+50, 50), minor=False)
+        ax1.set_yticks(np.arange(0, max_tick+25, 25), minor=True)
+    else:
+        ax1.set_yticks(np.arange(0, max_tick+100, 100), minor=False)
+        ax1.set_yticks(np.arange(0, max_tick+50, 50), minor=True)
 
     plt.sca(ax2)
     if diurnal:
@@ -465,7 +470,7 @@ def get_save_dir(save_dir):
 def plot_offsets(
         class_df, save_dir=None, append_time=False, fig=None,
         ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
-        diurnal=False):
+        diurnal=False, time_thresh=None):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -528,7 +533,8 @@ def plot_offsets(
         x, (LS/offset_totals).loc[x],
         label='Leading Stratiform', color=colors[1], linestyle=linestyle)
 
-    # ax2.plot([180, 180], [0, 1], '--', color='gray')
+    if time_thresh is not None:
+        ax2.plot([time_thresh, time_thresh], [0, 1], '--', color='gray')
 
     set_ticks(
         ax1, ax2, max(np.max(offset_totals.loc[x].values), maximum),
@@ -540,7 +546,7 @@ def plot_offsets(
 def plot_relative_offsets(
         class_df, save_dir=None, append_time=False, fig=None,
         ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
-        diurnal=False):
+        diurnal=False, time_thresh=None):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -612,7 +618,8 @@ def plot_relative_offsets(
         label='Relative Leading Stratiform', color=colors[1],
         linestyle=linestyle)
 
-    # ax2.plot([120, 120], [0, 1], '--', color='gray')
+    if time_thresh is not None:
+        ax2.plot([time_thresh, time_thresh], [0, 1], '--', color='gray')
 
     set_ticks(
         ax1, ax2, max(np.max(offset_totals.loc[x].values), maximum),
@@ -624,7 +631,7 @@ def plot_relative_offsets(
 def plot_inflows(
         class_df, save_dir=None, append_time=False, fig=None,
         ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
-        diurnal=False):
+        diurnal=False, time_thresh=None):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -698,7 +705,8 @@ def plot_inflows(
         ax1, ax2, max(np.max(inflow_totals.loc[x].values), maximum),
         legend=legend, diurnal=diurnal)
 
-    # ax2.plot([120, 120], [0, 1], '--', color='gray')
+    if time_thresh is not None:
+        ax2.plot([time_thresh, time_thresh], [0, 1], '--', color='gray')
 
     totals = [y.loc[x].sum() for y in [FF, RF, LeF, RiF, A, inflow_totals]]
     return totals
@@ -707,7 +715,7 @@ def plot_inflows(
 def plot_tilts(
         class_df, save_dir=None, append_time=False, fig=None,
         ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
-        diurnal=False):
+        diurnal=False, time_thresh=None):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -764,7 +772,8 @@ def plot_tilts(
         x, (SP/tilt_totals).loc[x], label='Ambiguous', color=colors[5],
         linestyle=linestyle)
 
-    # ax2.plot([210, 210], [0, 1], '--', color='gray')
+    if time_thresh is not None:
+        ax2.plot([time_thresh, time_thresh], [0, 1], '--', color='gray')
 
     set_ticks(
         ax1, ax2, max(np.max(tilt_totals.loc[x].values), maximum),
@@ -777,7 +786,7 @@ def plot_tilts(
 def plot_propagations(
         class_df, save_dir=None, append_time=False, fig=None,
         ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
-        diurnal=False):
+        diurnal=False, time_thresh=None):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -835,7 +844,8 @@ def plot_propagations(
         x, (SP/prop_totals).loc[x], label='Shear Perpendicular',
         color=colors[5], linestyle=linestyle)
 
-    # ax2.plot([210, 210], [0, 1], '--', color='gray')
+    if time_thresh is not None:
+        ax2.plot([time_thresh, time_thresh], [0, 1], '--', color='gray')
 
     set_ticks(
         ax1, ax2, max(np.max(prop_totals.loc[x].values), maximum),
@@ -864,18 +874,20 @@ def plot_comparison():
 
         plot_offsets(
             class_df, fig_dir, fig=fig_1, ax1=axes_1[0][0], ax2=axes_1[0][1],
-            linestyle=linestyles[i], legend=legends[i], maximum=800)
+            linestyle=linestyles[i], legend=legends[i], maximum=800,
+            time_thresh=180)
 
         # import pdb; pdb.set_trace()
 
         plot_relative_offsets(
             class_df, fig_dir, fig=fig_1, ax1=axes_1[1][0], ax2=axes_1[1][1],
             linestyle=linestyles[i], legend=legends[i],
-            maximum=600)
+            maximum=600, time_thresh=120)
 
         plot_inflows(
             class_df, fig_dir, fig=fig_1, ax1=axes_1[2][0], ax2=axes_1[2][1],
-            linestyle=linestyles[i], legend=legends[i], maximum=800)
+            linestyle=linestyles[i], legend=legends[i], maximum=800,
+            time_thresh=120)
 
         plt.subplots_adjust(hspace=0.775)
         make_subplot_labels(axes_1.flatten())
@@ -886,12 +898,13 @@ def plot_comparison():
 
         plot_tilts(
             class_df, fig_dir, fig=fig_2, ax1=axes_2[0][0], ax2=axes_2[0][1],
-            linestyle=linestyles[i], legend=legends[i], maximum=600)
+            linestyle=linestyles[i], legend=legends[i], maximum=600,
+            time_thresh=210)
 
         plot_propagations(
             class_df, fig_dir, fig=fig_2, ax1=axes_2[1][0], ax2=axes_2[1][1],
             linestyle=linestyles[i], legend=legends[i],
-            maximum=600)
+            maximum=600, time_thresh=210)
 
         make_subplot_labels(axes_2.flatten())
         plt.subplots_adjust(hspace=0.775)
@@ -904,7 +917,9 @@ def plot_comparison():
         plt.close('all')
 
 
-def plot_all(test_dir=None, test_names=None, diurnal=False):
+def plot_all(
+        test_dir=None, test_names=None, diurnal=False,
+        time_threshes=None):
 
     if (test_dir is None) or (test_names is None):
         test_dir = [
@@ -923,6 +938,8 @@ def plot_all(test_dir=None, test_names=None, diurnal=False):
             'Stricter Border Intersection Threshold',
             '50 km Linearity Threshold',
             '25 km Reduced Axis Ratio Linearity Threshold', 'Combined']
+    if time_threshes is None:
+        time_threshes = [[None]*5]*len(test_names)
 
     test = []
     [TS, LS, LeS, RiS, offset_total] = [[] for i in range(5)]
@@ -950,7 +967,7 @@ def plot_all(test_dir=None, test_names=None, diurnal=False):
 
         offset_summary = plot_offsets(
             class_df, fig_dir, fig=fig, ax1=axes[0][0], ax2=axes[0][1],
-            diurnal=diurnal)
+            diurnal=diurnal, time_thresh=time_threshes[i][0])
         TS.append(offset_summary[0].values[0])
         LS.append(offset_summary[1].values[0])
         LeS.append(offset_summary[2].values[0])
@@ -959,7 +976,7 @@ def plot_all(test_dir=None, test_names=None, diurnal=False):
 
         rel_offset_summary = plot_relative_offsets(
             class_df, fig_dir, fig=fig, ax1=axes[1][0], ax2=axes[1][1],
-            diurnal=diurnal)
+            diurnal=diurnal, time_thresh=time_threshes[i][1])
         RTS.append(rel_offset_summary[0].values[0])
         RLS.append(rel_offset_summary[1].values[0])
         RLeS.append(rel_offset_summary[2].values[0])
@@ -968,7 +985,7 @@ def plot_all(test_dir=None, test_names=None, diurnal=False):
 
         inflow_summary = plot_inflows(
             class_df, fig_dir, fig=fig, ax1=axes[2][0], ax2=axes[2][1],
-            diurnal=diurnal)
+            diurnal=diurnal, time_thresh=time_threshes[i][2])
         FF.append(inflow_summary[0].values[0])
         RF.append(inflow_summary[1].values[0])
         LeF.append(inflow_summary[2].values[0])
@@ -987,7 +1004,7 @@ def plot_all(test_dir=None, test_names=None, diurnal=False):
 
         tilt_summary = plot_tilts(
             class_df, fig_dir, fig=fig, ax1=axes[0][0], ax2=axes[0][1],
-            diurnal=diurnal)
+            diurnal=diurnal, time_thresh=time_threshes[i][3])
         UST.append(tilt_summary[0].values[0])
         DST.append(tilt_summary[1].values[0])
         A_tilt.append(tilt_summary[2].values[0])
@@ -995,7 +1012,7 @@ def plot_all(test_dir=None, test_names=None, diurnal=False):
 
         prop_summary = plot_propagations(
             class_df, fig_dir, fig=fig, ax1=axes[1][0], ax2=axes[1][1],
-            diurnal=diurnal)
+            diurnal=diurnal, time_thresh=time_threshes[i][4])
         USP.append(prop_summary[1].values[0])
         DSP.append(prop_summary[0].values[0])
         A_prop.append(prop_summary[2].values[0])
@@ -1114,7 +1131,8 @@ def plot_sensitivities(sen_dfs, test_dirs, name_abvs=None, suff=''):
 
 
 def plot_sensitivities_comp(
-        sen_dfs_1, sen_dfs_2, test_dirs, name_abvs=None, suff=''):
+        sen_dfs_1, sen_dfs_2, test_dirs_1, test_dirs_2,
+        name_abvs=None, suff=''):
 
     if name_abvs is None:
         name_abvs = [
@@ -1125,10 +1143,10 @@ def plot_sensitivities_comp(
     init_fonts()
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
-    offset_c = [colors[i] for i in [0, 1, 2, 4]]
-    inflow_c = [colors[i] for i in [0, 1, 2, 4, 5]]
-    tilt_c = [colors[i] for i in [0, 1, 5]]
-    prop_c = [colors[i] for i in [0, 1, 5]]
+    offset_c = [colors[i] for i in [0, 0, 1, 1, 2, 2, 4, 4]]
+    inflow_c = [colors[i] for i in [0, 0, 1, 1, 2, 2, 4, 4, 5, 5]]
+    tilt_c = [colors[i] for i in [0, 0, 1, 1, 5, 5]]
+    prop_c = [colors[i] for i in [0, 0, 1, 1, 5, 5]]
     clists = [offset_c, inflow_c, tilt_c, prop_c, offset_c]
     offset_1 = -.55
     leg_offset = [offset_1, offset_1, offset_1, offset_1, offset_1]
@@ -1159,17 +1177,33 @@ def plot_sensitivities_comp(
         ax = axes.flatten()[i]
         ncol = len(base_ratios_1.columns)
 
-        
+        col_names = base_ratios_1.columns.values.tolist()
+        new_col_names_1 = [
+            col_names[i] + ' Radar' for i in range(len(col_names))]
+        rename_dict_1 = {
+            col_names[i]: new_col_names_1[i] for i in range(len(col_names))}
+        base_ratios_1 = base_ratios_1.rename(columns=rename_dict_1)
+        new_col_names_2 = [
+            col_names[i] + ' ACCESS-C' for i in range(len(col_names))]
+        rename_dict_2 = {
+            col_names[i]: new_col_names_2[i] for i in range(len(col_names))}
+        base_ratios_2 = base_ratios_2.rename(columns=rename_dict_2)
 
-        ax = base_ratios_1.plot(
-            kind='bar', stacked=False, fontsize=12, rot=0, ax=ax,
-            yticks=np.arange(0, max_rat+0.1, 0.1), width=0.625*ncol/8,
-            color=c_list, position=1.1)
+        base_ratios = pd.concat([base_ratios_1, base_ratios_2], axis=1)
+        # col_names = base_ratios.columns.values.tolist()
 
-        ax = base_ratios_2.plot(
+        # import pdb; pdb.set_trace()
+        new_col_order = []
+        for i in range(len(new_col_names_1)):
+            new_col_order.append(new_col_names_1[i])
+            new_col_order.append(new_col_names_2[i])
+        base_ratios = base_ratios[new_col_order]
+
+        ax = base_ratios.plot(
             kind='bar', stacked=False, fontsize=12, rot=0, ax=ax,
-            yticks=np.arange(0, max_rat+0.1, 0.1), width=0.625*ncol/8,
-            color=c_list, position=-.1, edgecolor='black')
+            yticks=np.arange(0, np.ceil(max_rat*10)/10+0.1, 0.1),
+            width=0.75*ncol/4,
+            color=c_list)
 
         ax.set_xlim(-.5, 15.5)
 
@@ -1180,16 +1214,21 @@ def plot_sensitivities_comp(
         lines, labels = ax.get_legend_handles_labels()
 
         ax.legend(
-            lines[:int(len(lines)/2)], labels[:int(len(lines)/2)],
+            lines[::2], col_names,
             loc='lower center',
             bbox_to_anchor=(leg_offset_x[i], leg_offset[i]),
-            ncol=leg_columns[i], fancybox=True, shadow=True)
-        ax.set_yticks(np.arange(0, max_rat+0.05, 0.05), minor=True)
+            ncol=leg_columns[i]+1, fancybox=True, shadow=True)
+        ax.set_yticks(
+            np.arange(0, np.ceil(max_rat*10)/10+0.1, 0.05), minor=True)
         ax.grid(which='minor', alpha=0.2, axis='y')
         ax.grid(which='major', alpha=0.5, axis='y')
 
-    category_breakdown(
-        fig=fig, ax=axes.flatten()[-1], leg_offset_h=-.71, test_dir=test_dirs,
+    plt.suptitle(
+        'Category Ratios for Radar (Left Bars) and ACCESS-C (Right Bars)',
+        fontsize=14, y=.90)
+    category_breakdown_comp(
+        fig=fig, ax=axes.flatten()[-1], leg_offset_h=-.71,
+        test_dir_1=test_dirs_1, test_dir_2=test_dirs_2,
         test_names=name_abvs, name_abvs=name_abvs, ncol=5)
     plt.subplots_adjust(hspace=0.65)
     make_subplot_labels(axes.flatten(), x_shift=-.075)
@@ -1284,6 +1323,159 @@ def category_breakdown(
 
     ax.set_yticks(np.arange(0, 0.7, 0.1))
     ax.set_yticks(np.arange(0, .65, 0.05), minor='True')
+
+    ax.grid(which='major', alpha=0.5, axis='y')
+    ax.grid(which='minor', alpha=0.2, axis='y')
+
+    # fig_dir = base_dir + 'TINT_figures/'
+    # plt.savefig(
+    #     fig_dir + 'relative_stratiform_breakdown.png', dpi=200, facecolor='w',
+    #     edgecolor='white', bbox_inches='tight')
+
+    return tilt_sensitivity_df
+
+
+def category_breakdown_comp(
+        fig=None, ax=None, leg_offset_h=-0.45, test_dir_1=None,
+        test_dir_2=None, test_names=None, name_abvs=None, ncol=2):
+
+    if test_dir_1 is None or test_dir_2 is None:
+        test_dir_base = [
+            'ACCESS_radar_base/',
+            'ACCESS_radar_ambient_swapped/',
+            'ACCESS_radar_lower_wind_level/',
+            'ACCESS_radar_higher_wind_level/',
+            'ACCESS_radar_no_steiner/',
+            'ACCESS_radar_lower_ref_thresh/',
+            'ACCESS_radar_higher_shear_thresh/',
+            'ACCESS_radar_higher_rel_vel_thresh/',
+            'ACCESS_radar_higher_theta_e/',
+            'ACCESS_radar_higher_offset_thresh/',
+            'ACCESS_radar_higher_area_thresh/',
+            'ACCESS_radar_higher_conv_area_thresh/',
+            'ACCESS_radar_higher_border_thresh/',
+            'ACCESS_radar_linear_50/',
+            'ACCESS_radar_linear_25/',
+            'ACCESS_radar_combined_sensitivity/']
+        test_dir_1 = [t + 'combined_radar' for t in test_dir_base]
+        test_dir_2 = [t + 'combined_ACCESS' for t in test_dir_base]
+    if name_abvs is None:
+        name_abvs = [
+            'Base', 'SA', 'W2', 'W4', 'NS', 'LR', 'S4', 'RV4', 'T15',
+            'S15', 'A2', 'CA', 'B5', 'L50', 'L25', 'C']
+    if test_names is None:
+        test_names = name_abvs
+
+    can_classes_1 = [TS_1, LS_1, LeS_1, RiS_1, can_A_1, can_totals_1] = [
+        [] for i in range(6)]
+    can_classes_2 = [TS_2, LS_2, LeS_2, RiS_2, can_A_2, can_totals_2] = [
+        [] for i in range(6)]
+    test = []
+
+    for i in range(len(test_dir_1)):
+        base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+        class_path = base_dir + 'TINT_tracks/'
+        class_path += '{}_classes.pkl'.format(test_dir_1[i])
+
+        with open(class_path, 'rb') as f:
+            class_df_1 = pickle.load(f)
+
+        base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+        class_path = base_dir + 'TINT_tracks/'
+        class_path += '{}_classes.pkl'.format(test_dir_2[i])
+
+        with open(class_path, 'rb') as f:
+            class_df_2 = pickle.load(f)
+
+        test.append(test_names[i])
+
+        can_breakdown_1 = canonical_class_breakdown(class_df_1)
+        [
+            can_classes_1[i].append(can_breakdown_1[i])
+            for i in range(len(can_classes_1))]
+
+        can_breakdown_2 = canonical_class_breakdown(class_df_2)
+        [
+            can_classes_2[i].append(can_breakdown_2[i])
+            for i in range(len(can_classes_2))]
+
+    tilt_sensitivity_df_1 = pd.DataFrame({
+        'Test': test, 'Trailing Stratiform Class': TS_1,
+        'Leading Stratiform Class': LS_1,
+        'Left Stratiform Class': LeS_1,
+        'Right Stratiform Class': RiS_1, 'Ambiguous Inflow': can_A_1,
+        'Total': can_totals_1})
+    tilt_sensitivity_df_1 = tilt_sensitivity_df_1.set_index('Test')
+
+    tilt_sensitivity_df_1 = tilt_sensitivity_df_1.drop('Total', axis=1)
+    tilt_sensitivity_df_1 = tilt_sensitivity_df_1.reset_index(drop=True)
+    tilt_sensitivity_df_1.loc[:, 'Test'] = np.array(name_abvs)
+    tilt_sensitivity_df_1 = tilt_sensitivity_df_1.set_index('Test')
+
+    tilt_sensitivity_df_2 = pd.DataFrame({
+        'Test': test, 'Trailing Stratiform Class': TS_2,
+        'Leading Stratiform Class': LS_2,
+        'Left Stratiform Class': LeS_2,
+        'Right Stratiform Class': RiS_2, 'Ambiguous Inflow': can_A_2,
+        'Total': can_totals_2})
+    tilt_sensitivity_df_2 = tilt_sensitivity_df_2.set_index('Test')
+
+    tilt_sensitivity_df_2 = tilt_sensitivity_df_2.drop('Total', axis=1)
+    tilt_sensitivity_df_2 = tilt_sensitivity_df_2.reset_index(drop=True)
+    tilt_sensitivity_df_2.loc[:, 'Test'] = np.array(name_abvs)
+    tilt_sensitivity_df_2 = tilt_sensitivity_df_2.set_index('Test')
+
+    col_names = tilt_sensitivity_df_1.columns.values.tolist()
+    new_col_names_1 = [
+        col_names[i] + ' Radar' for i in range(len(col_names))]
+    rename_dict_1 = {
+        col_names[i]: new_col_names_1[i] for i in range(len(col_names))}
+    tilt_sensitivity_df_1 = tilt_sensitivity_df_1.rename(columns=rename_dict_1)
+    new_col_names_2 = [
+        col_names[i] + ' ACCESS-C' for i in range(len(col_names))]
+    rename_dict_2 = {
+        col_names[i]: new_col_names_2[i] for i in range(len(col_names))}
+    tilt_sensitivity_df_2 = tilt_sensitivity_df_2.rename(columns=rename_dict_2)
+
+    tilt_sensitivity_df = pd.concat(
+        [tilt_sensitivity_df_1, tilt_sensitivity_df_2], axis=1)
+
+    new_col_order = []
+    for i in range(len(new_col_names_1)):
+        new_col_order.append(new_col_names_1[i])
+        new_col_order.append(new_col_names_2[i])
+    tilt_sensitivity_df = tilt_sensitivity_df[new_col_order]
+
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    colors = [colors[i] for i in [0, 0, 1, 1, 2, 2, 4, 4, 5, 5]]
+
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=(6, 3.5))
+
+    init_fonts()
+
+    n_col = len(tilt_sensitivity_df_1.columns)
+
+    tilt_sensitivity_df.plot(
+        kind='bar', stacked=False, rot=0,
+        yticks=np.arange(0, 0.8, 0.1), width=0.75*n_col/4,
+        fig=fig, ax=ax, color=colors)
+    plt.sca(ax)
+    plt.ylabel('Ratio [-]', fontsize=14)
+    plt.xlabel(None)
+
+    lines, labels = ax.get_legend_handles_labels()
+
+    ax.legend(
+        lines[::2], col_names,
+        loc='lower center', bbox_to_anchor=(0.475, leg_offset_h),
+        ncol=ncol, fancybox=True, shadow=True)
+
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+
+    ax.set_yticks(np.arange(0, 0.8, 0.1))
+    ax.set_yticks(np.arange(0, .75, 0.05), minor='True')
 
     ax.grid(which='major', alpha=0.5, axis='y')
     ax.grid(which='minor', alpha=0.2, axis='y')
