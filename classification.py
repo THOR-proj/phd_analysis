@@ -855,8 +855,13 @@ def plot_propagations(
     return totals
 
 
-def plot_comparison():
-    test_dir = ['base', 'two_levels']
+def plot_comparison(test_dir=None, suffix='', maximums=None, title=None):
+
+    if test_dir is None:
+        test_dir = ['base', 'two_levels']
+    if maximums is None:
+        maximums = [800, 600, 800, 600, 600]
+
     linestyles = ['-', '--']
     legends = [True, False]
 
@@ -874,7 +879,7 @@ def plot_comparison():
 
         plot_offsets(
             class_df, fig_dir, fig=fig_1, ax1=axes_1[0][0], ax2=axes_1[0][1],
-            linestyle=linestyles[i], legend=legends[i], maximum=800,
+            linestyle=linestyles[i], legend=legends[i], maximum=maximums[0],
             time_thresh=180)
 
         # import pdb; pdb.set_trace()
@@ -882,37 +887,43 @@ def plot_comparison():
         plot_relative_offsets(
             class_df, fig_dir, fig=fig_1, ax1=axes_1[1][0], ax2=axes_1[1][1],
             linestyle=linestyles[i], legend=legends[i],
-            maximum=600, time_thresh=120)
+            maximum=maximums[1], time_thresh=120)
 
         plot_inflows(
             class_df, fig_dir, fig=fig_1, ax1=axes_1[2][0], ax2=axes_1[2][1],
-            linestyle=linestyles[i], legend=legends[i], maximum=800,
+            linestyle=linestyles[i], legend=legends[i], maximum=maximums[2],
             time_thresh=120)
 
         plt.subplots_adjust(hspace=0.775)
         make_subplot_labels(axes_1.flatten())
 
+        if title is not None:
+            plt.suptitle(title, y=.925)
+
         plt.savefig(
-            fig_dir + 'offsets_inflows_comparison.png', dpi=200, facecolor='w',
+            fig_dir + 'offsets_inflows_comparison{}.png'.format(suffix),
+            dpi=200, facecolor='w',
             edgecolor='white', bbox_inches='tight')
 
         plot_tilts(
             class_df, fig_dir, fig=fig_2, ax1=axes_2[0][0], ax2=axes_2[0][1],
-            linestyle=linestyles[i], legend=legends[i], maximum=600,
+            linestyle=linestyles[i], legend=legends[i], maximum=maximums[3],
             time_thresh=210)
 
         plot_propagations(
             class_df, fig_dir, fig=fig_2, ax1=axes_2[1][0], ax2=axes_2[1][1],
             linestyle=linestyles[i], legend=legends[i],
-            maximum=600, time_thresh=210)
+            maximum=maximums[4], time_thresh=210)
 
         make_subplot_labels(axes_2.flatten())
         plt.subplots_adjust(hspace=0.775)
 
+        if title is not None:
+            plt.suptitle(title, y=.945)
+
         plt.savefig(
-            fig_dir + 'tilts_propagations_comparison.png', dpi=200,
-            facecolor='w',
-            edgecolor='white', bbox_inches='tight')
+            fig_dir + 'tilts_propagations_comparison{}.png'.format(suffix),
+            dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
         plt.close('all')
 
@@ -1139,7 +1150,7 @@ def plot_sensitivities_comp(
             'Base', 'C2', 'C4', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15',
             'S15', 'A2', 'B5', 'L50', 'L25', 'C']
 
-    fig, axes = plt.subplots(6, 1, figsize=(13, 15))
+    fig, axes = plt.subplots(5, 1, figsize=(12, 12))
     init_fonts()
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
@@ -1226,10 +1237,10 @@ def plot_sensitivities_comp(
     plt.suptitle(
         'Category Ratios for Radar (Left Bars) and ACCESS-C (Right Bars)',
         fontsize=14, y=.90)
-    category_breakdown_comp(
-        fig=fig, ax=axes.flatten()[-1], leg_offset_h=-.71,
-        test_dir_1=test_dirs_1, test_dir_2=test_dirs_2,
-        test_names=name_abvs, name_abvs=name_abvs, ncol=5)
+    # category_breakdown_comp(
+    #     fig=fig, ax=axes.flatten()[-1], leg_offset_h=-.71,
+    #     test_dir_1=test_dirs_1, test_dir_2=test_dirs_2,
+    #     test_names=name_abvs, name_abvs=name_abvs, ncol=5)
     plt.subplots_adjust(hspace=0.65)
     make_subplot_labels(axes.flatten(), x_shift=-.075)
 
@@ -1630,6 +1641,135 @@ def plot_categories(
     #     edgecolor='white', bbox_inches='tight')
 
 
+def compare_categories(
+        class_df_1=None, class_df_2=None, pope_regime=None,
+        fig=None, ax=None, title=''):
+
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    if class_df_1 is None:
+        class_path_1 = base_dir + 'TINT_tracks/'
+        class_path_1 += 'base_classes.pkl'
+        with open(class_path_1, 'rb') as f:
+            class_df_1 = pickle.load(f)
+
+        class_path_2 = base_dir + 'TINT_tracks/'
+        class_path_2 += 'base_classes.pkl'
+        with open(class_path_2, 'rb') as f:
+            class_df_2 = pickle.load(f)
+    # fig_dir = base_dir + 'TINT_figures/'
+
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=(5, 3))
+    init_fonts()
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    colors = [colors[i] for i in [0, 0, 1, 1, 2, 2, 4, 4, 5, 5]]
+
+    counts_df_1 = pd.DataFrame({'count': class_df_1.value_counts()})
+    counts_df_2 = pd.DataFrame({'count': class_df_2.value_counts()})
+    if pope_regime is not None:
+        counts_df_1 = counts_df_1.xs(pope_regime, level='pope_regime')
+        counts_df_2 = counts_df_2.xs(pope_regime, level='pope_regime')
+
+    pivot_counts_list = []
+    grouped_counts_list = []
+
+    for counts_df in [counts_df_1, counts_df_2]:
+        ratio = counts_df['count']/counts_df['count'].sum()
+        counts_df['ratio'] = ratio
+        grouped_counts = counts_df.groupby(
+            ['offset_type', 'inflow_type']).sum()
+
+        grouped_counts_list.append(grouped_counts)
+
+        pivot_counts = grouped_counts.pivot_table(
+            'ratio', ['offset_type'], 'inflow_type')
+        pivot_counts.columns.name = None
+        pivot_counts = pivot_counts.reindex([
+            'Trailing Stratiform', 'Leading Stratiform',
+            'Parallel Stratiform (Left)', 'Parallel Stratiform (Right)'])
+
+        columns = pivot_counts.columns.values
+        required_columns = [
+            'Front Fed', 'Rear Fed',
+            'Parallel Fed (Left)', 'Parallel Fed (Right)',
+            'Ambiguous']
+        for col in required_columns:
+            if col not in columns:
+                pivot_counts[col] = np.nan
+
+        pivot_counts = pivot_counts[[
+            'Front Fed', 'Rear Fed',
+            'Parallel Fed (Left)', 'Parallel Fed (Right)',
+            'Ambiguous']]
+        pivot_counts = pivot_counts.reset_index()
+        pivot_counts.loc[:, 'offset_type'] = [
+            'Trailing', 'Leading', 'Left', 'Right']
+        pivot_counts = pivot_counts.set_index('offset_type')
+
+        pivot_counts = pivot_counts.rename({
+            'Parallel Fed (Left)': 'Left Fed',
+            'Parallel Fed (Right)': 'Right Fed',
+            'Ambiguous': 'Ambiguous Inflow'}, axis=1)
+
+        pivot_counts_list.append(pivot_counts)
+
+    col_names = pivot_counts_list[0].columns.values.tolist()
+    new_col_names_1 = [
+        col_names[i] + ' Radar' for i in range(len(col_names))]
+    rename_dict_1 = {
+        col_names[i]: new_col_names_1[i] for i in range(len(col_names))}
+    pivot_counts_list[0] = pivot_counts_list[0].rename(columns=rename_dict_1)
+    new_col_names_2 = [
+        col_names[i] + ' ACCESS-C' for i in range(len(col_names))]
+    rename_dict_2 = {
+        col_names[i]: new_col_names_2[i] for i in range(len(col_names))}
+    pivot_counts_list[1] = pivot_counts_list[1].rename(columns=rename_dict_2)
+
+    pivot_counts = pd.concat(pivot_counts_list, axis=1)
+    new_col_order = []
+    for i in range(len(new_col_names_1)):
+        new_col_order.append(new_col_names_1[i])
+        new_col_order.append(new_col_names_2[i])
+    pivot_counts = pivot_counts[new_col_order]
+
+    pivot_counts.plot(
+        kind='bar', stacked=False, rot=0, ax=ax,
+        yticks=np.arange(0, 0.7, 0.1), width=0.6*5/4,
+        color=colors, xlabel=None, legend=False)
+
+    plt.sca(ax)
+    plt.ylabel('Ratio [-]')
+    plt.xlabel(None)
+    ax.set_yticks(np.arange(0, 0.65, 0.05), minor=True)
+
+    # plt.xlabel('Stratiform Offset Category')
+    # ax.legend(
+    #     loc='upper right',  # bbox_to_anchor=(0.475, -0.575),
+    #     ncol=1, fancybox=True, shadow=True)
+
+    ax.grid(which='major', alpha=0.5, axis='y')
+    ax.grid(which='minor', alpha=0.2, axis='y')
+
+    total_1 = grouped_counts_list[0]['count'].sum()
+    total_2 = grouped_counts_list[1]['count'].sum()
+
+    ax.text(
+        0.52, .87, title, ha='center',
+        transform=ax.transAxes, size=12, backgroundcolor='1')
+
+    total_text = 'Radar Total = {}        ACCESS-C Total = {}'.format(
+        int(np.round(total_1)), int(np.round(total_2)))
+
+    ax.text(
+        0.15, .72, total_text,
+        transform=ax.transAxes, size=12, backgroundcolor='1')
+
+    # plt.savefig(
+    #     fig_dir + 'categories.png', dpi=200, facecolor='w',
+    #     edgecolor='white', bbox_inches='tight')
+
+
 def pope_comparison(class_df=None):
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
     if class_df is None:
@@ -1734,6 +1874,91 @@ def pope_comparison_radar(class_df=None, class_path=None):
 
     plt.savefig(
         fig_dir + 'pope_breakdown_radar.png', dpi=200, facecolor='w',
+        edgecolor='white', bbox_inches='tight')
+
+
+def pope_comparison_radar_sensitivity(
+        class_df_1=None, class_path_1=None,
+        class_df_2=None, class_path_2=None, titles=None):
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    if class_path_1 is None:
+        class_path_1 = base_dir + 'TINT_tracks/ACCESS_radar_base/'
+        class_path_2 = base_dir + 'TINT_tracks/ACCESS_radar_ambient_swapped/'
+    if titles is None:
+        titles = ['Base', 'Swapped Ambient']
+    with open(class_path_1 + 'combined_radar_classes.pkl', 'rb') as f:
+        class_df_1_rad = pickle.load(f)
+    with open(class_path_1 + 'combined_ACCESS_classes.pkl', 'rb') as f:
+        class_df_1_ACCESS = pickle.load(f)
+    with open(class_path_2 + 'combined_radar_classes.pkl', 'rb') as f:
+        class_df_2_rad = pickle.load(f)
+    with open(class_path_2 + 'combined_ACCESS_classes.pkl', 'rb') as f:
+        class_df_2_ACCESS = pickle.load(f)
+
+    sub_dir = class_path_1.split('/')[-2]
+    fig_dir = base_dir + '/TINT_figures/' + sub_dir + '/'
+
+    fig, axes = plt.subplots(3, 2, figsize=(12, 7))
+
+    init_fonts()
+
+    titles_1 = [
+        '{}: All Regimes'.format(titles[0]),
+        '{}: Weak Monsoon'.format(titles[0]),
+        '{}: Active Monsoon'.format(titles[0])]
+
+    titles_2 = [
+        '{}: All Regimes'.format(titles[1]),
+        '{}: Weak Monsoon'.format(titles[1]),
+        '{}: Active Monsoon'.format(titles[1])]
+
+    compare_categories(
+        class_df_1=class_df_1_rad, class_df_2=class_df_1_ACCESS,
+        pope_regime=None, fig=fig, ax=axes[0, 0],
+        title=titles_1[0])
+
+    compare_categories(
+        class_df_1=class_df_2_rad, class_df_2=class_df_2_ACCESS,
+        pope_regime=None, fig=fig, ax=axes[0, 1],
+        title=titles_2[0])
+
+    for i in range(1, 3):
+        compare_categories(
+            class_df_1=class_df_1_rad, class_df_2=class_df_1_ACCESS,
+            pope_regime=i, fig=fig, ax=axes[i, 0],
+            title=titles_1[i])
+        compare_categories(
+            class_df_1=class_df_2_rad, class_df_2=class_df_2_ACCESS,
+            pope_regime=i, fig=fig,
+            ax=axes[i, 1], title=titles_2[i])
+
+    # axes.flatten()[0].legend(
+    #     loc='upper right',  # bbox_to_anchor=(0.475, -0.575),
+    #     ncol=1, fancybox=True, shadow=True)
+
+    make_subplot_labels(axes.flatten())
+
+    plt.sca(axes.flatten()[-2])
+    plt.xlabel('Stratiform Offset Category')
+    plt.sca(axes.flatten()[-1])
+    plt.xlabel('Stratiform Offset Category')
+
+    lines, labels = axes.flatten()[-2].get_legend_handles_labels()
+    col_names = [
+        'Front Fed', 'Rear Fed', 'Left Fed', 'Right Fed',
+        'Ambiguous Inflow']
+
+    axes.flatten()[-2].legend(
+        lines[::2], col_names,
+        loc='lower center', bbox_to_anchor=(1.1, -0.6),
+        ncol=5, fancybox=True, shadow=True)
+
+    plt.suptitle(
+        'Category Ratios for Radar (Left Bars) and ACCESS-C (Right Bars)',
+        fontsize=14, y=.94)
+
+    plt.savefig(
+        fig_dir + 'pope_breakdown_radar_sensitivity.png', dpi=200, facecolor='w',
         edgecolor='white', bbox_inches='tight')
 
 
@@ -1885,5 +2110,193 @@ def monsoon_comparison(
     ax.text(
         0.7, lab_h, tot_lab[2], transform=ax.transAxes, size=12,
         backgroundcolor='1')
+
+    return ratios_df
+
+
+def monsoon_comparison_ACCESS_radar(
+        class_df_1=None, class_df_2=None, fig=None, ax=None, legend=True,
+        title='', required_types=None, titles=None, colors=None):
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    if class_df_1 is None:
+        class_path = base_dir + 'TINT_tracks/ACCESS_radar_base/'
+        class_path += 'combined_radar_classes.pkl'
+        with open(class_path, 'rb') as f:
+            class_df_1 = pickle.load(f)
+        class_path = base_dir + 'TINT_tracks/ACCESS_radar_base/'
+        class_path += 'combined_ACCESS_classes.pkl'
+        with open(class_path, 'rb') as f:
+            class_df_2 = pickle.load(f)
+
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=(5, 3))
+
+    if colors is None:
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        colors = prop_cycle.by_key()['color']
+        colors = [
+            colors[i]
+            for i in [0, 0, 1, 1, 2, 2, 4, 4, 6, 6, 7, 7, 5, 5]]
+
+    ratios_df_list = []
+    totals_list = []
+    for class_df in [class_df_1, class_df_2]:
+        counts_df = pd.DataFrame({'count': class_df.value_counts()})
+        counts_df = counts_df.reset_index('pope_regime')
+
+        pope = counts_df['pope_regime'].values
+        pope_dic = {0: 'Not Classified'}
+        for i in range(1, 6):
+            pope_dic[i] = 'Weak Monsoon'
+        pope_dic[2] = 'Active Monsoon'
+        monsoon = [pope_dic[p_num] for p_num in pope]
+        counts_df['pope_regime'] = monsoon
+
+        counts_df = counts_df.groupby([
+            'offset_type', 'inflow_type',
+            'tilt_dir', 'prop_dir', 'pope_regime']).sum()
+        try:
+            counts_df = counts_df.drop('Not Classified', level='pope_regime')
+        except KeyError:
+            print('No unclassified regime cases.')
+
+        counts_df_inactive = counts_df.xs('Weak Monsoon', level='pope_regime')
+        counts_df_active = counts_df.xs('Active Monsoon', level='pope_regime')
+
+        if required_types is None:
+            required_types = [
+                (
+                    'Trailing Stratiform', 'Front Fed',
+                    'Up-Shear Tilted', 'Down-Shear Propagating'),
+                (
+                    'Leading Stratiform', 'Front Fed',
+                    'Down-Shear Tilted', 'Down-Shear Propagating'),
+                (
+                    'Trailing Stratiform', 'Front Fed',
+                    'Down-Shear Tilted', 'Up-Shear Propagating'),
+                (
+                    'Trailing Stratiform', 'Rear Fed',
+                    'Up-Shear Tilted', 'Up-Shear Propagating'),
+                (
+                    'Leading Stratiform', 'Rear Fed',
+                    'Down-Shear Tilted', 'Up-Shear Propagating'),
+                (
+                    'Parallel Stratiform (Right)', 'Parallel Fed (Right)',
+                    'Down-Shear Tilted', 'Down-Shear Propagating')]
+            titles = [
+                'Type I: Front-Fed Trailing Stratiform, Up-Shear Tilted, Down-Shear Propagating',
+                'Type II: Front-Fed Leading Stratiform, Down-Shear Tilted, Down-Shear Propagating',
+                'Type III: Front-Fed Trailing Stratiform, Down-Shear Tilted, Up-Shear Propagating',
+                'Type IV: Rear-Fed Trailing Stratiform, Up-Shear Tilted, Up-Shear Propagating',
+                'Type VIII: Rear-Fed Leading Stratiform, Down-Shear Tilted, Up-Shear Propagating',
+                'Type IX: Right-Fed Right Stratiform, Down-Shear Tilted, Down-Shear Propagating',
+                'All Other Types']
+
+            titles = [
+                'Type I', 'Type II', 'Type III', 'Type IV', 'Type VIII',
+                'Type IX', 'All Other Types']
+
+        total = []
+        types = [[] for i in range(len(required_types)+1)]
+
+        for c_df in [counts_df, counts_df_inactive, counts_df_active]:
+
+            c_df = c_df.groupby(
+                ['offset_type', 'inflow_type', 'tilt_dir', 'prop_dir']).sum()
+            # total_ratio = (c_df['count']/c_df['count'].sum())
+            # c_df['total_ratio'] = total_ratio
+
+            c_df = c_df.drop('Ambiguous', level='inflow_type')
+            c_df = c_df.drop('Perpendicular Shear', level='tilt_dir')
+            c_df = c_df.drop('Ambiguous', level='tilt_dir')
+            c_df = c_df.drop('Perpendicular Shear', level='prop_dir')
+            c_df = c_df.drop('Ambiguous', level='prop_dir')
+
+            for sys_type in required_types:
+                if sys_type not in c_df.index.values.tolist():
+                    c_df.loc[sys_type, 'count'] = 0
+
+            ratio = c_df['count']/c_df['count'].sum()
+            c_df['ratio'] = ratio
+            # c_df.sort_values('ratio', axis=0, ascending=False)
+
+            # c_df.sort_values('count', axis=0, ascending=False)
+            # import pdb; pdb.set_trace()
+
+            total.append(int(c_df['count'].sum()))
+
+            for i in range(len(required_types)):
+                types[i].append(c_df.loc[required_types[i], 'ratio'])
+
+            types[-1].append(
+                1 - c_df.loc[[rt for rt in required_types]]['ratio'].sum())
+
+        totals_list.append(total)
+
+        categories = ['All', 'Weak Monsoon', 'Active Monsoon']
+        ratios_dict = {'Wet Season Regime': categories}
+        for i in range(len(required_types)):
+            ratios_dict[titles[i]] = types[i]
+        ratios_dict[titles[-1]] = types[-1]
+        ratios_df = pd.DataFrame(ratios_dict)
+        ratios_df = ratios_df.set_index('Wet Season Regime')
+        ratios_df_list.append(ratios_df)
+
+    # import pdb; pdb.set_trace()
+
+    col_names = ratios_df_list[0].columns.values.tolist()
+    new_col_names_1 = [
+        col_names[i] + ' Radar' for i in range(len(col_names))]
+    rename_dict_1 = {
+        col_names[i]: new_col_names_1[i] for i in range(len(col_names))}
+    ratios_df_list[0] = ratios_df_list[0].rename(columns=rename_dict_1)
+    new_col_names_2 = [
+        col_names[i] + ' ACCESS-C' for i in range(len(col_names))]
+    rename_dict_2 = {
+        col_names[i]: new_col_names_2[i] for i in range(len(col_names))}
+    ratios_df_list[1] = ratios_df_list[1].rename(columns=rename_dict_2)
+
+    ratios_df = pd.concat(ratios_df_list, axis=1)
+    new_col_order = []
+    for i in range(len(new_col_names_1)):
+        new_col_order.append(new_col_names_1[i])
+        new_col_order.append(new_col_names_2[i])
+    ratios_df = ratios_df[new_col_order]
+
+    ratios_df.plot(
+        kind='bar', stacked=False, rot=0, fontsize=12, ax=ax,
+        yticks=np.arange(0, 1.1, 0.1), width=0.7*4/4,
+        color=colors, legend=False)
+    ax.set_xlabel(None)
+    # ax.xaxis.set_label_coords(.5, -0.15)
+    ax.set_ylabel('Ratio [-]', fontsize=14)
+    if legend:
+        ax.legend(
+            loc='lower center', bbox_to_anchor=(.475, -0.5),
+            ncol=2, fancybox=True, shadow=True)
+    ax.set_yticks(np.arange(0, 1+0.05, 0.05), minor=True)
+    ax.grid(which='minor', alpha=0.2, axis='y')
+    ax.grid(which='major', alpha=0.5, axis='y')
+
+    lab_h = 0.81
+    fs = 12
+
+    tot_lab = [
+        'Totals\n {} / {}'.format(
+            totals_list[0][i], totals_list[1][i])
+        for i in range(len(totals_list[0]))]
+
+    ax.text(
+        0.45, 1.04, title, transform=ax.transAxes, size=12, ha='center')
+
+    ax.text(
+        0.21, lab_h, tot_lab[0], transform=ax.transAxes, size=fs,
+        backgroundcolor='1', ha='center')
+    ax.text(
+        0.52, lab_h, tot_lab[1], transform=ax.transAxes, size=fs,
+        backgroundcolor='1', ha='center')
+    ax.text(
+        0.8, lab_h, tot_lab[2], transform=ax.transAxes, size=fs,
+        backgroundcolor='1', ha='center')
 
     return ratios_df

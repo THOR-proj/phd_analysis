@@ -267,7 +267,9 @@ def gen_ACCESS_verification_figures(
     with open(path, 'rb') as f:
         tracks_obj = pickle.load(f)
 
-    # tracks_obj = cl.redo_exclusions(tracks_obj)
+    if not os.path.exists(fig_dir):
+        os.makedirs(fig_dir)
+        print('Creating new directory.')
 
     if exclusions is None:
         exclusions = [
@@ -321,6 +323,10 @@ def gen_ACCESS_verification_figures(
 def gen_operational_verification_figures(
         save_dir, fig_dir, radar=63, year=2020, exclusions=None, suffix='',
         start_date=None, end_date=None):
+
+    if not os.path.exists(fig_dir):
+        os.makedirs(fig_dir)
+        print('Creating new directory.')
 
     years_months = [
         [year, 10], [year, 11], [year, 12],

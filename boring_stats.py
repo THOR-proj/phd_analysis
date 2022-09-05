@@ -531,6 +531,100 @@ def plot_counts_regional(
     plt.subplots_adjust(hspace=.4)
 
 
+def plot_counts_regional_seasonal(
+        all_obs_radar, all_obs_weak_radar, all_obs_active_radar,
+        all_obs_ACCESS, all_obs_weak_ACCESS, all_obs_active_ACCESS,
+        QC_obs_radar, QC_obs_weak_radar, QC_obs_active_radar,
+        QC_obs_ACCESS, QC_obs_weak_ACCESS, QC_obs_active_ACCESS,
+        all_obs_radar_42, all_obs_radar_63, all_obs_radar_77,
+        all_obs_ACCESS_42, all_obs_ACCESS_63, all_obs_ACCESS_77,
+        QC_obs_radar_42, QC_obs_radar_63, QC_obs_radar_77,
+        QC_obs_ACCESS_42, QC_obs_ACCESS_63, QC_obs_ACCESS_77):
+
+    fig, ax = plt.subplots(2, 2, figsize=(12, 5))
+    cl.init_fonts()
+
+    labels = ['All', 'Weak Monsoon', 'Active Monsoon']
+
+    x = np.arange(len(labels))  # the label locations
+    width = 0.35  # the width of the bars
+
+    radar = [all_obs_radar[3], all_obs_weak_radar[3], all_obs_active_radar[3]]
+    ACCESS = [
+        all_obs_ACCESS[3], all_obs_weak_ACCESS[3], all_obs_active_ACCESS[3]]
+
+    QC_radar = [QC_obs_radar[3], QC_obs_weak_radar[3], QC_obs_active_radar[3]]
+    QC_ACCESS = [
+        QC_obs_ACCESS[3], QC_obs_weak_ACCESS[3], QC_obs_active_ACCESS[3]]
+
+    ax.flatten()[0].bar(x-width/2, radar, width, label='Radar')
+    ax.flatten()[0].bar(x+width/2, ACCESS, width, label='ACCESS-C')
+
+    ax.flatten()[1].bar(x-width/2, QC_radar, width, label='Radar')
+    ax.flatten()[1].bar(x+width/2, QC_ACCESS, width, label='ACCESS-C')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.flatten()[0].set_ylabel('Count [-]')
+    ax.flatten()[0].set_title('Raw Observation Count')
+    ax.flatten()[0].set_xticks(x)
+    ax.flatten()[0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+    ax.flatten()[0].set_yticks(np.arange(0, 120000, 20000))
+    ax.flatten()[0].set_xticklabels(labels)
+    ax.flatten()[0].grid(which='major', alpha=0.5, axis='y')
+
+    ax.flatten()[1].set_ylabel('Count [-]')
+    ax.flatten()[1].set_title('Restricted Sample Observation Count')
+    ax.flatten()[1].set_xticks(x)
+    ax.flatten()[1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+    ax.flatten()[1].set_yticks(np.arange(0, 7000, 1000))
+
+    ax.flatten()[1].set_xticklabels(labels)
+    ax.flatten()[1].grid(which='major', alpha=0.5, axis='y')
+
+    labels = ['42: Katherine', '63: Berrimah', '77: Arafura']
+
+    x = np.arange(len(labels))  # the label locations
+    width = 0.35  # the width of the bars
+
+    radar = [all_obs_radar_42[3], all_obs_radar_63[3], all_obs_radar_77[3]]
+    ACCESS = [all_obs_ACCESS_42[3], all_obs_ACCESS_63[3], all_obs_ACCESS_77[3]]
+
+    QC_radar = [QC_obs_radar_42[3], QC_obs_radar_63[3], QC_obs_radar_77[3]]
+    QC_ACCESS = [QC_obs_ACCESS_42[3], QC_obs_ACCESS_63[3], QC_obs_ACCESS_77[3]]
+
+    ax.flatten()[2].bar(x-width/2, radar, width, label='Radar')
+    ax.flatten()[2].bar(x+width/2, ACCESS, width, label='ACCESS-C')
+
+    ax.flatten()[3].bar(x-width/2, QC_radar, width, label='Radar')
+    ax.flatten()[3].bar(x+width/2, QC_ACCESS, width, label='ACCESS-C')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.flatten()[2].set_ylabel('Count [-]')
+    ax.flatten()[2].set_title('Raw Observation Count')
+    ax.flatten()[2].set_xticks(x)
+    ax.flatten()[2].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+    ax.flatten()[2].set_yticks(np.arange(0, 45000, 5000))
+    ax.flatten()[2].set_xticklabels(labels)
+    ax.flatten()[2].grid(which='major', alpha=0.5, axis='y')
+
+    ax.flatten()[3].set_ylabel('Count [-]')
+    ax.flatten()[3].set_title('Restricted Sample Observation Count')
+    ax.flatten()[3].set_xticks(x)
+    ax.flatten()[3].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+    ax.flatten()[3].set_yticks(np.arange(0, 3500, 500))
+
+    ax.flatten()[3].set_xticklabels(labels)
+    ax.flatten()[3].grid(which='major', alpha=0.5, axis='y')
+
+    ax.flatten()[2].legend(
+        loc='lower center', bbox_to_anchor=(1.1, -0.45),
+        ncol=2, fancybox=True, shadow=True)
+
+    cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
+
+    plt.subplots_adjust(hspace=.4)
+
+
 def compare_sizes(
         all_obs_radar, all_obs_ACCESS,
         QC_obs_radar, QC_obs_ACCESS, density=True, title=None):
