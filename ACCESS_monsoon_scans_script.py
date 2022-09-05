@@ -26,7 +26,7 @@ start_date = np.datetime64('{:04}-{:02}-01'.format(args.year, args.month))
 if args.month == 12:
     end_date = np.datetime64('{}-01-01'.format(args.year+1))
 else:
-    end_date = np.datetime64('{}-{}-01'.format(args.year, args.month))
+    end_date = np.datetime64('{}-{}-01'.format(args.year, args.month+1))
 
 print('Getting year {}'.format(args.year))
 cf.gen_ACCESS_verification_figures(
