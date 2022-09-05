@@ -356,7 +356,7 @@ def compare_exclusions(all_excl_radar, all_excl_ACCESS, title=None):
     axes.flatten()[1].set_xlabel('Ratio [-]')
     axes.flatten()[1].set_title('Exclusion Criteria Ratios')
 
-    plt.subplots_adjust(wspace=.75)
+    plt.subplots_adjUTC(wspace=.75)
     cl.make_subplot_labels(axes.flatten(), x_shift=-.15)
 
     if title is not None:
@@ -391,7 +391,7 @@ def plot_counts(
     ax.flatten()[1].bar(x-width/2, QC_radar, width, label='Radar')
     ax.flatten()[1].bar(x+width/2, QC_ACCESS, width, label='ACCESS-C')
 
-    # Add some text for labels, title and custom x-axis tick labels, etc.
+    # Add some text for labels, title and cUTCom x-axis tick labels, etc.
     ax.flatten()[0].set_ylabel('Count [-]')
     ax.flatten()[0].set_title('Raw Observation Count')
     ax.flatten()[0].set_xticks(x)
@@ -423,7 +423,7 @@ def plot_counts(
     ax.flatten()[3].bar(x - width/2, QC_radar, width, label='Radar')
     ax.flatten()[3].bar(x + width/2, QC_ACCESS, width, label='ACCESS-C')
 
-    # Add some text for labels, title and custom x-axis tick labels, etc.
+    # Add some text for labels, title and cUTCom x-axis tick labels, etc.
     ax.flatten()[2].set_ylabel('Count [-]')
     ax.flatten()[2].set_title('Raw System Count')
     ax.flatten()[2].set_xticks(x)
@@ -446,7 +446,7 @@ def plot_counts(
 
     cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
 
-    plt.subplots_adjust(hspace=.4)
+    plt.subplots_adjUTC(hspace=.4)
 
 
 def plot_counts_regional(
@@ -475,7 +475,7 @@ def plot_counts_regional(
     ax.flatten()[1].bar(x-width/2, QC_radar, width, label='Radar')
     ax.flatten()[1].bar(x+width/2, QC_ACCESS, width, label='ACCESS-C')
 
-    # Add some text for labels, title and custom x-axis tick labels, etc.
+    # Add some text for labels, title and cUTCom x-axis tick labels, etc.
     ax.flatten()[0].set_ylabel('Count [-]')
     ax.flatten()[0].set_title('Raw Observation Count')
     ax.flatten()[0].set_xticks(x)
@@ -685,7 +685,7 @@ def compare_velocities(
         all_obs_radar, all_obs_ACCESS,
         QC_obs_radar, QC_obs_ACCESS, density=True, title=None):
 
-    fig, ax = plt.subplots(2, 2, figsize=(12, 6))
+    fig, ax = plt.subplots(2, 2, figsize=(12, 4))
     cl.init_fonts()
 
     ax.flatten()[0].hist(
@@ -741,7 +741,7 @@ def compare_shape(
         all_obs_radar, all_obs_ACCESS,
         QC_obs_radar, QC_obs_ACCESS, density=True, title=None):
 
-    fig, ax = plt.subplots(2, 2, figsize=(12, 6))
+    fig, ax = plt.subplots(2, 2, figsize=(12, 4))
     cl.init_fonts()
 
     ax.flatten()[0].hist(
@@ -803,7 +803,7 @@ def compare_offset(
         all_obs_radar, all_obs_ACCESS,
         QC_obs_radar, QC_obs_ACCESS, density=True, title=None):
 
-    fig, ax = plt.subplots(1, 2, figsize=(12, 4))
+    fig, ax = plt.subplots(1, 2, figsize=(12, 2))
     cl.init_fonts()
 
     ax.flatten()[0].hist(
@@ -849,7 +849,7 @@ def compare_time(
         all_obs_radar, all_obs_ACCESS,
         QC_obs_radar, QC_obs_ACCESS, density=True, title=None):
 
-    fig, ax = plt.subplots(1, 2, figsize=(12, 4))
+    fig, ax = plt.subplots(1, 2, figsize=(12, 2))
     cl.init_fonts()
 
     a_hour = [int(s.astype(str)[11:13]) for s in all_obs_radar[2]]
@@ -886,8 +886,8 @@ def compare_time(
         else:
             ax.flatten()[i].set_ylabel('Count [-]')
 
-    ax.flatten()[0].set_xlabel('Time [hour UST]', labelpad=0)
-    ax.flatten()[1].set_xlabel('Time [hour UST]', labelpad=0)
+    ax.flatten()[0].set_xlabel('Time [hour UTC]', labelpad=0)
+    ax.flatten()[1].set_xlabel('Time [hour UTC]', labelpad=0)
 
     cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
     plt.subplots_adjust(hspace=.45)

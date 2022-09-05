@@ -84,6 +84,147 @@ def shear_versus_orientation(class_thresh=None, excl_thresh=None):
     return all_dic, FFTS_UST_dic, TS_dic, LS_dic
 
 
+def shear_versus_orientation_ACCESS(
+        class_thresh=None, excl_thresh=None):
+
+    years = [2020, 2021]
+    radars = [42, 63, 77]
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    tracks_dir = base_dir + 'TINT_tracks/ACCESS_radar_base/'
+    fig_dir = base_dir + 'TINT_figures/'
+
+    all_dic = {
+        'shear_angle_list': [], 'orientation_list': [],
+        'prop_angle_list': []}
+
+    FFTS_UST_dic = copy.deepcopy(all_dic)
+    TS_dic = copy.deepcopy(all_dic)
+    LS_dic = copy.deepcopy(all_dic)
+
+    for year in years:
+        for radar in radars:
+
+            print('Getting data for radar {}, year {}.'.format(radar, year))
+            fn = 'ACCESS_{}/{}1001_{}0501.pkl'.format(radar, year, year+1)
+
+            with open(tracks_dir + fn, 'rb') as f:
+                tracks_obj = pickle.load(f)
+
+            if class_thresh is not None and excl_thresh is not None:
+                print('Recalculating Exclusions')
+                tracks_obj = cl.redo_exclusions(
+                    tracks_obj, class_thresh, excl_thresh)
+
+            exclusions = [
+                'small_area', 'large_area', 'intersect_border',
+                'intersect_border_convective', 'duration_cond',
+                'small_velocity', 'small_offset']
+            excluded = tracks_obj.exclusions[exclusions]
+            amb = 'Ambiguous (On Quadrant Boundary)'
+            quad_bound = tracks_obj.tracks_class['offset_type'] == amb
+            excluded = np.logical_or(np.any(excluded, 1), quad_bound)
+            included = np.logical_not(excluded)
+
+            # import pdb; pdb.set_trace()
+
+            sub_classes = tracks_obj.tracks_class.where(
+                included == True).dropna()
+            inds_all = sub_classes.index.values
+            sub_tracks_all = tracks_obj.tracks.loc[inds_all]
+            sub_tracks_all = sub_tracks_all.xs(0, level='level')
+
+            sub_tracks_FFTS_UST = get_FFTS_UST(sub_classes, tracks_obj)
+            sub_tracks_TS = get_rel_TS(sub_classes, tracks_obj)
+            sub_tracks_LS = get_rel_LS(sub_classes, tracks_obj)
+
+            # import pdb; pdb.set_trace()
+
+            sub_tracks = [
+                sub_tracks_all, sub_tracks_FFTS_UST,
+                sub_tracks_TS, sub_tracks_LS]
+            dicts = [
+                all_dic, FFTS_UST_dic, TS_dic, LS_dic]
+
+            for i in range(len(sub_tracks)):
+                dicts[i] = get_dic_properties(sub_tracks[i], dicts[i])
+
+    return all_dic, FFTS_UST_dic, TS_dic, LS_dic
+
+
+def shear_versus_orientation_radar(
+        class_thresh=None, excl_thresh=None):
+
+    years = [2020, 2021]
+    radars = [42, 63, 77]
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    tracks_dir = base_dir + 'TINT_tracks/ACCESS_radar_base/'
+    fig_dir = base_dir + 'TINT_figures/'
+
+    all_dic = {
+        'shear_angle_list': [], 'orientation_list': [],
+        'prop_angle_list': []}
+
+    FFTS_UST_dic = copy.deepcopy(all_dic)
+    TS_dic = copy.deepcopy(all_dic)
+    LS_dic = copy.deepcopy(all_dic)
+
+    for year in years:
+
+        year_months = [
+            [year, 10], [year, 11], [year, 12],
+            [year+1, 1], [year+1, 2], [year+1, 3],
+            [year+1, 4]]
+
+        for radar in radars:
+            for year_month in year_months:
+
+                print(
+                    'Getting data for radar {}, year {}, month {}.'.format(
+                        radar, year_month[0], year_month[1]))
+                fn = 'radar_{}/{}_{}_{}.pkl'.format(
+                    radar, radar, year_month[0], year_month[1])
+
+                with open(tracks_dir + fn, 'rb') as f:
+                    tracks_obj = pickle.load(f)
+
+                if class_thresh is not None and excl_thresh is not None:
+                    print('Recalculating Exclusions')
+                    tracks_obj = cl.redo_exclusions(
+                        tracks_obj, class_thresh, excl_thresh)
+
+                exclusions = [
+                    'small_area', 'large_area', 'intersect_border',
+                    'intersect_border_convective', 'duration_cond',
+                    'small_velocity', 'small_offset']
+                excluded = tracks_obj.exclusions[exclusions]
+                amb = 'Ambiguous (On Quadrant Boundary)'
+                quad_bound = tracks_obj.tracks_class['offset_type'] == amb
+                excluded = np.logical_or(np.any(excluded, 1), quad_bound)
+                included = np.logical_not(excluded)
+
+                sub_classes = tracks_obj.tracks_class.where(
+                    included == True).dropna()
+                inds_all = sub_classes.index.values
+                sub_tracks_all = tracks_obj.tracks.loc[inds_all]
+
+                sub_tracks_all = sub_tracks_all.xs(0, level='level')
+
+                sub_tracks_FFTS_UST = get_FFTS_UST(sub_classes, tracks_obj)
+                sub_tracks_TS = get_rel_TS(sub_classes, tracks_obj)
+                sub_tracks_LS = get_rel_LS(sub_classes, tracks_obj)
+
+                sub_tracks = [
+                    sub_tracks_all, sub_tracks_FFTS_UST,
+                    sub_tracks_TS, sub_tracks_LS]
+                dicts = [
+                    all_dic, FFTS_UST_dic, TS_dic, LS_dic]
+
+                for i in range(len(sub_tracks)):
+                    dicts[i] = get_dic_properties(sub_tracks[i], dicts[i])
+
+    return all_dic, FFTS_UST_dic, TS_dic, LS_dic
+
+
 def get_dic_properties(sub_tracks, dic):
     u_shear = sub_tracks['u_shear']
     v_shear = sub_tracks['v_shear']
