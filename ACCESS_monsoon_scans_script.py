@@ -19,7 +19,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-save_dir = '/g/data/w40/esh563/TINT_tracks/'
+save_dir = '/g/data/w40/esh563/TINT_tracks/ACCESS_radar_base/'
 fig_dir = '/g/data/w40/esh563/TINT_figures/'
 
 start_date = np.datetime64('{:04}-{:02}-01'.format(args.year, args.month))
