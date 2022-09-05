@@ -267,6 +267,9 @@ def gen_ACCESS_verification_figures(
     with open(path, 'rb') as f:
         tracks_obj = pickle.load(f)
 
+    fig_dir = fig_dir + '/ACCESS_{}_{}_verification_scans{}/'.format(
+        radar, year, suffix)
+
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
         print('Creating new directory.')
@@ -311,8 +314,7 @@ def gen_ACCESS_verification_figures(
 
         figures.two_level(
             tracks_obj, grid, params=params, alt1=0, alt2=1)
-        save_path = fig_dir + '/ACCESS_{}_{}_verification_scans{}/{}.png'.format(
-            radar, year, suffix, s)
+        save_path = fig_dir + '{}.png'.format(s)
         plt.savefig(
             save_path, dpi=200, facecolor='w', edgecolor='white',
             bbox_inches='tight')
@@ -323,6 +325,8 @@ def gen_ACCESS_verification_figures(
 def gen_operational_verification_figures(
         save_dir, fig_dir, radar=63, year=2020, exclusions=None, suffix='',
         start_date=None, end_date=None):
+
+    fig_dir += '/radar_{}_{}_verification_scans{}/'.format(radar, year, suffix)
 
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
@@ -385,9 +389,7 @@ def gen_operational_verification_figures(
 
             figures.two_level(
                 tracks_obj, grid, params=params, alt1=1000, alt2='col_max')
-            save_path = fig_dir
-            save_path += '/radar_{}_{}_verification_scans{}/{}.png'.format(
-                radar, year, suffix, s)
+            save_path = fig_dir + '{}.png'.format(s)
             plt.savefig(
                 save_path, dpi=200, facecolor='w', edgecolor='white',
                 bbox_inches='tight')
