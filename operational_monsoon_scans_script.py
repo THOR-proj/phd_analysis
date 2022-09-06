@@ -10,6 +10,10 @@ parser.add_argument(
     help='year to generate verification scans for')
 
 parser.add_argument(
+    '--data-year', '-dy', type=int, default=2020,
+    help='year to generate verification scans for')
+
+parser.add_argument(
     '--radar', '-r', type=int, default=63,
     help='radar region to generate verification scans for')
 
@@ -31,6 +35,6 @@ else:
 print('Getting year {}'.format(args.year))
 cf.gen_operational_verification_figures(
     save_dir, fig_dir, radar=args.radar,
-    year=args.year, exclusions=['simple_duration_cond'],
+    year=args.data_year, exclusions=['simple_duration_cond'],
     suffix='_{}_{}'.format(args.year, args.month),
     start_date=start_date, end_date=end_date)

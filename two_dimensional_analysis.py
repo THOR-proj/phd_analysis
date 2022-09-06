@@ -601,7 +601,8 @@ def shear_angle_versus_propagation_hist_compare(
 
         hist = ax.hist(
             [angles_radar, angles_ACCESS], bins=bins, density=True,
-            color=[colors[0], colors[1]], rwidth=1)
+            color=[colors[0], colors[1]], rwidth=1,
+            label=['Radar', 'ACCESS-C'])
         first_nine.append(hist[0][:9].sum()/hist[0].sum())
 
         # angle_1 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
@@ -637,13 +638,15 @@ def shear_angle_versus_propagation_hist_compare(
             0.1, .89, total_lab, transform=ax.transAxes, size=12,
             backgroundcolor='1')
 
-    plt.subplots_adjust(hspace=0.35)
+    plt.subplots_adjust(hspace=0.4)
     cl.make_subplot_labels(axes.flatten(), size=16, x_shift=-0.175)
 
-    plt.subplots_adjust(hspace=0.45)
+    axes.flatten()[-2].legend(
+        loc='lower center', bbox_to_anchor=(1.1, -0.5),
+        ncol=2, fancybox=True, shadow=True)
 
     plt.savefig(
-        fig_dir + 'shear_versus_propagation_{}.png'.format(data),
+        fig_dir + 'shear_versus_propagation_{}_compare.png'.format(data),
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
     return first_nine
@@ -689,7 +692,8 @@ def shear_angle_versus_orientation_hist_compare(
 
         hist = ax.hist(
             [angles_radar, angles_ACCESS], bins=bins, density=True,
-            color=[colors[0], colors[1]], rwidth=1)
+            color=[colors[0], colors[1]], rwidth=1,
+            label=['Radar', 'ACCESS-C'])
         first_five.append(hist[0][:9].sum()/hist[0].sum())
 
         minor_ticks = np.arange(0, 180+db, db)
@@ -716,13 +720,15 @@ def shear_angle_versus_orientation_hist_compare(
             0.1, .89, total_lab, transform=ax.transAxes, size=12,
             backgroundcolor='1')
 
-    plt.subplots_adjust(hspace=0.35)
+    plt.subplots_adjust(hspace=0.4)
     cl.make_subplot_labels(axes.flatten(), size=16, x_shift=-0.175)
 
-    plt.subplots_adjust(hspace=0.45)
+    axes.flatten()[-2].legend(
+        loc='lower center', bbox_to_anchor=(1.1, -0.5),
+        ncol=2, fancybox=True, shadow=True)
 
     plt.savefig(
-        fig_dir + 'shear_versus_orientation_{}.png'.format(data),
+        fig_dir + 'shear_versus_orientation_{}_compare.png'.format(data),
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
     return first_five
