@@ -558,3 +558,171 @@ def shear_angle_versus_propagation_hist(dicts, data='base', titles=None):
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
     return first_nine
+
+
+def shear_angle_versus_propagation_hist_compare(
+        dicts_radar, dicts_ACCESS, data='base', titles=None):
+
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    fig_dir = base_dir + 'TINT_figures/'
+
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+
+    init_fonts()
+
+    fig, axes = plt.subplots(
+        int(np.ceil(len(dicts_radar) / 2)), 2, figsize=(12, 6))
+
+    first_nine = []
+    if titles is None:
+        titles = ['']*len(dicts_radar)
+
+    hist_maxes = [.024, .044, .036, .02]
+
+    for i in range(len(dicts_radar)):
+        shear = np.mod(np.array(dicts_radar[i]['shear_angle_list']), 360)
+        line_normal = np.mod(
+            np.array(dicts_radar[i]['prop_angle_list']), 360)
+        cosines = np.cos(np.deg2rad(shear-line_normal))
+        angles_radar = np.arccos(cosines) * 180 / np.pi
+
+        shear = np.mod(
+            np.array(dicts_ACCESS[i]['shear_angle_list']), 360)
+        line_normal = np.mod(
+            np.array(dicts_ACCESS[i]['prop_angle_list']), 360)
+        cosines = np.cos(np.deg2rad(shear-line_normal))
+        angles_ACCESS = np.arccos(cosines) * 180 / np.pi
+
+        ax = axes[i // 2, i % 2]
+        plt.sca(ax)
+        db = 5
+        bins = np.arange(0, 180+db, db)
+
+        hist = ax.hist(
+            [angles_radar, angles_ACCESS], bins=bins, density=True,
+            color=[colors[0], colors[1]], rwidth=1)
+        first_nine.append(hist[0][:9].sum()/hist[0].sum())
+
+        # angle_1 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
+        # angle_2 = np.random.uniform(low=0, high=np.pi*2, size=1000000)
+        # random_cosines = np.cos(angle_2-angle_1)
+        # random_angles = np.arccos(random_cosines) * 180 / np.pi
+        # ax.hist(
+        #     random_angles, bins=bins, density=True, histtype=u'step',
+        #     color=colors[3], linewidth=2, alpha=0.75)
+
+        minor_ticks = np.arange(0, 180+db, db)
+        ax.set_xticks(minor_ticks, minor=True)
+        ax.set_xticks(np.arange(0, 180+45, 45))
+        ax.set_yticks(np.arange(0, hist_maxes[i]+.004, .004))
+        ax.set_yticks(np.arange(0, hist_maxes[i]+.002, .002), minor=True)
+        plt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+        # plt.yticks(np.arange(0, 8, 1))
+        plt.xlabel('Angle between Shear and Relative Velocity [Degrees]')
+        plt.ylabel('Density [-]')
+
+        ax.grid(which='major', alpha=0.5, axis='y')
+        ax.grid(which='minor', alpha=0.2, axis='y')
+
+        ax.text(
+            0.5, 1.035, titles[i],
+            transform=ax.transAxes, size=12, ha='center')
+
+        total_lab = 'Radar Total = {}            ACCESS-C Total = {}'.format(
+            len(dicts_radar[i]['shear_angle_list']),
+            len(dicts_ACCESS[i]['shear_angle_list']))
+
+        ax.text(
+            0.1, .89, total_lab, transform=ax.transAxes, size=12,
+            backgroundcolor='1')
+
+    plt.subplots_adjust(hspace=0.35)
+    cl.make_subplot_labels(axes.flatten(), size=16, x_shift=-0.175)
+
+    plt.subplots_adjust(hspace=0.45)
+
+    plt.savefig(
+        fig_dir + 'shear_versus_propagation_{}.png'.format(data),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
+    return first_nine
+
+
+def shear_angle_versus_orientation_hist_compare(
+        dicts_radar, dicts_ACCESS, data='base', titles=None):
+
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    fig_dir = base_dir + 'TINT_figures/'
+
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+
+    init_fonts()
+
+    fig, axes = plt.subplots(
+        int(np.ceil(len(dicts_radar) / 2)), 2, figsize=(12, 6))
+
+    first_five = []
+    if titles is None:
+        titles = ['']*len(dicts_radar)
+
+    hist_maxes = [.02, .024, .02, .02]
+
+    for i in range(len(dicts_radar)):
+        shear = np.mod(np.array(dicts_radar[i]['shear_angle_list']), 360)
+        line_normal = np.mod(
+            np.array(dicts_radar[i]['orientation_list'])+90, 360)
+        cosines = np.cos(np.deg2rad(shear-line_normal))
+        angles_radar = np.arccos(cosines) * 180 / np.pi
+
+        shear = np.mod(np.array(dicts_ACCESS[i]['shear_angle_list']), 360)
+        line_normal = np.mod(
+            np.array(dicts_ACCESS[i]['orientation_list'])+90, 360)
+        cosines = np.cos(np.deg2rad(shear-line_normal))
+        angles_ACCESS = np.arccos(cosines) * 180 / np.pi
+
+        ax = axes[i // 2, i % 2]
+        plt.sca(ax)
+        db = 5
+        bins = np.arange(0, 180+db, db)
+
+        hist = ax.hist(
+            [angles_radar, angles_ACCESS], bins=bins, density=True,
+            color=[colors[0], colors[1]], rwidth=1)
+        first_five.append(hist[0][:9].sum()/hist[0].sum())
+
+        minor_ticks = np.arange(0, 180+db, db)
+        ax.set_xticks(minor_ticks, minor=True)
+        ax.set_xticks(np.arange(0, 180+45, 45))
+        ax.set_yticks(np.arange(0, hist_maxes[i]+.004, .004))
+        ax.set_yticks(np.arange(0, hist_maxes[i]+.002, .002), minor=True)
+        plt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+        # plt.yticks(np.arange(0, 8, 1))
+        plt.xlabel('Angle between Shear and Line-Normal [Degrees]')
+        plt.ylabel('Density [-]')
+
+        ax.grid(which='major', alpha=0.5, axis='y')
+        ax.grid(which='minor', alpha=0.2, axis='y')
+
+        total_lab = 'Radar Total = {}            ACCESS-C Total = {}'.format(
+            len(dicts_radar[i]['shear_angle_list']),
+            len(dicts_ACCESS[i]['shear_angle_list']))
+
+        ax.text(
+            0.5, 1.035, titles[i],
+            transform=ax.transAxes, size=12, ha='center')
+        ax.text(
+            0.1, .89, total_lab, transform=ax.transAxes, size=12,
+            backgroundcolor='1')
+
+    plt.subplots_adjust(hspace=0.35)
+    cl.make_subplot_labels(axes.flatten(), size=16, x_shift=-0.175)
+
+    plt.subplots_adjust(hspace=0.45)
+
+    plt.savefig(
+        fig_dir + 'shear_versus_orientation_{}.png'.format(data),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
+    return first_five
