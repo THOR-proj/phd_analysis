@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import classification as cl
 from scipy import stats
 import copy
+import pandas as pd
 
 base_dir = '/media/shorte1/Ewan\'s Hard Drive/phd/data/CPOL/'
 save_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_tracks/'
@@ -105,7 +106,8 @@ def shear_versus_orientation_ACCESS(
         for radar in radars:
 
             print('Getting data for radar {}, year {}.'.format(radar, year))
-            fn = 'ACCESS_{}/{}1001_{}0501.pkl'.format(radar, year, year+1)
+            fn = 'ACCESS_{:02}/{:04}1001_{:04}0501.pkl'.format(
+                radar, year, year+1)
 
             with open(tracks_dir + fn, 'rb') as f:
                 tracks_obj = pickle.load(f)
@@ -181,7 +183,7 @@ def shear_versus_orientation_radar(
                 print(
                     'Getting data for radar {}, year {}, month {}.'.format(
                         radar, year_month[0], year_month[1]))
-                fn = 'radar_{}/{}_{}_{}.pkl'.format(
+                fn = 'radar_{:02}/{:02}_{:04}_{:02}.pkl'.format(
                     radar, radar, year_month[0], year_month[1])
 
                 with open(tracks_dir + fn, 'rb') as f:
@@ -207,7 +209,11 @@ def shear_versus_orientation_radar(
                 inds_all = sub_classes.index.values
                 sub_tracks_all = tracks_obj.tracks.loc[inds_all]
 
-                sub_tracks_all = sub_tracks_all.xs(0, level='level')
+                if 0 in sub_tracks_all.index.get_level_values(level='level'):
+                    sub_tracks_all = sub_tracks_all.xs(0, level='level')
+                else:
+                    print('No systems.')
+                    continue
 
                 sub_tracks_FFTS_UST = get_FFTS_UST(sub_classes, tracks_obj)
                 sub_tracks_TS = get_rel_TS(sub_classes, tracks_obj)
@@ -258,7 +264,11 @@ def get_FFTS_UST(sub_classes, tracks_obj):
     inds = inds.index.values
 
     sub_tracks = tracks_obj.tracks.loc[inds]
-    sub_tracks = sub_tracks.xs(0, level='level')
+    if len(sub_tracks) > 0:
+        if 0 in sub_tracks.index.get_level_values(level='level'):
+            sub_tracks = sub_tracks.xs(0, level='level')
+        else:
+            sub_tracks = pd.DataFrame(columns=sub_tracks.columns)
 
     return sub_tracks
 
@@ -291,7 +301,11 @@ def get_TS(sub_classes, tracks_obj):
     inds = inds.index.values
 
     sub_tracks = tracks_obj.tracks.loc[inds]
-    sub_tracks = sub_tracks.xs(0, level='level')
+    if len(sub_tracks) > 0:
+        if 0 in sub_tracks.index.get_level_values(level='level'):
+            sub_tracks = sub_tracks.xs(0, level='level')
+        else:
+            sub_tracks = pd.DataFrame(columns=sub_tracks.columns)
 
     return sub_tracks
 
@@ -325,7 +339,11 @@ def get_LS(sub_classes, tracks_obj):
     inds = inds.index.values
 
     sub_tracks = tracks_obj.tracks.loc[inds]
-    sub_tracks = sub_tracks.xs(0, level='level')
+    if len(sub_tracks) > 0:
+        if 0 in sub_tracks.index.get_level_values(level='level'):
+            sub_tracks = sub_tracks.xs(0, level='level')
+        else:
+            sub_tracks = pd.DataFrame(columns=sub_tracks.columns)
 
     return sub_tracks
 
@@ -338,7 +356,11 @@ def get_rel_TS(sub_classes, tracks_obj):
     inds = inds.index.values
 
     sub_tracks = tracks_obj.tracks.loc[inds]
-    sub_tracks = sub_tracks.xs(0, level='level')
+    if len(sub_tracks) > 0:
+        if 0 in sub_tracks.index.get_level_values(level='level'):
+            sub_tracks = sub_tracks.xs(0, level='level')
+        else:
+            sub_tracks = pd.DataFrame(columns=sub_tracks.columns)
 
     return sub_tracks
 
@@ -351,7 +373,12 @@ def get_rel_LS(sub_classes, tracks_obj):
     inds = inds.index.values
 
     sub_tracks = tracks_obj.tracks.loc[inds]
-    sub_tracks = sub_tracks.xs(0, level='level')
+
+    if len(sub_tracks) > 0:
+        if 0 in sub_tracks.index.get_level_values(level='level'):
+            sub_tracks = sub_tracks.xs(0, level='level')
+        else:
+            sub_tracks = pd.DataFrame(columns=sub_tracks.columns)
 
     return sub_tracks
 
