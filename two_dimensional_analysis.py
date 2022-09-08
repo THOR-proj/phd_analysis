@@ -579,6 +579,7 @@ def shear_angle_versus_propagation_hist_compare(
         titles = ['']*len(dicts_radar)
 
     hist_maxes = [.024, .044, .036, .02]
+    dy = [.004, .008, .008, .004]
 
     for i in range(len(dicts_radar)):
         shear = np.mod(np.array(dicts_radar[i]['shear_angle_list']), 360)
@@ -616,8 +617,8 @@ def shear_angle_versus_propagation_hist_compare(
         minor_ticks = np.arange(0, 180+db, db)
         ax.set_xticks(minor_ticks, minor=True)
         ax.set_xticks(np.arange(0, 180+45, 45))
-        ax.set_yticks(np.arange(0, hist_maxes[i]+.004, .004))
-        ax.set_yticks(np.arange(0, hist_maxes[i]+.002, .002), minor=True)
+        ax.set_yticks(np.arange(0, hist_maxes[i]+dy[i], dy[i]))
+        ax.set_yticks(np.arange(0, hist_maxes[i]+dy[i]/2, dy[i]/2), minor=True)
         plt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
         # plt.yticks(np.arange(0, 8, 1))
         plt.xlabel('Angle between Shear and Relative Velocity [Degrees]')

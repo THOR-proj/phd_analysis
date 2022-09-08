@@ -356,7 +356,7 @@ def compare_exclusions(all_excl_radar, all_excl_ACCESS, title=None):
     axes.flatten()[1].set_xlabel('Ratio [-]')
     axes.flatten()[1].set_title('Exclusion Criteria Ratios')
 
-    plt.subplots_adjUTC(wspace=.75)
+    plt.subplots_adjust(wspace=.75)
     cl.make_subplot_labels(axes.flatten(), x_shift=-.15)
 
     if title is not None:
@@ -446,7 +446,7 @@ def plot_counts(
 
     cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
 
-    plt.subplots_adjUTC(hspace=.4)
+    plt.subplots_adjust(hspace=.4)
 
 
 def plot_counts_regional(
@@ -481,6 +481,7 @@ def plot_counts_regional(
     ax.flatten()[0].set_xticks(x)
     ax.flatten()[0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
     ax.flatten()[0].set_yticks(np.arange(0, 45000, 5000))
+    ax.flatten()[0].set_yticks(np.arange(0, 45000, 2500), minor=True)
     ax.flatten()[0].set_xticklabels(labels)
     ax.flatten()[0].grid(which='major', alpha=0.5, axis='y')
 
@@ -489,6 +490,7 @@ def plot_counts_regional(
     ax.flatten()[1].set_xticks(x)
     ax.flatten()[1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
     ax.flatten()[1].set_yticks(np.arange(0, 3500, 500))
+    ax.flatten()[1].set_yticks(np.arange(0, 3500, 250), minor=True)
 
     ax.flatten()[1].set_xticklabels(labels)
     ax.flatten()[1].grid(which='major', alpha=0.5, axis='y')
@@ -539,9 +541,11 @@ def plot_counts_regional_seasonal(
         all_obs_radar_42, all_obs_radar_63, all_obs_radar_77,
         all_obs_ACCESS_42, all_obs_ACCESS_63, all_obs_ACCESS_77,
         QC_obs_radar_42, QC_obs_radar_63, QC_obs_radar_77,
-        QC_obs_ACCESS_42, QC_obs_ACCESS_63, QC_obs_ACCESS_77):
+        QC_obs_ACCESS_42, QC_obs_ACCESS_63, QC_obs_ACCESS_77,
+        fig=None, ax=None, sp_labels=False, legend=False):
 
-    fig, ax = plt.subplots(2, 2, figsize=(12, 5))
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(2, 2, figsize=(12, 5))
     cl.init_fonts()
 
     labels = ['All', 'Weak Monsoon', 'Active Monsoon']
@@ -569,17 +573,21 @@ def plot_counts_regional_seasonal(
     ax.flatten()[0].set_xticks(x)
     ax.flatten()[0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
     ax.flatten()[0].set_yticks(np.arange(0, 120000, 20000))
+    ax.flatten()[0].set_yticks(np.arange(0, 110000, 20000/2), minor=True)
     ax.flatten()[0].set_xticklabels(labels)
     ax.flatten()[0].grid(which='major', alpha=0.5, axis='y')
+    ax.flatten()[0].grid(which='minor', alpha=0.2, axis='y')
 
     ax.flatten()[1].set_ylabel('Count [-]')
     ax.flatten()[1].set_title('Restricted Sample Observation Count')
     ax.flatten()[1].set_xticks(x)
     ax.flatten()[1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
     ax.flatten()[1].set_yticks(np.arange(0, 7000, 1000))
+    ax.flatten()[1].set_yticks(np.arange(0, 6500, 500), minor=True)
 
     ax.flatten()[1].set_xticklabels(labels)
     ax.flatten()[1].grid(which='major', alpha=0.5, axis='y')
+    ax.flatten()[1].grid(which='minor', alpha=0.2, axis='y')
 
     labels = ['42: Katherine', '63: Berrimah', '77: Arafura']
 
@@ -603,24 +611,30 @@ def plot_counts_regional_seasonal(
     ax.flatten()[2].set_title('Raw Observation Count')
     ax.flatten()[2].set_xticks(x)
     ax.flatten()[2].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
-    ax.flatten()[2].set_yticks(np.arange(0, 45000, 5000))
+    ax.flatten()[2].set_yticks(np.arange(0, 50000, 10000))
+    ax.flatten()[2].set_yticks(np.arange(0, 45000, 10000/2), minor=True)
     ax.flatten()[2].set_xticklabels(labels)
     ax.flatten()[2].grid(which='major', alpha=0.5, axis='y')
+    ax.flatten()[2].grid(which='minor', alpha=0.2, axis='y')
 
     ax.flatten()[3].set_ylabel('Count [-]')
     ax.flatten()[3].set_title('Restricted Sample Observation Count')
     ax.flatten()[3].set_xticks(x)
     ax.flatten()[3].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
     ax.flatten()[3].set_yticks(np.arange(0, 3500, 500))
+    ax.flatten()[3].set_yticks(np.arange(0, 3250, 500/2), minor=True)
 
     ax.flatten()[3].set_xticklabels(labels)
     ax.flatten()[3].grid(which='major', alpha=0.5, axis='y')
+    ax.flatten()[3].grid(which='minor', alpha=0.2, axis='y')
 
-    ax.flatten()[2].legend(
-        loc='lower center', bbox_to_anchor=(1.1, -0.45),
-        ncol=2, fancybox=True, shadow=True)
+    if legend:
+        ax.flatten()[2].legend(
+            loc='lower center', bbox_to_anchor=(1.1, -0.45),
+            ncol=2, fancybox=True, shadow=True)
 
-    cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
+    if sp_labels:
+        cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
 
     plt.subplots_adjust(hspace=.4)
 
@@ -737,17 +751,19 @@ def compare_velocities(
         plt.suptitle(title, fontsize=14)
 
 
-def compare_shape(
+def compare_orientation(
         all_obs_radar, all_obs_ACCESS,
-        QC_obs_radar, QC_obs_ACCESS, density=True, title=None):
+        QC_obs_radar, QC_obs_ACCESS, density=True, title=None,
+        legend=False, labels=False, fig=None, ax=None):
 
-    fig, ax = plt.subplots(2, 2, figsize=(12, 4))
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(1, 2, figsize=(12, 2))
     cl.init_fonts()
 
     ax.flatten()[0].hist(
         [all_obs_radar[7], all_obs_ACCESS[7]],
         bins=np.arange(0, 391.25, 11.25), label=['Radar', 'ACCESS-C'],
-        density=density)
+        density=density, rwidth=1)
 
     ax.flatten()[0].set_title('Raw Orientations')
     ax.flatten()[0].set_xticks(np.arange(0, 405, 45))
@@ -755,28 +771,15 @@ def compare_shape(
     ax.flatten()[1].hist(
         [QC_obs_radar[7], QC_obs_ACCESS[7]],
         bins=np.arange(0, 391.25, 11.25), label=['Radar', 'ACCESS-C'],
-        density=density)
+        density=density, rwidth=1)
 
     ax.flatten()[1].set_title('Restricted Sample Orientations')
     ax.flatten()[1].set_xticks(np.arange(0, 405, 45))
 
-    ax.flatten()[2].hist(
-        [all_obs_radar[8], all_obs_ACCESS[8]],
-        bins=np.arange(0, 1.1, .05), label=['Radar', 'ACCESS-C'],
-        density=density)
-
-    ax.flatten()[2].set_title('Raw Eccentricities')
-
-    ax.flatten()[3].hist(
-        [QC_obs_radar[8], QC_obs_ACCESS[8]],
-        bins=np.arange(0, 1.1, .05), label=['Radar', 'ACCESS-C'],
-        density=density)
-
-    ax.flatten()[3].set_title('Restricted Sample Eccentricities')
-
-    ax.flatten()[2].legend(
-        loc='lower center', bbox_to_anchor=(1.1, -0.5),
-        ncol=2, fancybox=True, shadow=True)
+    if legend:
+        ax.flatten()[0].legend(
+            loc='lower center', bbox_to_anchor=(1.1, -0.5),
+            ncol=2, fancybox=True, shadow=True)
 
     for i in range(len(ax.flatten())):
         ax.flatten()[i].ticklabel_format(
@@ -787,44 +790,46 @@ def compare_shape(
         else:
             ax.flatten()[i].set_ylabel('Count [-]')
 
-    ax.flatten()[2].set_xlabel('Eccentricity [-]', labelpad=0)
-    ax.flatten()[3].set_xlabel('Eccentricity [-]', labelpad=0)
     ax.flatten()[0].set_xlabel('Orientation [degrees]', labelpad=0)
     ax.flatten()[1].set_xlabel('Orientation [degrees]', labelpad=0)
 
-    cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
+    if labels:
+        cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
+
     plt.subplots_adjust(hspace=.45)
 
     if title is not None:
-        plt.suptitle(title, fontsize=14)
+        ax.flatten()[0].text(
+            1.08, 1.25, title, size=14, ha='center',
+            transform=ax.flatten()[0].transAxes)
 
 
-def compare_offset(
+def compare_eccentricity(
         all_obs_radar, all_obs_ACCESS,
-        QC_obs_radar, QC_obs_ACCESS, density=True, title=None):
+        QC_obs_radar, QC_obs_ACCESS, density=True, title=None,
+        legend=False, labels=False):
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 2))
     cl.init_fonts()
 
     ax.flatten()[0].hist(
-        [np.array(all_obs_radar[9])/1e3, np.array(all_obs_ACCESS[9])/1e3],
-        bins=np.arange(0, 105, 5), label=['Radar', 'ACCESS-C'],
-        density=density)
+        [all_obs_radar[8], all_obs_ACCESS[8]],
+        bins=np.arange(0, 1.1, .05), label=['Radar', 'ACCESS-C'],
+        density=density, rwidth=1)
 
-    ax.flatten()[0].set_title('Raw Stratiform Offset Length')
-    ax.flatten()[0].set_xticks(np.arange(0, 110, 10))
+    ax.flatten()[0].set_title('Raw Eccentricities')
 
     ax.flatten()[1].hist(
-        [np.array(QC_obs_radar[9])/1e3, np.array(QC_obs_ACCESS[9])/1e3],
-        bins=np.arange(0, 105, 5), label=['Radar', 'ACCESS-C'],
-        density=density)
+        [QC_obs_radar[8], QC_obs_ACCESS[8]],
+        bins=np.arange(0, 1.1, .05), label=['Radar', 'ACCESS-C'],
+        density=density, rwidth=1)
 
-    ax.flatten()[1].set_title('Restricted Sample Stratiform Offset Length')
-    ax.flatten()[1].set_xticks(np.arange(0, 110, 10))
+    ax.flatten()[1].set_title('Restricted Sample Eccentricities')
 
-    ax.flatten()[0].legend(
-        loc='lower center', bbox_to_anchor=(1.1, -0.3),
-        ncol=2, fancybox=True, shadow=True)
+    if legend:
+        ax.flatten()[0].legend(
+            loc='lower center', bbox_to_anchor=(1.1, -0.5),
+            ncol=2, fancybox=True, shadow=True)
 
     for i in range(len(ax.flatten())):
         ax.flatten()[i].ticklabel_format(
@@ -835,10 +840,68 @@ def compare_offset(
         else:
             ax.flatten()[i].set_ylabel('Count [-]')
 
+    ax.flatten()[0].set_xlabel('Eccentricity [-]', labelpad=0)
+    ax.flatten()[1].set_xlabel('Eccentricity [-]', labelpad=0)
+
+    if labels:
+        cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
+    plt.subplots_adjust(hspace=.45)
+
+    if title is not None:
+        ax.flatten()[0].text(
+            1.08, 1.25, title, size=14, ha='center',
+            transform=ax.flatten()[0].transAxes)
+
+
+def compare_offset(
+        all_obs_radar, all_obs_ACCESS,
+        QC_obs_radar, QC_obs_ACCESS, density=True, title=None,
+        fig=None, ax=None, legend=False, labels=False):
+
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(1, 2, figsize=(12, 2))
+    cl.init_fonts()
+
+    ax.flatten()[0].hist(
+        [np.array(all_obs_radar[9])/1e3, np.array(all_obs_ACCESS[9])/1e3],
+        bins=np.arange(0, 52.5, 2.5), label=['Radar', 'ACCESS-C'],
+        density=density, rwidth=1)
+
+    ax.flatten()[0].set_title('Raw Stratiform Offset Lengths')
+    ax.flatten()[0].set_xticks(np.arange(0, 55, 5))
+
+    ax.flatten()[1].hist(
+        [np.array(QC_obs_radar[9])/1e3, np.array(QC_obs_ACCESS[9])/1e3],
+        bins=np.arange(0, 52.5, 2.5), label=['Radar', 'ACCESS-C'],
+        density=density, rwidth=1)
+
+    ax.flatten()[1].set_title('Restricted Sample Stratiform Offset Lengths')
+    ax.flatten()[1].set_xticks(np.arange(0, 55, 5))
+
+    if legend:
+        ax.flatten()[0].legend(
+            loc='lower center', bbox_to_anchor=(1.1, -0.3),
+            ncol=2, fancybox=True, shadow=True)
+
+    for i in range(len(ax.flatten())):
+        ax.flatten()[i].ticklabel_format(
+            axis='y', style='sci', scilimits=(0, 0))
+        ax.flatten()[i].grid(which='major', alpha=0.5, axis='y')
+        ax.flatten()[i].grid(which='minor', alpha=0.2, axis='y')
+        if density:
+            ax.flatten()[i].set_ylabel('Density [-]')
+        else:
+            ax.flatten()[0].set_yticks(np.arange(0, 2e4, .5e4))
+            ax.flatten()[0].set_yticks(np.arange(0, 1.75e4, .25e4), minor=True)
+            ax.flatten()[1].set_yticks(np.arange(0, 12e2, 2e2))
+            ax.flatten()[1].set_yticks(np.arange(0, 11e2, 1e2), minor=True)
+            ax.flatten()[i].set_ylabel('Count [-]')
+
     ax.flatten()[0].set_xlabel('Stratiform Offset Magnitude [m]', labelpad=0)
     ax.flatten()[1].set_xlabel('Stratiform Offset Magnitude [m]', labelpad=0)
 
-    cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
+    if labels:
+        cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
     plt.subplots_adjust(hspace=.45)
 
     if title is not None:
@@ -847,9 +910,12 @@ def compare_offset(
 
 def compare_time(
         all_obs_radar, all_obs_ACCESS,
-        QC_obs_radar, QC_obs_ACCESS, density=True, title=None):
+        QC_obs_radar, QC_obs_ACCESS,
+        fig=None, ax=None, density=True, title=None,
+        labels=False, legend=False):
 
-    fig, ax = plt.subplots(1, 2, figsize=(12, 2))
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(1, 2, figsize=(12, 2))
     cl.init_fonts()
 
     a_hour = [int(s.astype(str)[11:13]) for s in all_obs_radar[2]]
@@ -860,7 +926,7 @@ def compare_time(
     ax.flatten()[0].hist(
         [a_hour, b_hour],
         bins=np.arange(0, 25, 1), label=['Radar', 'ACCESS-C'],
-        density=density)
+        density=density, rwidth=1)
 
     ax.flatten()[0].set_title('Raw Observation Count')
     ax.flatten()[0].set_xticks(np.arange(0, 25, 2))
@@ -868,14 +934,15 @@ def compare_time(
     ax.flatten()[1].hist(
         [c_hour, d_hour],
         bins=np.arange(0, 25, 1), label=['Radar', 'ACCESS-C'],
-        density=density)
+        density=density, rwidth=1)
 
     ax.flatten()[1].set_title('Restricted Observation Count')
     ax.flatten()[1].set_xticks(np.arange(0, 25, 2))
 
-    ax.flatten()[0].legend(
-        loc='lower center', bbox_to_anchor=(1.1, -0.3),
-        ncol=2, fancybox=True, shadow=True)
+    if legend:
+        ax.flatten()[0].legend(
+            loc='lower center', bbox_to_anchor=(1.1, -0.3),
+            ncol=2, fancybox=True, shadow=True)
 
     for i in range(len(ax.flatten())):
         ax.flatten()[i].ticklabel_format(
@@ -889,8 +956,11 @@ def compare_time(
     ax.flatten()[0].set_xlabel('Time [hour UTC]', labelpad=0)
     ax.flatten()[1].set_xlabel('Time [hour UTC]', labelpad=0)
 
-    cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
+    if labels:
+        cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
     plt.subplots_adjust(hspace=.45)
 
     if title is not None:
-        plt.suptitle(title, fontsize=14)
+        ax.flatten()[0].text(
+            1.08, 1.25, title, size=14, ha='center',
+            transform=ax.flatten()[0].transAxes)
