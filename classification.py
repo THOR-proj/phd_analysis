@@ -20,7 +20,8 @@ WRF_dir = '/media/shorte1/Ewan\'s Hard Drive/phd/data/caine_WRF_data/'
 
 def create_ACCESS_counts(
         save_dir, tracks_base_dir, class_thresh=None,
-        excl_thresh=None, non_linear_conds=None, exclusions=None):
+        excl_thresh=None, non_linear_conds=None, exclusions=None,
+        morning_only=False):
 
     test_names = [
         'ACCESS_63', 'ACCESS_77', 'ACCESS_42']
@@ -51,7 +52,7 @@ def create_ACCESS_counts(
             tracks_dir=tracks_dir[i],
             class_thresh=class_threshes[i], excl_thresh=excl_threshes[i],
             non_linear=non_linear_conds[i], years=[2020, 2021], fake_pope=True,
-            exclusions=exclusions)
+            exclusions=exclusions, morning_only=morning_only)
 
         out_file_name = save_dir + '{}_classes.pkl'.format(test_names[i])
         with open(out_file_name, 'wb') as f:
@@ -74,7 +75,8 @@ def create_ACCESS_counts(
 
 def create_oper_radar_counts(
         save_dir, tracks_base_dir, class_thresh=None,
-        excl_thresh=None, non_linear_conds=None, exclusions=None):
+        excl_thresh=None, non_linear_conds=None, exclusions=None,
+        morning_only=False):
 
     test_names = [
         'radar_63', 'radar_77', 'radar_42']
@@ -106,7 +108,8 @@ def create_oper_radar_counts(
             base_dir='/home/student.unimelb.edu.au/shorte1/Documents/CPOL_analysis/',
             tracks_dir=tracks_dir[i], class_thresh=class_threshes[i],
             excl_thresh=excl_threshes[i], non_linear=non_linear_conds[i],
-            years=[2020, 2021], radar=radar[i], exclusions=exclusions)
+            years=[2020, 2021], radar=radar[i], exclusions=exclusions,
+            morning_only=morning_only)
 
         out_file_name = save_dir + '{}_classes.pkl'.format(test_names[i])
         with open(out_file_name, 'wb') as f:
@@ -220,7 +223,7 @@ def get_counts(
         base_dir=None, tracks_dir='base',
         non_linear=False, class_thresh=None, excl_thresh=None,
         years=sorted(list(set(range(1998, 2016)) - {2000, 2007, 2008})),
-        fake_pope=False, exclusions=None):
+        fake_pope=False, exclusions=None, morning_only=False):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
     [
@@ -229,6 +232,19 @@ def get_counts(
         [] for i in range(10)]
     for year in years:
         tracks_obj = load_year(year, tracks_dir=tracks_dir)
+
+        # restrict to morning only...
+        if morning_only:
+            print('Restricting to hour UTC < 12')
+            tracks_obj.tracks = tracks_obj.tracks.iloc[
+                tracks_obj.tracks.index.get_level_values('time').hour < 12]
+            tracks_obj.sysyem_tracks = tracks_obj.system_tracks.iloc[
+                tracks_obj.system_tracks.index.get_level_values('time').hour < 12]
+            tracks_obj.tracks_class = tracks_obj.tracks_class.iloc[
+                tracks_obj.tracks_class.index.get_level_values('time').hour < 12]
+            tracks_obj.exclusions = tracks_obj.exclusions.iloc[
+                tracks_obj.exclusions.index.get_level_values('time').hour < 12]
+
         print('Getting new exclusions.')
         tracks_obj = redo_exclusions(tracks_obj, class_thresh, excl_thresh)
         print('Adding Pope monsoon regime.')
@@ -298,7 +314,8 @@ def get_counts(
 def get_counts_radar(
         base_dir=None, tracks_dir='base',
         non_linear=False, class_thresh=None, excl_thresh=None,
-        years=[2020, 2021], radar=63, fake_pope=True, exclusions=None):
+        years=[2020, 2021], radar=63, fake_pope=True, exclusions=None,
+        morning_only=False):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
     [
@@ -315,6 +332,18 @@ def get_counts_radar(
             month = ym[1]
             tracks_obj = load_op_month(
                 year, month, radar, tracks_dir=tracks_dir)
+
+            if morning_only:
+                print('Restricting to hour UTC < 12')
+                tracks_obj.tracks = tracks_obj.tracks.iloc[
+                    tracks_obj.tracks.index.get_level_values('time').hour < 12]
+                tracks_obj.sysyem_tracks = tracks_obj.system_tracks.iloc[
+                    tracks_obj.system_tracks.index.get_level_values('time').hour < 12]
+                tracks_obj.tracks_class = tracks_obj.tracks_class.iloc[
+                    tracks_obj.tracks_class.index.get_level_values('time').hour < 12]
+                tracks_obj.exclusions = tracks_obj.exclusions.iloc[
+                    tracks_obj.exclusions.index.get_level_values('time').hour < 12]
+
             print('Getting new exclusions.')
             tracks_obj = redo_exclusions(tracks_obj, class_thresh, excl_thresh)
             print('Adding Pope monsoon regime.')
