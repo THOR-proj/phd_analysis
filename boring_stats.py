@@ -931,6 +931,19 @@ def compare_time(
     ax.flatten()[0].set_title('Raw Observation Count')
     ax.flatten()[0].set_xticks(np.arange(0, 25, 2))
 
+    spine_offset = -.395
+
+    twin0 = ax.flatten()[0].twiny()
+    twin0.spines.bottom.set_position(("axes", spine_offset))
+    twin0.xaxis.set_ticks_position("bottom")
+    twin0.xaxis.set_label_position("bottom")
+
+    ax.flatten()[0].set_xlim([-1, 25])
+    twin0.set_xlim([8, 34])
+    twin0.set_xticks(np.arange(0, 25, 2)+9)
+    twin0.set_xticklabels((np.arange(0, 25, 2)+9) % 24)
+    twin0.set_xlabel('Time [hour LST]')
+
     ax.flatten()[1].hist(
         [c_hour, d_hour],
         bins=np.arange(0, 25, 1), label=['Radar', 'ACCESS-C'],
@@ -938,6 +951,16 @@ def compare_time(
 
     ax.flatten()[1].set_title('Restricted Observation Count')
     ax.flatten()[1].set_xticks(np.arange(0, 25, 2))
+
+    twin1 = ax.flatten()[1].twiny()
+    twin1.spines.bottom.set_position(("axes", spine_offset))
+    twin1.xaxis.set_ticks_position("bottom")
+    twin1.xaxis.set_label_position("bottom")
+    ax.flatten()[1].set_xlim([-1, 25])
+    twin1.set_xlim([8, 34])
+    twin1.set_xticks(np.arange(0, 25, 2)+9)
+    twin1.set_xticklabels((np.arange(0, 25, 2)+9) % 24)
+    twin1.set_xlabel('Time [hour LST]')
 
     if legend:
         ax.flatten()[0].legend(
