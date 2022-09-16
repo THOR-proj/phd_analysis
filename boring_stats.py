@@ -697,42 +697,38 @@ def compare_sizes(
 
 def compare_velocities(
         all_obs_radar, all_obs_ACCESS,
-        QC_obs_radar, QC_obs_ACCESS, density=True, title=None):
+        QC_obs_radar, QC_obs_ACCESS,
+        fig=None, ax=None, density=True, title=None,
+        labels=False, legend=False, direction='Zonal'):
 
-    fig, ax = plt.subplots(2, 2, figsize=(12, 4))
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(2, 2, figsize=(12, 4))
     cl.init_fonts()
 
+    if direction == 'Zonal':
+        ind = 5
+    else:
+        ind = 6
+
     ax.flatten()[0].hist(
-        [all_obs_radar[5], all_obs_ACCESS[5]],
+        [all_obs_radar[ind], all_obs_ACCESS[ind]],
         bins=np.arange(-20, 22, 2), label=['Radar', 'ACCESS-C'],
         density=density)
 
-    ax.flatten()[0].set_title('Raw Zonal Velocities')
+    ax.flatten()[0].set_title('Raw {} Velocities'.format(direction))
 
     ax.flatten()[1].hist(
-        [QC_obs_radar[5], QC_obs_ACCESS[5]],
+        [QC_obs_radar[ind], QC_obs_ACCESS[ind]],
         bins=np.arange(-20, 22, 2), label=['Radar', 'ACCESS-C'],
         density=density)
 
-    ax.flatten()[1].set_title('Restricted Sample Zonal Velocities')
+    ax.flatten()[1].set_title(
+        'Restricted Sample {} Velocities'.format(direction))
 
-    ax.flatten()[2].hist(
-        [all_obs_radar[6], all_obs_ACCESS[6]],
-        bins=np.arange(-20, 22, 2), label=['Radar', 'ACCESS-C'],
-        density=density)
-
-    ax.flatten()[2].set_title('Raw Meridional Velocities')
-
-    ax.flatten()[3].hist(
-        [QC_obs_radar[6], QC_obs_ACCESS[6]],
-        bins=np.arange(-20, 22, 2), label=['Radar', 'ACCESS-C'],
-        density=density)
-
-    ax.flatten()[3].set_title('Restricted Sample Meridional Velocities')
-
-    ax.flatten()[2].legend(
-        loc='lower center', bbox_to_anchor=(1.1, -0.5),
-        ncol=2, fancybox=True, shadow=True)
+    if legend:
+        ax.flatten()[0].legend(
+            loc='lower center', bbox_to_anchor=(1.1, -0.5),
+            ncol=2, fancybox=True, shadow=True)
 
     for i in range(len(ax.flatten())):
         ax.flatten()[i].ticklabel_format(
@@ -744,11 +740,14 @@ def compare_velocities(
             ax.flatten()[i].set_ylabel('Count [-]')
         ax.flatten()[i].set_xlabel('Velocity [m/s]', labelpad=0)
 
-    cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
+    if labels:
+        cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
     plt.subplots_adjust(hspace=.45)
 
     if title is not None:
-        plt.suptitle(title, fontsize=14)
+        ax.flatten()[0].text(
+            1.08, 1.25, title, size=14, ha='center',
+            transform=ax.flatten()[0].transAxes)
 
 
 def compare_orientation(
@@ -864,19 +863,21 @@ def compare_offset(
 
     ax.flatten()[0].hist(
         [np.array(all_obs_radar[9])/1e3, np.array(all_obs_ACCESS[9])/1e3],
-        bins=np.arange(0, 52.5, 2.5), label=['Radar', 'ACCESS-C'],
+        bins=np.arange(0, 52, 2), label=['Radar', 'ACCESS-C'],
         density=density, rwidth=1)
 
     ax.flatten()[0].set_title('Raw Stratiform Offset Lengths')
-    ax.flatten()[0].set_xticks(np.arange(0, 55, 5))
+    ax.flatten()[0].set_xticks(np.arange(0, 54, 4))
+    ax.flatten()[0].set_xticks(np.arange(0, 52, 2), minor=True)
 
     ax.flatten()[1].hist(
         [np.array(QC_obs_radar[9])/1e3, np.array(QC_obs_ACCESS[9])/1e3],
-        bins=np.arange(0, 52.5, 2.5), label=['Radar', 'ACCESS-C'],
+        bins=np.arange(0, 52, 2), label=['Radar', 'ACCESS-C'],
         density=density, rwidth=1)
 
     ax.flatten()[1].set_title('Restricted Sample Stratiform Offset Lengths')
-    ax.flatten()[1].set_xticks(np.arange(0, 55, 5))
+    ax.flatten()[1].set_xticks(np.arange(0, 54, 4))
+    ax.flatten()[1].set_xticks(np.arange(0, 52, 2), minor=True)
 
     if legend:
         ax.flatten()[0].legend(
@@ -987,3 +988,231 @@ def compare_time(
         ax.flatten()[0].text(
             1.08, 1.25, title, size=14, ha='center',
             transform=ax.flatten()[0].transAxes)
+
+
+def gen_error_model_plot(
+        z_s=10000, fig=None, ax=None, legend=False,
+        closest='convective', tau=300, r_max=20e3, dr=5e3):
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=(5.5, 3))
+
+    cl.init_fonts()
+
+    z_c = 1000
+
+    s_mags = [0, 5e3, 10e3, 20e3, 30e3, 40e3]
+
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    colors = [colors[i] for i in [0, 1, 2, 4, 5, 6]]
+
+    base_label = r"$\Delta r="
+
+    del_ts = []
+
+    for j in range(len(s_mags)):
+
+        if closest == 'convective':
+            r_c = np.arange(0, r_max+10, 10)
+            r_s = r_c + s_mags[j]
+        elif closest == 'stratiform':
+            r_s = np.arange(0, r_max+10, 10)
+            r_c = r_s + s_mags[j]
+
+        elav_s = np.zeros(len(r_c))
+        elav_c = np.zeros(len(r_c))
+
+        for i in range(len(r_c)):
+
+            if r_s[i] == 0:
+                elav_s[i] = np.pi/2
+            else:
+                elav_s[i] = np.abs(np.arctan(z_s/np.abs(r_s[i])))
+
+            if r_c[i] == 0:
+                elav_c[i] = np.pi/2
+            else:
+                elav_c[i] = np.abs(np.arctan(z_c/np.abs(r_c[i])))
+
+        del_t = np.abs(elav_c-elav_s)*(2*tau/np.pi)
+        del_ts.append(del_t)
+
+        lab = base_label + '{}'.format(int(s_mags[j]/1000)) + '$ km'
+
+        if closest == 'convective':
+            ax.plot(
+                r_c, del_t, color=colors[j], label=lab, linewidth=1.75)
+        else:
+            ax.plot(
+                r_s, del_t, color=colors[j], label=lab, linewidth=1.75)
+
+    ax.set_xticks(np.arange(0, r_max+dr, dr))
+    ax.set_xticks(np.arange(0, r_max+dr/2, dr/2), minor=True)
+    ax.set_xticklabels(np.arange(0, r_max/1e3+dr/1e3, dr/1e3))
+    if closest == 'convective':
+        ax.set_xlabel(r'$r_c$ [km]')
+    else:
+        ax.set_xlabel(r'$r_s$ [km]')
+
+    ax.set_yticks(np.arange(0, tau+60, 60))
+    ax.set_yticks(np.arange(0, tau+30, 30), minor=True)
+    ax.set_ylabel(r'$\Delta t$ [s]')
+
+    ax.grid(which='minor', alpha=0.2, axis='both')
+    ax.grid(which='major', alpha=0.5, axis='both')
+
+    ax.set_ylim([-20, tau+20])
+
+    lines, labels = ax.get_legend_handles_labels()
+    lines = [lines[i] for i in [0, 3, 1, 4, 2]]
+    labels = [labels[i] for i in [0, 3, 1, 4, 2]]
+
+    if legend:
+        ax.legend(
+            lines, labels,
+            loc='lower center',
+            bbox_to_anchor=(.5, -.55),
+            ncol=3, fancybox=True, shadow=True)
+
+    if closest == 'convective':
+        ax.set_title(
+            r'$z_s = ${} km, $r_s = r_c+\Delta r$'.format(int(z_s/1000)))
+    elif closest == 'stratiform':
+        ax.set_title(
+            r'$z_s = ${} km, $r_c = r_s+\Delta r$'.format(int(z_s/1000)))
+
+
+def plot_deformation(
+        z_c=1e3, z_s=7.5e3, tau=300, fig=None, ax=None,
+        conv_radius=10e3, conv_centroid_x=5e3, conv_centroid_y=0,
+        strat_radius=16e3, strat_centroid_x=10e3, plot=True,
+        strat_centroid_y=0, u=10, v=0, extent=None, dx=None):
+
+    if (fig is None or ax is None) and plot is True:
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+
+    cl.init_fonts()
+
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    colors = [colors[i] for i in [0, 1, 2, 4, 5, 6]]
+
+    theta = np.arange(0, 2*np.pi+2*np.pi/1000, 2*np.pi/1000)
+
+    conv_border_x = conv_centroid_x + conv_radius*np.cos(theta)
+    conv_border_y = conv_centroid_y + conv_radius*np.sin(theta)
+
+    strat_border_x = strat_centroid_x + strat_radius*np.cos(theta)
+    strat_border_y = strat_centroid_y + strat_radius*np.sin(theta)
+
+    r_c = np.sqrt(conv_border_x**2 + conv_border_y**2)
+    r_s = np.sqrt(strat_border_x**2 + strat_border_y**2)
+
+    elav_s = np.zeros(len(r_c))
+    elav_c = np.zeros(len(r_c))
+
+    for i in range(len(r_s)):
+        if r_s[i] == 0:
+            elav_s[i] = np.pi/2
+        else:
+            elav_s[i] = np.abs(np.arctan(z_s/np.abs(r_s[i])))
+
+        if r_c[i] == 0:
+            elav_c[i] = np.pi/2
+        else:
+            elav_c[i] = np.abs(np.arctan(z_c/np.abs(r_c[i])))
+
+    t_c = elav_c*(2*tau/np.pi)
+    t_s = elav_s*(2*tau/np.pi)
+
+    error_strat_border_x = strat_border_x + u*t_s
+    error_conv_border_x = conv_border_x + u*t_c
+    error_strat_border_y = strat_border_y + v*t_s
+    error_conv_border_y = conv_border_y + v*t_c
+
+    c_conv_error = get_centroid(error_conv_border_x, error_conv_border_y)
+    c_strat_error = get_centroid(error_strat_border_x, error_strat_border_y)
+
+    so_mag = np.sqrt(
+        (conv_centroid_x - strat_centroid_x)**2
+        + (conv_centroid_y - strat_centroid_y)**2)
+    so_error_mag = np.sqrt(
+        (c_conv_error[1] - c_strat_error[1])**2
+        + (c_conv_error[2] - c_strat_error[2])**2)
+
+    if plot is True:
+
+        ax.plot(
+            [conv_centroid_x, strat_centroid_x],
+            [conv_centroid_y, strat_centroid_y], linestyle='-',
+            color=prop_cycle.by_key()['color'][3],
+            linewidth=1.75, label='Stratiform Offset', alpha=.6,)
+
+        ax.plot(
+            [c_conv_error[1], c_strat_error[1]],
+            [c_conv_error[2], c_strat_error[2]], linestyle='--',
+            color=prop_cycle.by_key()['color'][3],
+            linewidth=1.75, label='Deformed Stratiform Offset',)
+
+        ax.plot(
+            conv_border_x, conv_border_y, linewidth=1.75, color=colors[0],
+            label='Convective Boundary', alpha=.6)
+        ax.plot(
+            error_conv_border_x, error_conv_border_y, '--', linewidth=1.75,
+            color=colors[0], label='Deformed Convective Boundary')
+        ax.plot(
+            strat_border_x, strat_border_y, linewidth=1.75, color=colors[1],
+            label='Stratiform Boundary', alpha=.6)
+        ax.plot(
+            error_strat_border_x, error_strat_border_y, '--',
+            linewidth=1.75, color=colors[1],
+            label='Deformed Stratiform Boundary')
+
+        ax.scatter(
+            [0], [0], marker='*', s=300, color='red',
+            edgecolors='k')
+        ax.text(
+            -4e3, -5e3, 'Radar', fontsize=12)
+
+        title = r'$|\mathrm{\mathbf{s}}|=' + '${:.02f} km, '.format(so_mag/1e3)
+        title += r"$|\mathrm{\mathbf{s}}'|=" + '${:.02f} km'.format(
+            so_error_mag/1e3)
+
+        ax.set_title(title)
+
+        if extent is not None and dx is not None:
+            ax.set_xlim([extent[0], extent[1]])
+            ax.set_ylim([extent[2], extent[3]])
+            ax.set_xticks(np.arange(extent[0], extent[1]+dx, dx))
+            ax.set_xticks(
+                np.arange(extent[0], extent[1]+dx/2, dx/2), minor=True)
+            ax.set_xticklabels(
+                (np.arange(extent[0], extent[1]+dx, dx)/1e3).astype(int))
+            ax.set_yticks(np.arange(extent[2], extent[3]+dx, dx))
+            ax.set_yticks(
+                np.arange(extent[2], extent[3]+dx/2, dx/2), minor=True)
+            ax.set_yticklabels((np.arange(
+                extent[2], extent[3]+dx, dx)/1e3).astype(int))
+
+        ax.grid(which='minor', alpha=0.2, axis='both')
+        ax.grid(which='major', alpha=0.5, axis='both')
+        ax.set_xlabel(r'$x$ [km]')
+        ax.set_ylabel(r'$y$ [km]')
+
+    return so_error_mag
+
+
+def get_centroid(x, y):
+    A = .5*np.array([
+        x[i]*y[i+1] - x[i+1]*y[i]
+        for i in range(len(x)-1)]).sum()
+
+    cx = 1/(6*A)*np.array([
+        (x[i]+x[i+1])*(x[i]*y[i+1] - x[i+1]*y[i])
+        for i in range(len(x)-1)]).sum()
+
+    cy = 1/(6*A)*np.array([
+        (y[i]+y[i+1])*(x[i]*y[i+1] - x[i+1]*y[i])
+        for i in range(len(x)-1)]).sum()
+
+    return A, cx, cy
