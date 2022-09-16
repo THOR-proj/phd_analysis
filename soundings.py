@@ -5,17 +5,22 @@ import copy
 import pandas as pd
 import classification as cl
 
-def get_ERA5_soundings():
+
+def get_ERA5_soundings(lon = 130.925, lat = -12.457):
     days_2021 = np.arange(
-    np.datetime64('2021-01-01'), np.datetime64('2021-03-01'), np.timedelta64(1, 'D'))
+        np.datetime64('2021-01-01'), np.datetime64('2021-03-01'),
+        np.timedelta64(1, 'D'))
     days_2022 = np.arange(
-        np.datetime64('2022-01-01'), np.datetime64('2022-03-01'), np.timedelta64(1, 'D'))
+        np.datetime64('2022-01-01'), np.datetime64('2022-03-01'),
+        np.timedelta64(1, 'D'))
     days_list = [days_2021, days_2022]
 
     days_hours_2021 = np.arange(
-        np.datetime64('2021-01-01'), np.datetime64('2021-03-01'), np.timedelta64(6, 'h'))
+        np.datetime64('2021-01-01'), np.datetime64('2021-03-01'),
+        np.timedelta64(6, 'h'))
     days_hours_2022 = np.arange(
-        np.datetime64('2022-01-01'), np.datetime64('2022-03-01'), np.timedelta64(6, 'h'))
+        np.datetime64('2022-01-01'), np.datetime64('2022-03-01'),
+        np.timedelta64(6, 'h'))
     days_hours_list = [days_hours_2021, days_hours_2022]
 
     pope_df = pd.read_csv(
@@ -121,3 +126,98 @@ def get_ERA5_soundings():
         1e3/ERA5_soundings['p'])**(R/cp)
 
     return ERA5_soundings
+
+
+def plot_soundings(ERA5_soundings):
+
+    fig, ax = plt.subplots(1, 1, figsize=(6, 5))
+
+    cl.init_fonts()
+
+    pope_regime = 2
+
+    min_speed = 0
+    max_speed = 0
+
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    colors = [colors[i] for i in [0, 1, 2, 4, 5, 6]]
+
+    hours = np.arange(0, 24, 6)
+
+    ERA5_soundings_pope = ERA5_soundings.where(
+        ERA5_soundings['pope_regime'] == pope_regime)
+
+    u_t = ERA5_soundings_pope['u'].mean(dim=['hour', 'time'])
+    v_t = ERA5_soundings_pope['v'].mean(dim=['hour', 'time'])
+    t_t = ERA5_soundings_pope['t'].mean(dim=['hour', 'time'])
+
+    u_t_sig = np.sqrt(ERA5_soundings_pope['u'].var(dim=['hour', 'time']))
+    v_t_sig = np.sqrt(ERA5_soundings_pope['v'].var(dim=['hour', 'time']))
+    t_t_sig = np.sqrt(ERA5_soundings_pope['t'].var(dim=['hour', 'time']))
+
+    # hour = 18
+
+    # u_t = ERA5_soundings_pope['u'].sel(hour=hour).mean(dim='time')
+    # v_t = ERA5_soundings_pope['v'].sel(hour=hour).mean(dim='time')
+    # t_t = ERA5_soundings_pope['t'].sel(hour=hour).mean(dim='time')
+
+    # u_t_sig = np.sqrt(ERA5_soundings_pope['u'].sel(hour=hour).var(dim='time'))
+    # v_t_sig = np.sqrt(ERA5_soundings_pope['v'].sel(hour=hour).var(dim='time'))
+
+    ax.plot(
+        u_t, u_t.altitude, color=colors[0], label=r'ERA5 $u$',
+        linewidth=1.75)
+    ax.fill_betweenx(
+        u_t.altitude, u_t-u_t_sig, u_t+u_t_sig, color=colors[0],
+        alpha=0.1, linewidth=1.75)
+
+    ax.plot(
+        v_t, v_t.altitude, color=colors[0], label=r'ERA5 $v$',
+        linestyle='dashed')
+    ax.fill_betweenx(
+        v_t.altitude, v_t-v_t_sig, v_t+v_t_sig, color=colors[0],
+        alpha=0.1, linewidth=1.75, linestyle='--')
+
+    ax.set_xticks(np.arange(-30, 30, 10))
+    ax.set_xticks(np.arange(-30, 25, 5), minor=True)
+    ax.set_xlabel(r'$u$ [m/s]')
+
+    twin0 = ax.twiny()
+    twin0.xaxis.set_ticks_position("top")
+    twin0.xaxis.set_label_position("top")
+
+    ax.set_xlim([-30, 20])
+    twin0.set_xlim([300, 500])
+    twin0.set_xticks(np.arange(300, 550, 50))
+    twin0.set_xticks(np.arange(300, 525, 25), minor=True)
+    twin0.set_xlabel(r'$\theta$ [K]')
+
+    twin0.plot(
+        t_t, t_t.altitude, linestyle='dashdot', color=colors[0],
+        label=r'ERA5 $\theta$')
+    twin0.fill_betweenx(
+        t_t.altitude, t_t-t_t_sig, t_t+t_t_sig, color=colors[0],
+        alpha=0.1, linewidth=1.75, linestyle='dashdot')
+
+    min_speed = min(min(np.concatenate([u_t.values, v_t.values])), min_speed)
+    max_speed = max(max(np.concatenate([u_t.values, v_t.values])), max_speed)
+
+    max_sig = max(np.max(v_t_sig), np.max(u_t_sig))
+
+    ax.plot(
+        [min_speed-max_sig, max_speed+max_sig], [500, 500],
+        linestyle='dashed', color='grey')
+    ax.plot(
+        [min_speed-max_sig, max_speed+max_sig], [3000, 3000],
+        linestyle='dashed', color='grey')
+    ax.plot(
+        [min_speed-max_sig, max_speed+max_sig], [2000, 2000],
+        linestyle='dashed', color='grey')
+    ax.plot(
+        [min_speed-max_sig, max_speed+max_sig], [4000, 4000],
+        linestyle='dashed', color='grey')
+
+    ax.legend(
+        loc='lower center', bbox_to_anchor=(.5, -0.30),
+        ncol=2, fancybox=True, shadow=True)
