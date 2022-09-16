@@ -150,11 +150,11 @@ def plot_soundings(ERA5_soundings):
 
     u_t = ERA5_soundings_pope['u'].mean(dim=['hour', 'time'])
     v_t = ERA5_soundings_pope['v'].mean(dim=['hour', 'time'])
-    t_t = ERA5_soundings_pope['t'].mean(dim=['hour', 'time'])
+    t_t = ERA5_soundings_pope['theta'].mean(dim=['hour', 'time'])
 
     u_t_sig = np.sqrt(ERA5_soundings_pope['u'].var(dim=['hour', 'time']))
     v_t_sig = np.sqrt(ERA5_soundings_pope['v'].var(dim=['hour', 'time']))
-    t_t_sig = np.sqrt(ERA5_soundings_pope['t'].var(dim=['hour', 'time']))
+    t_t_sig = np.sqrt(ERA5_soundings_pope['theta'].var(dim=['hour', 'time']))
 
     # hour = 18
 
