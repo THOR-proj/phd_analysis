@@ -249,6 +249,146 @@ def get_ACCESS_G_soundings(lon=130.925, lat=-12.457):
 
     hours_da = xr.DataArray(hours, name='hour', coords={'hour': hours})
 
+    ACCESS_G_soundings = xr.concat(new_ds, dim=hours_da)
+
+    R = 287.04
+    cp = 1005
+
+    ACCESS_G_soundings['theta'] = ACCESS_G_soundings['t']*(
+        1e5/ACCESS_G_soundings['p'])**(R/cp)
+
+    return ACCESS_G_soundings
+
+
+def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
+
+    days_2021 = np.arange(
+        np.datetime64('2021-01-01'), np.datetime64('2021-03-01'),
+        np.timedelta64(1, 'D'))
+    days_2022 = np.arange(
+        np.datetime64('2022-01-01'), np.datetime64('2022-03-01'),
+        np.timedelta64(1, 'D'))
+    days_list = [days_2021, days_2022]
+
+    # bad_days_list = [
+    #     np.datetime64('2021-01-12'),
+    #     np.datetime64('2022-01-06'),
+    #     np.datetime64('2022-01-21'),
+    #     np.datetime64('2022-02-17')]
+
+    # days = sorted(list(set(np.concatenate(days_list)) - set(bad_days_list)))
+    days = np.concatenate(days_list)
+
+    pope_df = pd.read_csv(
+        'fake_pope_regimes.csv', header=None,
+        index_col=0, names=['time', 'pope_regime'])
+    pope_df.index = pd.to_datetime(pope_df.index)
+
+    base_dir = '/g/data/wr45/ops_aps3/access-dn/1/'
+
+    hours = [0, 6, 12, 18, 24]
+
+    soundings_ds = [[] for i in range(len(hours))]
+
+    topog = xr.open_dataset(
+        base_dir + '20201001/0000/an/sfc/topog.nc')
+    topog = topog.interp(lon=lon, lat=lat)
+
+    new_alts = np.arange(100, 20100, 100)
+    bad_days = []
+
+    for i in range(len(days)):
+
+        print('Loading {}'.format(days[i]))
+
+        datetime_str = (days[i]-np.timedelta64(1, 'd'))
+        datetime_str = datetime_str.astype(str).replace('-', '')
+
+        year = datetime_str[0:4]
+        month = datetime_str[4:6]
+        day = datetime_str[6:8]
+
+        date_str = '{}{}{}'.format(year, month, day)
+        hour_str = '1200'
+
+        datasets = []
+        file_exists = True
+
+        for var in [
+                'wnd_ucmp', 'wnd_vcmp', 'air_temp', 'pressure', 'spec_hum']:
+
+            try:
+                ds = xr.open_dataset(
+                    base_dir + '{}/{}/fc/ml/{}.nc'.format(
+                        date_str, hour_str, var))
+            except FileNotFoundError:
+                print('Missing File.')
+                file_exists = False
+                continue
+
+            ds = ds.interp(lon=lon, lat=lat)
+            ds = ds.load()
+
+            datasets.append(ds)
+
+        if not file_exists:
+            bad_days.append(days[i])
+            continue
+
+        [u, v, t, p, q] = datasets
+
+        for j in range(len(hours)):
+
+            datasets_t = [
+                vble.sel(time=(days[i]+np.timedelta64(hours[j])))
+                for vble in [u, v, t, p, q]]
+            [u_t, v_t, t_t, p_t, q_t] = datasets_t
+
+            altitude_rho = u_t.A_rho + u_t.B_rho * topog['topog']
+            altitude_theta = p_t.A_theta + p_t.B_theta * topog['topog']
+
+            u_t = u_t.rename({'rho_lvl': 'altitude'})
+            v_t = v_t.rename({'rho_lvl': 'altitude'})
+            t_t = t_t.rename({'theta_lvl': 'altitude'})
+            p_t = p_t.rename({'theta_lvl': 'altitude'})
+            q_t = q_t.rename({'theta_lvl': 'altitude'})
+
+            u_t = u_t['wnd_ucmp'].assign_coords(
+                {'altitude': altitude_rho.squeeze().values})
+            v_t = v_t['wnd_vcmp'].assign_coords(
+                {'altitude': altitude_rho.squeeze().values})
+            t_t = t_t['air_temp'].assign_coords(
+                {'altitude': altitude_theta.squeeze().values})
+            p_t = p_t['pressure'].assign_coords(
+                {'altitude': altitude_theta.squeeze().values})
+            q_t = q_t['spec_hum'].assign_coords(
+                {'altitude': altitude_theta.squeeze().values})
+
+            u_t = u_t.interp(altitude=new_alts)
+            v_t = v_t.interp(altitude=new_alts)
+            t_t = t_t.interp(altitude=new_alts)
+            p_t = p_t.interp(altitude=new_alts)
+            q_t = q_t.interp(altitude=new_alts)
+
+            ds_t = xr.Dataset({
+                'u': u_t, 'v': v_t, 'p': p_t, 't': t_t, 'q': q_t})
+
+            ds_t['time'] = ds_t['time'] - np.timedelta64(hours[j], 'h')
+
+            ds_t['pope_regime'] = pope_df.loc[ds_t['time'].values]
+
+            soundings_ds[j].append(ds_t)
+
+    new_ds = []
+
+    for i in range(len(hours)):
+        ds_i = xr.concat(soundings_ds[i], dim='time')
+        ds_i = ds_i.drop('dim_1')
+        ds_i = ds_i.squeeze()
+        new_ds.append(ds_i)
+
+    hours_da = xr.DataArray(hours, name='hour', coords={'hour': hours})
+
     ACCESS_C_soundings = xr.concat(new_ds, dim=hours_da)
 
     R = 287.04
