@@ -89,7 +89,7 @@ def get_ERA5_soundings(lon=130.925, lat=-12.457):
                 u_t = u_t['u'].assign_coords({'altitude': z_t.values})
                 v_t = v_t['v'].assign_coords({'altitude': z_t.values})
                 t_t = t_t['t'].assign_coords({'altitude': z_t.values})
-                q_t = t_t['t'].assign_coords({'altitude': z_t.values})
+                q_t = q_t['t'].assign_coords({'altitude': z_t.values})
                 p_t = p_t['p'].assign_coords({'altitude': z_t.values})
 
                 ds_t = xr.Dataset({
