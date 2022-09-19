@@ -6,7 +6,7 @@ import pandas as pd
 import classification as cl
 
 
-def get_ERA5_soundings(lon = 130.925, lat = -12.457):
+def get_ERA5_soundings(lon=130.925, lat=-12.457):
     days_2021 = np.arange(
         np.datetime64('2021-01-01'), np.datetime64('2021-03-01'),
         np.timedelta64(1, 'D'))
@@ -28,9 +28,6 @@ def get_ERA5_soundings(lon = 130.925, lat = -12.457):
         index_col=0, names=['time', 'pope_regime'])
     pope_df.index = pd.to_datetime(pope_df.index)
 
-    lon = 130.925
-    lat = -12.457
-
     base_dir = '/g/data/w40/esh563/era5/pressure-levels/reanalysis/'
 
     years = [2021, 2022]
@@ -42,7 +39,7 @@ def get_ERA5_soundings(lon = 130.925, lat = -12.457):
     for i in range(len(years)):
 
         datasets = []
-        for var in ['u', 'v', 't', 'z']:
+        for var in ['u', 'v', 't', 'q', 'z']:
 
             print('Loading {}, {}'.format(years[i], var))
 
@@ -62,7 +59,7 @@ def get_ERA5_soundings(lon = 130.925, lat = -12.457):
 
             datasets.append(ds)
 
-        [u, v, t, z] = datasets
+        [u, v, t, q, z] = datasets
 
         for j in range(len(days_list[i])):
 
@@ -74,6 +71,7 @@ def get_ERA5_soundings(lon = 130.925, lat = -12.457):
                 u_t = u.sel(time=time_jk)
                 v_t = v.sel(time=time_jk)
                 t_t = t.sel(time=time_jk)
+                q_t = q.sel(time=time_jk)
                 z_t = z.sel(time=time_jk)
 
                 z_t = z_t['z'] / 9.80665
@@ -85,16 +83,19 @@ def get_ERA5_soundings(lon = 130.925, lat = -12.457):
                 u_t = u_t.rename({'level': 'altitude'})
                 v_t = v_t.rename({'level': 'altitude'})
                 t_t = t_t.rename({'level': 'altitude'})
+                q_t = q_t.rename({'level': 'altitude'})
                 p_t = p_t.rename({'level': 'altitude'})
 
                 u_t = u_t['u'].assign_coords({'altitude': z_t.values})
                 v_t = v_t['v'].assign_coords({'altitude': z_t.values})
                 t_t = t_t['t'].assign_coords({'altitude': z_t.values})
+                q_t = t_t['t'].assign_coords({'altitude': z_t.values})
                 p_t = p_t['p'].assign_coords({'altitude': z_t.values})
 
                 ds_t = xr.Dataset({
                     'u': u_t, 'v': v_t,
-                    'p': p_t, 't': t_t})
+                    'p': p_t, 'q': q_t,
+                    't': t_t})
 
                 ds_t = ds_t.sel(altitude=slice(25e3, 0))
 
@@ -128,6 +129,137 @@ def get_ERA5_soundings(lon = 130.925, lat = -12.457):
     return ERA5_soundings
 
 
+def get_ACCESS_G_soundings(lon=130.925, lat=-12.457):
+
+    days_2021 = np.arange(
+        np.datetime64('2021-01-01'), np.datetime64('2021-03-01'),
+        np.timedelta64(1, 'D'))
+    days_2022 = np.arange(
+        np.datetime64('2022-01-01'), np.datetime64('2022-03-01'),
+        np.timedelta64(1, 'D'))
+    days_list = [days_2021, days_2022]
+
+    bad_days_list = [
+        np.datetime64('2021-01-12'),
+        np.datetime64('2022-01-06'),
+        np.datetime64('2022-01-21'),
+        np.datetime64('2022-02-17')]
+
+    days = sorted(list(set(np.concatenate(days_list)) - set(bad_days_list)))
+
+    pope_df = pd.read_csv(
+        'fake_pope_regimes.csv', header=None,
+        index_col=0, names=['time', 'pope_regime'])
+    pope_df.index = pd.to_datetime(pope_df.index)
+
+    base_dir = '/g/data/wr45/ops_aps3/access-g/1/'
+
+    hours = [0, 6, 12, 18]
+
+    soundings_ds = [[] for i in range(len(hours))]
+
+    topog = xr.open_dataset(
+        base_dir + '20201001/0000/an/sfc/topog.nc')
+    topog = topog.interp(lon=lon, lat=lat)
+
+    new_alts = np.arange(100, 20100, 100)
+
+    for i in range(len(days)):
+
+        print('Loading {}'.format(days[i]))
+
+        for j in range(len(hours)):
+
+            datetime_str = days[i].astype(str).replace('-', '')
+
+            year = datetime_str[0:4]
+            month = datetime_str[4:6]
+            day = datetime_str[6:8]
+
+            date_str = '{}{}{}'.format(year, month, day)
+            hour_str = '{:02d}00'.format(hours[j])
+
+            datasets = []
+            file_exists = True
+            for var in [
+                    'wnd_ucmp', 'wnd_vcmp', 'air_temp',
+                    'pressure', 'spec_hum']:
+
+                try:
+                    ds = xr.open_dataset(
+                        base_dir + '{}/{}/an/ml/{}.nc'.format(
+                            date_str, hour_str, var))
+                except FileNotFoundError:
+                    print('Missing File.')
+                    file_exists = False
+                    continue
+
+                ds = ds.interp(lon=lon, lat=lat)
+                ds = ds.load()
+
+                datasets.append(ds)
+
+            if not file_exists:
+                continue
+
+            [u_t, v_t, t_t, p_t, q_t] = datasets
+
+            altitude_rho = u_t.A_rho + u_t.B_rho * topog['topog']
+            altitude_theta = p_t.A_theta + p_t.B_theta * topog['topog']
+
+            u_t = u_t.rename({'rho_lvl': 'altitude'})
+            v_t = v_t.rename({'rho_lvl': 'altitude'})
+            t_t = t_t.rename({'theta_lvl': 'altitude'})
+            p_t = p_t.rename({'theta_lvl': 'altitude'})
+            q_t = q_t.rename({'theta_lvl': 'altitude'})
+
+            u_t = u_t['wnd_ucmp'].assign_coords(
+                {'altitude': altitude_rho.squeeze().values})
+            v_t = v_t['wnd_vcmp'].assign_coords(
+                {'altitude': altitude_rho.squeeze().values})
+            t_t = t_t['air_temp'].assign_coords(
+                {'altitude': altitude_theta.squeeze().values})
+            p_t = p_t['pressure'].assign_coords(
+                {'altitude': altitude_theta.squeeze().values})
+            q_t = q_t['spec_hum'].assign_coords(
+                {'altitude': altitude_theta.squeeze().values})
+
+            u_t = u_t.interp(altitude=new_alts)
+            v_t = v_t.interp(altitude=new_alts)
+            t_t = t_t.interp(altitude=new_alts)
+            p_t = p_t.interp(altitude=new_alts)
+            q_t = q_t.interp(altitude=new_alts)
+
+            ds_t = xr.Dataset({
+                'u': u_t, 'v': v_t, 'p': p_t, 't': t_t, 'q': q_t})
+
+            ds_t['time'] = ds_t['time'] - np.timedelta64(hours[j], 'h')
+
+            ds_t['pope_regime'] = pope_df.loc[ds_t['time'].values]
+
+            soundings_ds[j].append(ds_t)
+
+    new_ds = []
+
+    for i in range(len(hours)):
+        ds_i = xr.concat(soundings_ds[i], dim='time')
+        ds_i = ds_i.drop('dim_1')
+        ds_i = ds_i.squeeze()
+        new_ds.append(ds_i)
+
+    hours_da = xr.DataArray(hours, name='hour', coords={'hour': hours})
+
+    ACCESS_C_soundings = xr.concat(new_ds, dim=hours_da)
+
+    R = 287.04
+    cp = 1005
+
+    ACCESS_C_soundings['theta'] = ACCESS_C_soundings['t']*(
+        1e5/ACCESS_C_soundings['p'])**(R/cp)
+
+    return ACCESS_C_soundings
+
+
 def plot_soundings(ERA5_soundings):
 
     fig, ax = plt.subplots(1, 1, figsize=(6, 5))
@@ -142,8 +274,6 @@ def plot_soundings(ERA5_soundings):
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
     colors = [colors[i] for i in [0, 1, 2, 4, 5, 6]]
-
-    hours = np.arange(0, 24, 6)
 
     ERA5_soundings_pope = ERA5_soundings.where(
         ERA5_soundings['pope_regime'] == pope_regime)
@@ -165,35 +295,39 @@ def plot_soundings(ERA5_soundings):
     # u_t_sig = np.sqrt(ERA5_soundings_pope['u'].sel(hour=hour).var(dim='time'))
     # v_t_sig = np.sqrt(ERA5_soundings_pope['v'].sel(hour=hour).var(dim='time'))
 
-    ax.plot(
+    line1 = ax.plot(
         u_t, u_t.altitude, color=colors[0], label=r'ERA5 $u$',
         linewidth=1.75)
     ax.fill_betweenx(
         u_t.altitude, u_t-u_t_sig, u_t+u_t_sig, color=colors[0],
         alpha=0.1, linewidth=1.75)
 
-    ax.plot(
+    line2 = ax.plot(
         v_t, v_t.altitude, color=colors[0], label=r'ERA5 $v$',
         linestyle='dashed')
     ax.fill_betweenx(
         v_t.altitude, v_t-v_t_sig, v_t+v_t_sig, color=colors[0],
         alpha=0.1, linewidth=1.75, linestyle='--')
 
-    ax.set_xticks(np.arange(-30, 30, 10))
-    ax.set_xticks(np.arange(-30, 25, 5), minor=True)
-    ax.set_xlabel(r'$u$ [m/s]')
+    ax.set_xticks(np.arange(-35, 25, 5))
+    ax.set_xticks(np.arange(-35, 22.5, 2.5), minor=True)
+    ax.set_xlabel(r'Velocity [m/s]')
+    ax.set_ylabel(r'Altitude [km]')
+    ax.set_yticks(np.arange(0, 22e3, 2e3))
+    ax.set_yticks(np.arange(0, 21e3, 1e3), minor=True)
+    ax.set_yticklabels(np.arange(0, 22, 2))
 
     twin0 = ax.twiny()
     twin0.xaxis.set_ticks_position("top")
     twin0.xaxis.set_label_position("top")
 
-    ax.set_xlim([-30, 20])
-    twin0.set_xlim([300, 500])
-    twin0.set_xticks(np.arange(300, 550, 50))
-    twin0.set_xticks(np.arange(300, 525, 25), minor=True)
+    ax.set_xlim([-35, 20])
+    twin0.set_xlim([260, 480])
+    twin0.set_xticks(np.arange(260, 520, 40))
+    twin0.set_xticks(np.arange(260, 500, 20), minor=True)
     twin0.set_xlabel(r'$\theta$ [K]')
 
-    twin0.plot(
+    line3 = twin0.plot(
         t_t, t_t.altitude, linestyle='dashdot', color=colors[0],
         label=r'ERA5 $\theta$')
     twin0.fill_betweenx(
@@ -203,11 +337,11 @@ def plot_soundings(ERA5_soundings):
     min_speed = min(min(np.concatenate([u_t.values, v_t.values])), min_speed)
     max_speed = max(max(np.concatenate([u_t.values, v_t.values])), max_speed)
 
-    max_sig = max(np.max(v_t_sig), np.max(u_t_sig))
+    max_sig = max(np.max(v_t_sig), np.max(u_t_sig))+5
 
-    ax.plot(
+    line4 = ax.plot(
         [min_speed-max_sig, max_speed+max_sig], [500, 500],
-        linestyle='dashed', color='grey')
+        linestyle='dashed', color='grey', label='MINT Layers')
     ax.plot(
         [min_speed-max_sig, max_speed+max_sig], [3000, 3000],
         linestyle='dashed', color='grey')
@@ -218,6 +352,13 @@ def plot_soundings(ERA5_soundings):
         [min_speed-max_sig, max_speed+max_sig], [4000, 4000],
         linestyle='dashed', color='grey')
 
+    lines = line1 + line2 + line3 + line4
+    labels = [line.get_label() for line in lines]
+
+    ax.grid(which='major', alpha=0.5, axis='both')
+    ax.grid(which='minor', alpha=0.2, axis='both')
+
     ax.legend(
+        lines, labels,
         loc='lower center', bbox_to_anchor=(.5, -0.30),
-        ncol=2, fancybox=True, shadow=True)
+        ncol=4, fancybox=True, shadow=True)
