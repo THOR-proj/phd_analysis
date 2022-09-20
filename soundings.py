@@ -412,6 +412,10 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
                 print('Missing File.')
                 file_exists = False
                 continue
+            except ValueError:
+                print('Bad Data.')
+                file_exists = False
+                continue
 
             times = np.arange(
                 days[i], days[i]+np.timedelta64(30, 'h'),
