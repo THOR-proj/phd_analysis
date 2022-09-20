@@ -427,7 +427,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
         for j in range(len(hours)):
 
             datasets_t = [
-                vble.sel(time=(days[i]+np.timedelta64(hours[j])))
+                vble.sel(time=(days[i]+np.timedelta64(hours[j], 'h')))
                 for vble in [u, v, t, p, q]]
             [u_t, v_t, t_t, p_t, q_t] = datasets_t
 
