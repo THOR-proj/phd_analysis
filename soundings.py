@@ -384,7 +384,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
     new_alts = np.arange(100, 20100, 100)
     bad_days = []
 
-    for i in range(len(days)):
+    for i in range(len(days_2022)):
 
         print('Loading {}'.format(days[i]))
 
@@ -472,8 +472,11 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
             import pdb; pdb.set_trace()
             altitude = geop_t['geop_ht'].values
             pressure = geop_t['lvl'].values
+            pressure = np.expand_dims(pressure, (1, 2, 3))
+
             p = xr.DataArray(
                 pressure, name='p',
+                dims=['altitude', 'lon', 'lat', 'time'],
                 coords={
                     'altitude': altitude,
                     'lon': geop_t['lon'].values,
