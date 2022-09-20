@@ -473,16 +473,14 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
             altitude = geop_t['geop_ht'].values
             pressure = geop_t['lvl'].values
 
-            p = copy.deepcopy(geop_t)
-            p = p.drop(['geop_ht', 'lvl'])
-            p['pressure'] = pressure
-            p['pressure'].assign_coords(
-                {'altitude': altitude})
+            p_t = copy.deepcopy(geop_t)
+            p_t['geop_ht'] = pressure
+            p_t = p_t.assign_coords({'lvl': altitude})
+            p_t = p_t.rename({'lvl': 'altitude', 'geop_ht': 'p'})
 
             u_t = u_t.rename({'rho_lvl': 'altitude'})
             v_t = v_t.rename({'rho_lvl': 'altitude'})
             t_t = t_t.rename({'theta_lvl': 'altitude'})
-            p_t = p_t.rename({'theta_lvl': 'altitude'})
             q_t = q_t.rename({'theta_lvl': 'altitude'})
 
             u_t = u_t['wnd_ucmp'].assign_coords(
@@ -490,8 +488,6 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
             v_t = v_t['wnd_vcmp'].assign_coords(
                 {'altitude': altitude_rho.squeeze().values})
             t_t = t_t['air_temp'].assign_coords(
-                {'altitude': altitude_theta.squeeze().values})
-            p_t = p_t['pressure'].assign_coords(
                 {'altitude': altitude_theta.squeeze().values})
             q_t = q_t['spec_hum'].assign_coords(
                 {'altitude': altitude_theta.squeeze().values})
