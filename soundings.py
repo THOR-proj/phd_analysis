@@ -473,7 +473,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
             pressure = geop_t['lvl'].values
 
             p_t = copy.deepcopy(geop_t)
-            p_t['geop_ht'] = pressure
+            p_t['geop_ht'].values = pressure
             p_t = p_t.assign_coords({'lvl': altitude})
             p_t = p_t.rename({'lvl': 'altitude', 'geop_ht': 'p'})
 
