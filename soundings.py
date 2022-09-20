@@ -432,7 +432,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
 
         try:
             ds = xr.open_dataset(
-                base_dir + '{}/{}/fc/pl/geop_height.nc'.format(
+                base_dir + '{}/{}/fc/pl/geop_ht.nc'.format(
                     date_str, hour_str))
             times = np.arange(
                 days[i], days[i]+np.timedelta64(30, 'h'),
@@ -470,7 +470,15 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
             altitude_theta = t_t.A_theta + t_t.B_theta * topog['topog']
 
             import pdb; pdb.set_trace()
-            geop_t = geop_t
+            altitude = geop_t['geop_ht'].values
+            pressure = geop_t['lvl'].values
+            p = xr.DataArray(
+                pressure, name='p',
+                coords={
+                    'altitude': altitude,
+                    'lon': geop_t['lon'].values,
+                    'lat': geop_t['lat'].values,
+                    'time': geop_t['time'].values})
 
             u_t = u_t.rename({'rho_lvl': 'altitude'})
             v_t = v_t.rename({'rho_lvl': 'altitude'})
