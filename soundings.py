@@ -476,6 +476,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
             p_t['geop_ht'].values = pressure
             p_t = p_t.assign_coords({'lvl': altitude})
             p_t = p_t.rename({'lvl': 'altitude', 'geop_ht': 'p'})
+            p_t = p_t['p']
 
             u_t = u_t.rename({'rho_lvl': 'altitude'})
             v_t = v_t.rename({'rho_lvl': 'altitude'})
@@ -497,7 +498,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
             p_t = p_t.interp(altitude=new_alts)
             q_t = q_t.interp(altitude=new_alts)
 
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
 
             ds_t = xr.Dataset({
                 'u': u_t, 'v': v_t, 'p': p_t, 't': t_t, 'q': q_t})
