@@ -1,9 +1,96 @@
 import xarray as xr
 import numpy as np
+import scipy as sp
 import matplotlib.pyplot as plt
 import copy
 import pandas as pd
 import classification as cl
+
+import metpy.calc as mpcalc
+from metpy.plots import SkewT
+from metpy.units import units
+
+
+def plot_skewt(
+        soundings, fig=None, figsize=(12, 6), subplots=None,
+        legend=False, left_ticks=True, right_ticks=False, title=None):
+
+    if fig is None:
+        fig = plt.figure(figsize=figsize)
+
+    p = soundings['p'].values * units.Pa
+    T = (soundings['t'].values-273.15) * units.degC
+    q = soundings['q']
+    # u = soundings['u'] * units.meter_per_second
+    # v = soundings['v'] * units.meter_per_second
+    heights = soundings['altitude'] * units.meter
+
+    Td = mpcalc.dewpoint_from_specific_humidity(p, T, q)
+
+    skew = SkewT(fig=fig, subplot=subplots, rotation=45)
+
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    # colors = [colors[i] for i in [0, 1, 2, 4, 5, 6]]
+
+    cl.init_fonts()
+
+    # Plot the data using normal plotting functions, in this case using
+    # log scaling in Y, as dictated by the typical meteorological plot.
+    skew.plot(p, T, 'r', label='Temperature')
+    skew.plot(p, Td, colors[0], label='Dew Point Temperature')
+    # skew.plot_barbs(p[::3], u[::3], v[::3])
+    skew.ax.set_ylim(1000, 100)
+    skew.ax.set_xlim(-10, 30)
+
+    f = sp.interpolate.interp1d(
+        p[::-1], heights[::-1], fill_value='extrapolate')
+
+    secax = skew.ax.secondary_yaxis(location=1)
+    secax.set_yticks(np.arange(1000, 0, -100))
+
+    labels = f(np.arange(100000, 0, -10000))/1000
+    labels = ['{:.02f}'.format(lbl) for lbl in labels]
+
+    secax.set_yticklabels(labels)
+    secax.set_ylabel('Altitude [m]')
+
+    if left_ticks:
+        skew.ax.set_ylabel(r'Pressure [hPa]')
+    else:
+        skew.ax.set_yticklabels([])
+        skew.ax.set_ylabel(None)
+
+    skew.ax.set_xlabel(r'Temperature [$^\circ$C]')
+
+    lcl_pressure, lcl_temperature = mpcalc.lcl(p[0], T[0], Td[0])
+    skew.plot(lcl_pressure, lcl_temperature, 'ko', markerfacecolor='black')
+
+    # Calculate full parcel profile and add to plot as black line
+    prof = mpcalc.parcel_profile(p, T[0], Td[0]).to('degC')
+    skew.plot(p, prof, 'k', linewidth=2, label='Parcel Profile')
+
+    # Shade areas of CAPE and CIN
+    skew.shade_cin(p, T, prof, Td, label='CIN')
+    skew.shade_cape(p, T, prof, label='CAPE')
+
+    # Add the relevant special lines
+    skew.plot_dry_adiabats(
+        label='Dry Adiabat', linewidth=1.25, linestyle='dotted')
+    skew.plot_moist_adiabats(
+        linewidth=1.25, label='Moist Adiabat', linestyle='dotted')
+    skew.plot_mixing_lines(
+        linewidth=1, label='Mixing Lines', linestyle='dashed', colors='grey')
+
+    if title is not None:
+        skew.ax.set_title(title, fontsize=12)
+
+    if legend:
+        skew.ax.legend(
+            loc='lower center', bbox_to_anchor=(1.1, -0.3),
+            ncol=4, fancybox=True, shadow=True)
+
+    return skew.ax
 
 
 def get_ERA5_soundings(lon=130.925, lat=-12.457):
@@ -301,7 +388,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
 
         print('Loading {}'.format(days[i]))
 
-        datetime_str = (days[i]-np.timedelta64(1, 'd'))
+        datetime_str = (days[i]-np.timedelta64(1, 'D'))
         datetime_str = datetime_str.astype(str).replace('-', '')
 
         year = datetime_str[0:4]

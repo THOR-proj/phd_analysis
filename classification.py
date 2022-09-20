@@ -481,12 +481,13 @@ def get_time_str():
     return current_time
 
 
-def make_subplot_labels(axes, size=16, x_shift=-0.15):
+def make_subplot_labels(axes, size=16, x_shift=-0.15, y_shift=0):
     labels = list(string.ascii_lowercase)
     labels = [label + ')' for label in labels]
     for i in range(len(axes)):
         axes[i].text(
-            x_shift, 1.0, labels[i], transform=axes[i].transAxes, size=size)
+            x_shift, 1.0+y_shift, labels[i], transform=axes[i].transAxes,
+            size=size)
 
 
 def get_save_dir(save_dir):
