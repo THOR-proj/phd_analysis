@@ -384,7 +384,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
     new_alts = np.arange(100, 20100, 100)
     bad_days = []
 
-    for i in range(len(days_2022)):
+    for i in range(len(days)):
 
         print('Loading {}'.format(days[i]))
 
@@ -513,7 +513,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
 
     for i in range(len(hours)):
         ds_i = xr.concat(soundings_ds[i], dim='time')
-        ds_i = ds_i.drop('dim_1')
+        ds_i = ds_i.drop('dim_0')
         ds_i = ds_i.squeeze()
         new_ds.append(ds_i)
 
