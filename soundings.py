@@ -413,7 +413,11 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
                 file_exists = False
                 continue
 
-            ds = ds.interp(lon=lon, lat=lat)
+            times = np.arange(
+                days[i], days[i]+np.timedelta64(30, 'h'),
+                np.timedelta64(6, 'h'))
+
+            ds = ds.interp(lon=lon, lat=lat, time=times)
             ds = ds.load()
 
             datasets.append(ds)
