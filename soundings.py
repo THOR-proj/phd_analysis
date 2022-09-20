@@ -472,16 +472,12 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
             import pdb; pdb.set_trace()
             altitude = geop_t['geop_ht'].values
             pressure = geop_t['lvl'].values
-            pressure = np.expand_dims(pressure, (1, 2, 3))
 
-            p = xr.DataArray(
-                pressure, name='p',
-                dims=['altitude', 'lon', 'lat', 'time'],
-                coords={
-                    'altitude': altitude,
-                    'lon': geop_t['lon'].values,
-                    'lat': geop_t['lat'].values,
-                    'time': geop_t['time'].values})
+            p = copy.deepcopy(geop_t)
+            p = p.drop(['geop_ht', 'lvl'])
+            p['pressure'] = pressure
+            p['pressure'].assign_coords(
+                {'altitude': altitude})
 
             u_t = u_t.rename({'rho_lvl': 'altitude'})
             v_t = v_t.rename({'rho_lvl': 'altitude'})
