@@ -378,7 +378,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
     soundings_ds = [[] for i in range(len(hours))]
 
     topog = xr.open_dataset(
-        base_dir + '20201001/0000/an/sfc/topog.nc')
+        base_dir + '20211001/0000/an/sfc/topog.nc')
     topog = topog.interp(lon=lon, lat=lat)
 
     new_alts = np.arange(100, 20100, 100)
