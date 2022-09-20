@@ -384,7 +384,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
     new_alts = np.arange(100, 20100, 100)
     bad_days = []
 
-    for i in range(len(days)):
+    for i in range(len(days_2022)):
 
         print('Loading {}'.format(days[i]))
 
