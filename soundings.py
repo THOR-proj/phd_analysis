@@ -402,7 +402,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
         file_exists = True
 
         for var in [
-                'wnd_ucmp', 'wnd_vcmp', 'air_temp', 'pressure', 'spec_hum']:
+                'wnd_ucmp', 'wnd_vcmp', 'air_temp', 'spec_hum']:
 
             try:
                 ds = xr.open_dataset(
@@ -421,26 +421,58 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
                 days[i], days[i]+np.timedelta64(30, 'h'),
                 np.timedelta64(6, 'h'))
 
-            ds = ds.interp(lon=lon, lat=lat, time=times)
-            ds = ds.load()
+            try:
+                ds = ds.interp(lon=lon, lat=lat, time=times)
+                ds = ds.load()
+            except pd.errors.InvalidIndexError:
+                print('Bad index.')
+                file_exists=False
+                continue
 
             datasets.append(ds)
+
+        try:
+            ds = xr.open_dataset(
+                base_dir + '{}/{}/fc/pl/geop_height.nc'.format(
+                    date_str, hour_str))
+        except FileNotFoundError:
+            print('Missing File.')
+            file_exists = False
+        except ValueError:
+            print('Bad Data.')
+            file_exists = False
+
+        times = np.arange(
+            days[i], days[i]+np.timedelta64(30, 'h'),
+            np.timedelta64(6, 'h'))
+
+        try:
+            ds = ds.interp(lon=lon, lat=lat, time=times)
+            ds = ds.load()
+        except pd.errors.InvalidIndexError:
+            print('Bad index.')
+            file_exist = False
 
         if not file_exists:
             bad_days.append(days[i])
             continue
 
-        [u, v, t, p, q] = datasets
+        datasets.append(ds)
+
+        [u, v, t, q, geop] = datasets
 
         for j in range(len(hours)):
 
             datasets_t = [
                 vble.sel(time=(days[i]+np.timedelta64(hours[j], 'h')))
-                for vble in [u, v, t, p, q]]
-            [u_t, v_t, t_t, p_t, q_t] = datasets_t
+                for vble in [u, v, t, q, geop]]
+            [u_t, v_t, t_t, q_t, geop_t] = datasets_t
 
             altitude_rho = u_t.A_rho + u_t.B_rho * topog['topog']
-            altitude_theta = p_t.A_theta + p_t.B_theta * topog['topog']
+            altitude_theta = t_t.A_theta + t_t.B_theta * topog['topog']
+
+            import pdb; pdb.set_trace()
+            geop_t = geop_t
 
             u_t = u_t.rename({'rho_lvl': 'altitude'})
             v_t = v_t.rename({'rho_lvl': 'altitude'})
