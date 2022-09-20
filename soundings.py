@@ -352,10 +352,11 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
     days_2021 = np.arange(
         np.datetime64('2021-01-01'), np.datetime64('2021-03-01'),
         np.timedelta64(1, 'D'))
-    days_2022 = np.arange(
-        np.datetime64('2022-01-01'), np.datetime64('2022-03-01'),
-        np.timedelta64(1, 'D'))
-    days_list = [days_2021, days_2022]
+    # days_2022 = np.arange(
+    #     np.datetime64('2022-01-01'), np.datetime64('2022-03-01'),
+    #     np.timedelta64(1, 'D'))
+    # Frustrating - pressure data not archived for ACCESS-C for 2022
+    days_list = [days_2021]
 
     # bad_days_list = [
     #     np.datetime64('2021-01-12'),
@@ -384,7 +385,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
     new_alts = np.arange(100, 20100, 100)
     bad_days = []
 
-    for i in range(len(days_2022)):
+    for i in range(len(days)):
 
         print('Loading {}'.format(days[i]))
 
@@ -402,7 +403,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
         file_exists = True
 
         for var in [
-                'wnd_ucmp', 'wnd_vcmp', 'air_temp', 'spec_hum']:
+                'wnd_ucmp', 'wnd_vcmp', 'air_temp', 'spec_hum', 'pressure']:
 
             try:
                 ds = xr.open_dataset(
@@ -430,58 +431,59 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
 
             datasets.append(ds)
 
-        try:
-            ds = xr.open_dataset(
-                base_dir + '{}/{}/fc/pl/geop_ht.nc'.format(
-                    date_str, hour_str))
-            times = np.arange(
-                days[i], days[i]+np.timedelta64(30, 'h'),
-                np.timedelta64(6, 'h'))
-            ds = ds.sel(time=times)
-            ds = ds.interp(lon=lon, lat=lat)
-            ds = ds.load()
-        except FileNotFoundError:
-            print('Missing File.')
-            file_exists = False
-            ds = None
-        except ValueError:
-            print('Bad Data.')
-            file_exists = False
-        except pd.errors.InvalidIndexError:
-            print('Bad index.')
-            file_exists = False
-
+        # try:
+        #     ds = xr.open_dataset(
+        #         base_dir + '{}/{}/fc/pl/geop_ht.nc'.format(
+        #             date_str, hour_str))
+        #     times = np.arange(
+        #         days[i], days[i]+np.timedelta64(30, 'h'),
+        #         np.timedelta64(6, 'h'))
+        #     ds = ds.sel(time=times)
+        #     ds = ds.interp(lon=lon, lat=lat)
+        #     ds = ds.load()
+        # except FileNotFoundError:
+        #     print('Missing File.')
+        #     file_exists = False
+        #     ds = None
+        # except ValueError:
+        #     print('Bad Data.')
+        #     file_exists = False
+        # except pd.errors.InvalidIndexError:
+        #     print('Bad index.')
+        #     file_exists = False
+        #
         if not file_exists:
             bad_days.append(days[i])
             continue
+        #
+        # datasets.append(ds)
 
-        datasets.append(ds)
-
-        [u, v, t, q, geop] = datasets
+        [u, v, t, q, p] = datasets
 
         for j in range(len(hours)):
 
             datasets_t = [
                 vble.sel(time=(days[i]+np.timedelta64(hours[j], 'h')))
-                for vble in [u, v, t, q, geop]]
-            [u_t, v_t, t_t, q_t, geop_t] = datasets_t
+                for vble in [u, v, t, q, p]]
+            [u_t, v_t, t_t, q_t, p_t] = datasets_t
 
             altitude_rho = u_t.A_rho + u_t.B_rho * topog['topog']
             altitude_theta = t_t.A_theta + t_t.B_theta * topog['topog']
 
-            altitude = geop_t['geop_ht'].values
-            pressure = geop_t['lvl'].values
-
-            p_t = copy.deepcopy(geop_t)
-            p_t['geop_ht'].values = pressure
-            p_t = p_t.assign_coords({'lvl': altitude})
-            p_t = p_t.rename({'lvl': 'altitude', 'geop_ht': 'p'})
-            p_t = p_t['p']
+            # altitude = geop_t['geop_ht'].values
+            # pressure = geop_t['lvl'].values
+            #
+            # p_t = copy.deepcopy(geop_t)
+            # p_t['geop_ht'].values = pressure
+            # p_t = p_t.assign_coords({'lvl': altitude})
+            # p_t = p_t.rename({'lvl': 'altitude', 'geop_ht': 'p'})
+            # p_t = p_t['p']
 
             u_t = u_t.rename({'rho_lvl': 'altitude'})
             v_t = v_t.rename({'rho_lvl': 'altitude'})
             t_t = t_t.rename({'theta_lvl': 'altitude'})
             q_t = q_t.rename({'theta_lvl': 'altitude'})
+            p_t = p_t.rename({'theta_lvl': 'altitude'})
 
             u_t = u_t['wnd_ucmp'].assign_coords(
                 {'altitude': altitude_rho.squeeze().values})
@@ -490,6 +492,8 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
             t_t = t_t['air_temp'].assign_coords(
                 {'altitude': altitude_theta.squeeze().values})
             q_t = q_t['spec_hum'].assign_coords(
+                {'altitude': altitude_theta.squeeze().values})
+            p_t = p_t['pressure'].assign_coords(
                 {'altitude': altitude_theta.squeeze().values})
 
             u_t = u_t.interp(altitude=new_alts)
