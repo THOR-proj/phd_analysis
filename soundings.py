@@ -408,6 +408,13 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
                 ds = xr.open_dataset(
                     base_dir + '{}/{}/fc/ml/{}.nc'.format(
                         date_str, hour_str, var))
+                times = np.arange(
+                    days[i], days[i]+np.timedelta64(30, 'h'),
+                    np.timedelta64(6, 'h'))
+                ds = ds.sel(time=times)
+                ds = ds.interp(lon=lon, lat=lat)
+                ds = ds.load()
+
             except FileNotFoundError:
                 print('Missing File.')
                 file_exists = False
@@ -416,17 +423,9 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
                 print('Bad Data.')
                 file_exists = False
                 continue
-
-            times = np.arange(
-                days[i], days[i]+np.timedelta64(30, 'h'),
-                np.timedelta64(6, 'h'))
-
-            try:
-                ds = ds.interp(lon=lon, lat=lat, time=times)
-                ds = ds.load()
             except pd.errors.InvalidIndexError:
                 print('Bad index.')
-                file_exists=False
+                file_exists = False
                 continue
 
             datasets.append(ds)
@@ -435,23 +434,22 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
             ds = xr.open_dataset(
                 base_dir + '{}/{}/fc/pl/geop_height.nc'.format(
                     date_str, hour_str))
+            times = np.arange(
+                days[i], days[i]+np.timedelta64(30, 'h'),
+                np.timedelta64(6, 'h'))
+            ds = ds.sel(time=times)
+            ds = ds.interp(lon=lon, lat=lat)
+            ds = ds.load()
         except FileNotFoundError:
             print('Missing File.')
             file_exists = False
+            ds = None
         except ValueError:
             print('Bad Data.')
             file_exists = False
-
-        times = np.arange(
-            days[i], days[i]+np.timedelta64(30, 'h'),
-            np.timedelta64(6, 'h'))
-
-        try:
-            ds = ds.interp(lon=lon, lat=lat, time=times)
-            ds = ds.load()
         except pd.errors.InvalidIndexError:
             print('Bad index.')
-            file_exist = False
+            file_exists = False
 
         if not file_exists:
             bad_days.append(days[i])
