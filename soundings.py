@@ -9,11 +9,13 @@ import classification as cl
 import metpy.calc as mpcalc
 from metpy.plots import SkewT
 from metpy.units import units
+import metpy.interpolate as mpinterp
 
 
 def plot_skewt(
         soundings, fig=None, figsize=(12, 6), subplots=None,
-        legend=False, left_ticks=True, right_ticks=False, title=None):
+        legend=False, left_ticks=True, right_ticks=False, title=None,
+        ylim=(1000, 100), xlim=(-10, 30)):
 
     if fig is None:
         fig = plt.figure(figsize=figsize)
@@ -40,8 +42,8 @@ def plot_skewt(
     skew.plot(p, T, 'r', label='Temperature')
     skew.plot(p, Td, colors[0], label='Dew Point Temperature')
     # skew.plot_barbs(p[::3], u[::3], v[::3])
-    skew.ax.set_ylim(1000, 100)
-    skew.ax.set_xlim(-10, 30)
+    skew.ax.set_ylim(ylim)
+    skew.ax.set_xlim(xlim)
 
     f = sp.interpolate.interp1d(
         p[::-1], heights[::-1], fill_value='extrapolate')
@@ -63,16 +65,57 @@ def plot_skewt(
 
     skew.ax.set_xlabel(r'Temperature [$^\circ$C]')
 
-    lcl_pressure, lcl_temperature = mpcalc.lcl(p[0], T[0], Td[0])
+    parcel_index = 0
+
+    lcl_pressure, lcl_temperature = mpcalc.lcl(
+        p[parcel_index], T[parcel_index], Td[parcel_index])
     skew.plot(lcl_pressure, lcl_temperature, 'ko', markerfacecolor='black')
 
     # Calculate full parcel profile and add to plot as black line
-    prof = mpcalc.parcel_profile(p, T[0], Td[0]).to('degC')
+    prof = mpcalc.parcel_profile(
+        p, T[parcel_index], Td[parcel_index]).to('degC')
     skew.plot(p, prof, 'k', linewidth=2, label='Parcel Profile')
+    # Plot the dew point ascent line
 
+    skew.plot(
+        np.array([
+            p[parcel_index].magnitude,
+            lcl_pressure.magnitude])*units('Pa'),
+        np.array([
+            Td[parcel_index].magnitude,
+            lcl_temperature.magnitude])*units('degC'),
+        '--', color='black', linewidth=2)
+
+    # if not np.any(p == lcl_pressure):
+    #     import pdb; pdb.set_trace()
+    #     lcl_ind = np.where(p > lcl_pressure)[0][-1]
+    #     new_p = np.insert(p, lcl_ind+1, lcl_pressure)
+    #     T_lcl = mpinterp.interpolate_1d(lcl_pressure, p, T)
+    #     prof_lcl = mpinterp.interpolate_1d(lcl_pressure, p, prof)
+    #     Td_lcl = mpinterp.interpolate_1d(lcl_pressure, p, Td)
+    #     new_T = np.insert(T, lcl_ind+1, T_lcl)
+    #     new_prof = np.insert(prof, lcl_ind+1, prof_lcl)
+    #     new_Td = np.insert(Td, lcl_ind+1, Td_lcl)
+    #
+    #     # Shade areas of CAPE and CIN
+    #     skew.shade_cin(new_p, new_T, new_prof, new_Td, label='CIN')
+    #     skew.shade_cape(new_p, new_T, new_prof, label='CAPE')
+    # else:
     # Shade areas of CAPE and CIN
-    skew.shade_cin(p, T, prof, Td, label='CIN')
+    skew.shade_cin(p, T, prof, label='CIN')
     skew.shade_cape(p, T, prof, label='CAPE')
+
+    # Calculate CAPE/CIN
+    CAPE, CIN = mpcalc.surface_based_cape_cin(
+        p, T, Td)
+    MLCAPE, MLCIN = mpcalc.mixed_layer_cape_cin(
+        p, T, Td)
+
+    C_text = 'CAPE = {} J/kg \nMLCAPE = {} J/kg'.format(
+        int(round(CAPE.magnitude)), int(round(MLCAPE.magnitude)))
+
+    skew.ax.text(
+        .3, .91, C_text, transform=skew.ax.transAxes, backgroundcolor='white')
 
     # Add the relevant special lines
     skew.plot_dry_adiabats(
