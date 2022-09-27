@@ -106,8 +106,6 @@ def get_ACCESS_C(gadi=False):
             u_fc_i['time'] = u_fc_i['time'] - np.timedelta64(hours[i], 'h')
             v_fc_i['time'] = v_fc_i['time'] - np.timedelta64(hours[i], 'h')
 
-
-
             if u_fc_all[i] is None:
                 u_fc_all[i] = copy.deepcopy(u_fc_i)
                 v_fc_all[i] = copy.deepcopy(v_fc_i)
