@@ -52,10 +52,10 @@ def get_ACCESS_C(gadi=False):
     v_an = xr.open_dataset(
         base_dir + date + '/' + hour + '/an/sfc/vwnd10m.nc')
 
-    lon_min = 129
-    lon_max = 135.01
-    lat_min = -10
-    lat_max = -16
+    lon_min = 128
+    lon_max = 136
+    lat_min = -9
+    lat_max = -17
 
     dt = datetimes[0]
     date = str(dt)[0:10].replace('-', '')
