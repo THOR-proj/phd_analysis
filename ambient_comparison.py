@@ -91,3 +91,5 @@ def get_ACCESS_C(gadi=False):
             else:
                 u_fc_all[i] = xr.concat([u_fc_all[i], u_fc_i], dim='time')
                 v_fc_all[i] = xr.concat([v_fc_all[i], v_fc_i], dim='time')
+
+    return u_fc_all, v_fc_all

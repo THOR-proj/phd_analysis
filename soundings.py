@@ -16,11 +16,11 @@ def read_wyoming_sounding_txt(
         loc='darwin', year=2021,
         split_txt='94120 YPDN Darwin Airport Observations at '):
     # Parse txt files
-    fn = 'darwin_sounding_2021_jan.txt'
+    fn = '{}_sounding_2021_jan.txt'.format(loc)
     with open(fn, 'rb') as f:
         text = f.read().decode()
 
-    fn = 'darwin_sounding_2021_feb.txt'
+    fn = '{}_sounding_2021_feb.txt'.format(loc)
     with open(fn, 'rb') as f:
         text += f.read().decode()
 
@@ -67,6 +67,8 @@ def read_wyoming_sounding_txt(
         df['u'] = -np.sin(df['drct']*np.pi/180)*df['sknt']*1852/3600
         df['v'] = -np.cos(df['drct']*np.pi/180)*df['sknt']*1852/3600
         df = df.set_index('altitude')
+        if loc == 'gove':
+            df = df.iloc[1:]
 
         df['pope_regime'] = pope_df.loc[
             np.datetime64(pd.to_datetime(times[i]).date())].values[0]
@@ -90,6 +92,7 @@ def read_wyoming_sounding_txt(
         np.timedelta64(1, 'D'))
     for time in time_array:
         for j in range(len(hours)):
+            import pdb; pdb.set_trace()
             try:
                 da_t = da.sel(time=time+np.timedelta64(hours[j], 'h'))
                 da_t['time'] = time
