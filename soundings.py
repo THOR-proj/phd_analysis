@@ -5,28 +5,171 @@ import matplotlib.pyplot as plt
 import copy
 import pandas as pd
 import classification as cl
+import re
 
 import metpy.calc as mpcalc
 from metpy.plots import SkewT
 from metpy.units import units
-import metpy.interpolate as mpinterp
+
+
+def read_wyoming_sounding_txt(
+        loc='darwin', year=2021,
+        split_txt='94120 YPDN Darwin Airport Observations at '):
+    # Parse txt files
+    fn = 'darwin_sounding_2021_jan.txt'
+    with open(fn, 'rb') as f:
+        text = f.read().decode()
+
+    fn = 'darwin_sounding_2021_feb.txt'
+    with open(fn, 'rb') as f:
+        text += f.read().decode()
+
+    col_names = [
+        'p', 'altitude', 't', 'Td', 'RH', 'r', 'drct', 'sknt',
+        'theta', 'theta_e', 'theta_v']
+
+    soundings_list = text.split(split_txt)
+    soundings_list = [snd for snd in soundings_list if snd != '']
+
+    times = [snd[:15] for snd in soundings_list]
+    parse_month = {'Jan': '01', 'Feb': '02'}
+    times = [
+        np.datetime64(
+            '{}-{}-{}T{}'.format(
+                snd[11:15], parse_month[snd[7:10]], snd[4:6], snd[0:2]))
+        for snd in soundings_list]
+
+    start = 'deg   knot     K      K      K '
+    start += '\n------------------------------------------------------------'
+    start += '-----------------\n '
+    end = 'Station information and sounding indices'
+    pattern = '{}(.*?){}'.format(start, end)
+
+    soundings_list_revised = [
+        re.search(pattern, snd, re.DOTALL).group(1)
+        for snd in soundings_list]
+
+    new_alts = np.arange(100, 20100, 100)
+
+    pope_df = pd.read_csv(
+        'fake_pope_regimes.csv', header=None,
+        index_col=0, names=['time', 'pope_regime'])
+    pope_df.index = pd.to_datetime(pope_df.index)
+
+    hours = [0, 12]
+
+    da_list = []
+    for i in range(len(soundings_list_revised)):
+        snd = soundings_list_revised[i]
+        df = snd.split('\n')[:-2]
+        df = [' '.join(row.split()).split() for row in df]
+        df = pd.DataFrame(df, columns=col_names, dtype=float)
+        df['u'] = -np.sin(df['drct']*np.pi/180)*df['sknt']*1852/3600
+        df['v'] = -np.cos(df['drct']*np.pi/180)*df['sknt']*1852/3600
+        df = df.set_index('altitude')
+
+        df['pope_regime'] = pope_df.loc[
+            np.datetime64(pd.to_datetime(times[i]).date())].values[0]
+
+        da = xr.Dataset.from_dataframe(df)
+        da = da.interp(altitude=new_alts)
+        da_list.append(da)
+
+    da = xr.concat(da_list, dim='time')
+    da = da.assign_coords({'time': times})
+    da['pope_regime'] = da['pope_regime'].isel(altitude=0)
+    da['p'] = da['p']*1e2
+    da['t'] = da['t'] + 273.15
+    da['Td'] = da['Td'] + 273.15
+
+    # import pdb; pdb.set_trace()
+    da_t_list = [[] for i in range(len(hours))]
+    time_array = np.arange(
+        np.datetime64('{:04d}-01-01'.format(year)),
+        np.datetime64('{:04d}-03-01'.format(year)),
+        np.timedelta64(1, 'D'))
+    for time in time_array:
+        for j in range(len(hours)):
+            try:
+                da_t = da.sel(time=time+np.timedelta64(hours[j], 'h'))
+                da_t['time'] = time
+                da_t_list[j].append(da_t)
+            except KeyError:
+                print('No soundings at {} {}.'.format(time, hours[j]))
+                continue
+
+    new_ds = []
+
+    for i in range(len(hours)):
+        ds_i = xr.concat(da_t_list[i], dim='time')
+        new_ds.append(ds_i)
+
+    obs_soundings = xr.concat(new_ds, dim='hour')
+    obs_soundings = da.assign_coords({'hour': hours})
+
+    return obs_soundings
+
+
+# def dl_wyoming(common_times):
+#     # Download and parse dataa
+#     hours = [0, 12]
+#
+#     soundings_ds = [[] for i in range(len(hours))]
+#
+#     for ct in common_times:
+#         for hour in hours:
+#
+#             dt64 = common_times[0] + np.timedelta64(hour, 'h')
+#             unix_epoch = np.datetime64(0, 's')
+#             one_second = np.timedelta64(1, 's')
+#             seconds_since_epoch = (dt64 - unix_epoch) / one_second
+#
+#             dt = datetime.datetime.utcfromtimestamp(seconds_since_epoch)
+#
+#             success = False
+#             counter = 0
+#
+#             while success is False or counter < 10:
+#                 try:
+#                     import pdb; pdb.set_trace()
+#                     df = WyomingUpperAir.request_data(dt, 'YPDN')
+#                     print('Successfully downloaded {} {}'.format(ct, hour))
+#                     success = True
+#                 except requests.exceptions.HTTPError:
+#
+#                     print('Failed download {} {}'.format(ct, hour))
+#                     counter += 1
+#                     time.sleep(2)
+#             da = df.to_xarray().dropna(dim='index')
+#
+#             da = da.rename({'index': 'altitude'})
+#             da = da.assign_coords({'altitude': da['height'].values})
+#
+#             new_alts = np.arange(100, 20100, 100).astype(np.float64)
+#
+#             da.interp(altitude=new_alts)
 
 
 def plot_skewt(
         soundings, fig=None, figsize=(12, 6), subplots=None,
         legend=False, left_ticks=True, right_ticks=False, title=None,
-        ylim=(1000, 100), xlim=(-10, 30)):
+        ylim=(1000, 100), xlim=(-10, 30), label_CAPE=True,
+        right_tick_label=True, custom_ticks=False):
 
     if fig is None:
         fig = plt.figure(figsize=figsize)
 
     p = soundings['p'].values * units.Pa
     T = (soundings['t'].values-273.15) * units.degC
-    q = soundings['q']
+    try:
+        q = soundings['q']
+    except KeyError:
+        q = mpcalc.specific_humidity_from_dewpoint(
+            p, (soundings['Td'].values - 273.15) * units.degC)
+
     # u = soundings['u'] * units.meter_per_second
     # v = soundings['v'] * units.meter_per_second
     heights = soundings['altitude'] * units.meter
-
     Td = mpcalc.dewpoint_from_specific_humidity(p, T, q)
 
     skew = SkewT(fig=fig, subplot=subplots, rotation=45)
@@ -42,6 +185,9 @@ def plot_skewt(
     skew.plot(p, T, 'r', label='Temperature')
     skew.plot(p, Td, colors[0], label='Dew Point Temperature')
     # skew.plot_barbs(p[::3], u[::3], v[::3])
+    if custom_ticks:
+        skew.ax.set_yticks(np.arange(ylim[0], ylim[1]-50, -50)*units['hPa'])
+        skew.ax.set_xticks(np.arange(xlim[0]-20, xlim[1]+2, 2)*units['degC'])
     skew.ax.set_ylim(ylim)
     skew.ax.set_xlim(xlim)
 
@@ -49,13 +195,21 @@ def plot_skewt(
         p[::-1], heights[::-1], fill_value='extrapolate')
 
     secax = skew.ax.secondary_yaxis(location=1)
-    secax.set_yticks(np.arange(1000, 0, -100))
 
-    labels = f(np.arange(100000, 0, -10000))/1000
+    if custom_ticks:
+        secax.set_yticks(np.arange(ylim[0], ylim[1]-50, -50))
+        labels = f(np.arange(ylim[0], ylim[1]-50, -50)*100)/1000
+    else:
+        secax.set_yticks(np.arange(1000, 0, -100))
+
+        labels = f(np.arange(100000, 0, -10000))/1000
+
     labels = ['{:.02f}'.format(lbl) for lbl in labels]
-
     secax.set_yticklabels(labels)
-    secax.set_ylabel('Altitude [m]')
+    if right_tick_label:
+        secax.set_ylabel('Altitude [km]')
+    else:
+        secax.set_ylabel('')
 
     if left_ticks:
         skew.ax.set_ylabel(r'Pressure [hPa]')
@@ -84,23 +238,8 @@ def plot_skewt(
         np.array([
             Td[parcel_index].magnitude,
             lcl_temperature.magnitude])*units('degC'),
-        '--', color='black', linewidth=2)
+        '-', color='black', linewidth=2)
 
-    # if not np.any(p == lcl_pressure):
-    #     import pdb; pdb.set_trace()
-    #     lcl_ind = np.where(p > lcl_pressure)[0][-1]
-    #     new_p = np.insert(p, lcl_ind+1, lcl_pressure)
-    #     T_lcl = mpinterp.interpolate_1d(lcl_pressure, p, T)
-    #     prof_lcl = mpinterp.interpolate_1d(lcl_pressure, p, prof)
-    #     Td_lcl = mpinterp.interpolate_1d(lcl_pressure, p, Td)
-    #     new_T = np.insert(T, lcl_ind+1, T_lcl)
-    #     new_prof = np.insert(prof, lcl_ind+1, prof_lcl)
-    #     new_Td = np.insert(Td, lcl_ind+1, Td_lcl)
-    #
-    #     # Shade areas of CAPE and CIN
-    #     skew.shade_cin(new_p, new_T, new_prof, new_Td, label='CIN')
-    #     skew.shade_cape(new_p, new_T, new_prof, label='CAPE')
-    # else:
     # Shade areas of CAPE and CIN
     skew.shade_cin(p, T, prof, label='CIN')
     skew.shade_cape(p, T, prof, label='CAPE')
@@ -114,16 +253,40 @@ def plot_skewt(
     C_text = 'CAPE = {} J/kg \nMLCAPE = {} J/kg'.format(
         int(round(CAPE.magnitude)), int(round(MLCAPE.magnitude)))
 
-    skew.ax.text(
-        .3, .91, C_text, transform=skew.ax.transAxes, backgroundcolor='white')
+    if label_CAPE:
+        skew.ax.text(
+            .275, .91, C_text, transform=skew.ax.transAxes,
+            # backgroundcolor='white',
+            fontsize=10)
 
     # Add the relevant special lines
-    skew.plot_dry_adiabats(
-        label='Dry Adiabat', linewidth=1.25, linestyle='dotted')
-    skew.plot_moist_adiabats(
-        linewidth=1.25, label='Moist Adiabat', linestyle='dotted')
-    skew.plot_mixing_lines(
-        linewidth=1, label='Mixing Lines', linestyle='dashed', colors='grey')
+    if custom_ticks:
+
+        tmps = (np.arange(xlim[0], xlim[1]+2, 2))*units('degC')
+
+        mixing_ratio = np.array([
+            0.0004, 0.001, 0.002, 0.003, 0.004, 0.0055, 0.007, 0.0085,
+            0.01, 0.014, 0.016, 0.018, 0.02, 0.022,
+            0.024, 0.026, 0.028, 0.03, 0.032]).reshape(-1, 1)
+
+        skew.plot_mixing_lines(
+            mixing_ratio=mixing_ratio, linewidth=1,
+            label='Mixing Lines', linestyle='dashed', colors='grey')
+        skew.plot_dry_adiabats(
+            label='Dry Adiabat', linewidth=1.25, linestyle='dotted',
+            t0=tmps)
+        skew.plot_moist_adiabats(
+            linewidth=1.25, label='Moist Adiabat', linestyle='dotted',
+            t0=tmps)
+
+    else:
+        skew.plot_dry_adiabats(
+            label='Dry Adiabat', linewidth=1.25, linestyle='dotted')
+        skew.plot_moist_adiabats(
+            linewidth=1.25, label='Moist Adiabat', linestyle='dotted')
+        skew.plot_mixing_lines(
+            linewidth=1, label='Mixing Lines', linestyle='dashed',
+            colors='grey')
 
     if title is not None:
         skew.ax.set_title(title, fontsize=12)
@@ -577,13 +740,14 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
     return ACCESS_C_soundings
 
 
-def plot_soundings(ERA5_soundings):
+def plot_wind_profile(
+        soundings_mean, soundings_var, title=None, fig=None, ax=None,
+        legend=False, xlim=(-5, 15), ylim=(0, 20e3)):
 
-    fig, ax = plt.subplots(1, 1, figsize=(6, 5))
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=(6, 5))
 
     cl.init_fonts()
-
-    pope_regime = 2
 
     min_speed = 0
     max_speed = 0
@@ -592,67 +756,41 @@ def plot_soundings(ERA5_soundings):
     colors = prop_cycle.by_key()['color']
     colors = [colors[i] for i in [0, 1, 2, 4, 5, 6]]
 
-    ERA5_soundings_pope = ERA5_soundings.where(
-        ERA5_soundings['pope_regime'] == pope_regime)
+    u_t = soundings_mean['u']
+    v_t = soundings_mean['v']
 
-    u_t = ERA5_soundings_pope['u'].mean(dim=['hour', 'time'])
-    v_t = ERA5_soundings_pope['v'].mean(dim=['hour', 'time'])
-    t_t = ERA5_soundings_pope['theta'].mean(dim=['hour', 'time'])
-
-    u_t_sig = np.sqrt(ERA5_soundings_pope['u'].var(dim=['hour', 'time']))
-    v_t_sig = np.sqrt(ERA5_soundings_pope['v'].var(dim=['hour', 'time']))
-    t_t_sig = np.sqrt(ERA5_soundings_pope['theta'].var(dim=['hour', 'time']))
-
-    # hour = 18
-
-    # u_t = ERA5_soundings_pope['u'].sel(hour=hour).mean(dim='time')
-    # v_t = ERA5_soundings_pope['v'].sel(hour=hour).mean(dim='time')
-    # t_t = ERA5_soundings_pope['t'].sel(hour=hour).mean(dim='time')
-
-    # u_t_sig = np.sqrt(ERA5_soundings_pope['u'].sel(hour=hour).var(dim='time'))
-    # v_t_sig = np.sqrt(ERA5_soundings_pope['v'].sel(hour=hour).var(dim='time'))
+    u_t_sig = np.sqrt(soundings_var['u'])
+    v_t_sig = np.sqrt(soundings_var['v'])
 
     line1 = ax.plot(
-        u_t, u_t.altitude, color=colors[0], label=r'ERA5 $u$',
+        u_t, u_t.altitude, color=colors[0], label=r'$u$',
         linewidth=1.75)
     ax.fill_betweenx(
         u_t.altitude, u_t-u_t_sig, u_t+u_t_sig, color=colors[0],
         alpha=0.1, linewidth=1.75)
 
     line2 = ax.plot(
-        v_t, v_t.altitude, color=colors[0], label=r'ERA5 $v$',
+        v_t, v_t.altitude, color=colors[0], label=r'$v$',
         linestyle='dashed')
     ax.fill_betweenx(
         v_t.altitude, v_t-v_t_sig, v_t+v_t_sig, color=colors[0],
         alpha=0.1, linewidth=1.75, linestyle='--')
 
-    ax.set_xticks(np.arange(-35, 25, 5))
-    ax.set_xticks(np.arange(-35, 22.5, 2.5), minor=True)
+    xtick_min = xlim[0]
+    xtick_max = xlim[1]
+
+    ax.set_xticks(np.arange(xtick_min, xtick_max+4, 4))
+    ax.set_xticks(np.arange(xtick_min, xtick_max+2, 2), minor=True)
     ax.set_xlabel(r'Velocity [m/s]')
     ax.set_ylabel(r'Altitude [km]')
-    ax.set_yticks(np.arange(0, 22e3, 2e3))
-    ax.set_yticks(np.arange(0, 21e3, 1e3), minor=True)
-    ax.set_yticklabels(np.arange(0, 22, 2))
+    ax.set_yticks(np.arange(0, 21e3, 1e3))
+    ax.set_yticks(np.arange(0, 20.5e3, .5e3), minor=True)
+    ax.set_yticklabels(np.arange(0, 21, 1))
+    ax.set_xlim([xtick_min, xtick_max])
+    ax.set_ylim(ylim)
 
-    twin0 = ax.twiny()
-    twin0.xaxis.set_ticks_position("top")
-    twin0.xaxis.set_label_position("top")
-
-    ax.set_xlim([-35, 20])
-    twin0.set_xlim([260, 480])
-    twin0.set_xticks(np.arange(260, 520, 40))
-    twin0.set_xticks(np.arange(260, 500, 20), minor=True)
-    twin0.set_xlabel(r'$\theta$ [K]')
-
-    line3 = twin0.plot(
-        t_t, t_t.altitude, linestyle='dashdot', color=colors[0],
-        label=r'ERA5 $\theta$')
-    twin0.fill_betweenx(
-        t_t.altitude, t_t-t_t_sig, t_t+t_t_sig, color=colors[0],
-        alpha=0.1, linewidth=1.75, linestyle='dashdot')
-
-    min_speed = min(min(np.concatenate([u_t.values, v_t.values])), min_speed)
-    max_speed = max(max(np.concatenate([u_t.values, v_t.values])), max_speed)
+    min_speed = min(np.concatenate([u_t.values, v_t.values]))
+    max_speed = max(np.concatenate([u_t.values, v_t.values]))
 
     max_sig = max(np.max(v_t_sig), np.max(u_t_sig))+5
 
@@ -669,13 +807,17 @@ def plot_soundings(ERA5_soundings):
         [min_speed-max_sig, max_speed+max_sig], [4000, 4000],
         linestyle='dashed', color='grey')
 
-    lines = line1 + line2 + line3 + line4
+    lines = line1 + line2 + line4
     labels = [line.get_label() for line in lines]
 
     ax.grid(which='major', alpha=0.5, axis='both')
     ax.grid(which='minor', alpha=0.2, axis='both')
 
-    ax.legend(
-        lines, labels,
-        loc='lower center', bbox_to_anchor=(.5, -0.30),
-        ncol=4, fancybox=True, shadow=True)
+    if title is not None:
+        ax.set_title(title, fontsize=12)
+
+    if legend:
+        ax.legend(
+            lines, labels,
+            loc='lower center', bbox_to_anchor=(.5, -0.30),
+            ncol=4, fancybox=True, shadow=True)
