@@ -44,6 +44,35 @@ def get_ACCESS_C(gadi=False):
 
     hours = [0, 6, 12, 18, 24]
 
+    dt = datetimes[0]
+    date = str(dt)[0:10].replace('-', '')
+    hour = '0000'
+    u_an = xr.open_dataset(
+        base_dir + date + '/' + hour + '/an/sfc/uwnd10m.nc')
+    v_an = xr.open_dataset(
+        base_dir + date + '/' + hour + '/an/sfc/vwnd10m.nc')
+
+    lon_min = 129
+    lon_max = 135.01
+    lat_min = -10
+    lat_max = -16
+
+    dt = datetimes[0]
+    date = str(dt)[0:10].replace('-', '')
+    hour = '1200'
+    u_fc = xr.open_dataset(
+        base_dir + date + '/' + hour + '/fc/sfc/uwnd10m.nc')
+    v_fc = xr.open_dataset(
+        base_dir + date + '/' + hour + '/fc/sfc/vwnd10m.nc')
+
+    u_fc = u_fc.sel(lon=slice(lon_min, lon_max), lat=slice(lat_min, lat_max))
+    v_fc = v_fc.sel(lon=slice(lon_min, lon_max), lat=slice(lat_min, lat_max))
+
+    u_lon_stable = u_fc.lon
+    u_lat_stable = u_fc.lat
+    v_lon_stable = v_fc.lon
+    v_lat_stable = v_fc.lat
+
     missing_forecasts = []
 
     for dt in datetimes:
@@ -84,6 +113,11 @@ def get_ACCESS_C(gadi=False):
 
             u_fc_i['time'] = u_fc_i['time'] - np.timedelta64(hours[i], 'h')
             v_fc_i['time'] = v_fc_i['time'] - np.timedelta64(hours[i], 'h')
+
+            u_fc_i['lon'] = u_lon_stable
+            u_fc_i['lat'] = u_lat_stable
+            v_fc_i['lon'] = v_lon_stable
+            v_fc_i['lat'] = v_lat_stable
 
             if u_fc_all[i] is None:
                 u_fc_all[i] = copy.deepcopy(u_fc_i)

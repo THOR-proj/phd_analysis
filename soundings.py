@@ -56,7 +56,10 @@ def read_wyoming_sounding_txt(
         index_col=0, names=['time', 'pope_regime'])
     pope_df.index = pd.to_datetime(pope_df.index)
 
-    hours = [0, 12]
+    if loc == 'gove':
+        hours = [0]
+    else:
+        hours = [0, 12]
 
     da_list = []
     for i in range(len(soundings_list_revised)):
@@ -92,7 +95,7 @@ def read_wyoming_sounding_txt(
         np.timedelta64(1, 'D'))
     for time in time_array:
         for j in range(len(hours)):
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             try:
                 da_t = da.sel(time=time+np.timedelta64(hours[j], 'h'))
                 da_t['time'] = time
