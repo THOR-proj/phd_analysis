@@ -96,6 +96,11 @@ def get_ACCESS_C(gadi=False):
         v_fc = v_fc.sel(
             lon=slice(lon_min, lon_max), lat=slice(lat_min, lat_max))
 
+        u_fc['lon'] = u_lon_stable
+        u_fc['lat'] = u_lat_stable
+        v_fc['lon'] = v_lon_stable
+        v_fc['lat'] = v_lat_stable
+
         # Coarsen access-c
         # access-c ~1.5 km, access-g 12 km
         # so coarsen by 8
@@ -114,10 +119,7 @@ def get_ACCESS_C(gadi=False):
             u_fc_i['time'] = u_fc_i['time'] - np.timedelta64(hours[i], 'h')
             v_fc_i['time'] = v_fc_i['time'] - np.timedelta64(hours[i], 'h')
 
-            u_fc_i['lon'] = u_lon_stable
-            u_fc_i['lat'] = u_lat_stable
-            v_fc_i['lon'] = v_lon_stable
-            v_fc_i['lat'] = v_lat_stable
+
 
             if u_fc_all[i] is None:
                 u_fc_all[i] = copy.deepcopy(u_fc_i)
