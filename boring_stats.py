@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 def get_boring_radar_stats(
         save_dir, exclusions=None, regime=None, pope_dir=None,
-        radars=[63, 42, 77]):
+        radars=[63, 42, 77], morning_only=False):
 
     if pope_dir is None:
         pope_dir = '/home/student.unimelb.edu.au/shorte1/'
@@ -52,6 +52,18 @@ def get_boring_radar_stats(
                 tracks_obj = cl.redo_exclusions(tracks_obj)
                 tracks_obj = cl.add_monsoon_regime(
                     tracks_obj, base_dir=pope_dir, fake_pope=True)
+
+                # restrict to morning only...
+                if morning_only:
+                    print('Restricting to hour UTC < 12')
+                    tracks_obj.tracks = tracks_obj.tracks.iloc[
+                        tracks_obj.tracks.index.get_level_values('time').hour < 12]
+                    tracks_obj.sysyem_tracks = tracks_obj.system_tracks.iloc[
+                        tracks_obj.system_tracks.index.get_level_values('time').hour < 12]
+                    tracks_obj.tracks_class = tracks_obj.tracks_class.iloc[
+                        tracks_obj.tracks_class.index.get_level_values('time').hour < 12]
+                    tracks_obj.exclusions = tracks_obj.exclusions.iloc[
+                        tracks_obj.exclusions.index.get_level_values('time').hour < 12]
 
                 excluded = tracks_obj.exclusions[exclusions]
                 excluded = np.any(excluded, 1)
@@ -113,7 +125,7 @@ def get_boring_radar_stats(
 
 def get_boring_ACCESS_stats(
         save_dir, exclusions=None, regime=None, pope_dir=None,
-        radars=[63, 42, 77]):
+        radars=[63, 42, 77], morning_only=False):
 
     if pope_dir is None:
         pope_dir = '/home/student.unimelb.edu.au/shorte1/'
@@ -149,6 +161,18 @@ def get_boring_ACCESS_stats(
             tracks_obj = cl.redo_exclusions(tracks_obj)
             tracks_obj = cl.add_monsoon_regime(
                 tracks_obj, base_dir=pope_dir, fake_pope=True)
+
+            # restrict to morning only...
+            if morning_only:
+                print('Restricting to hour UTC < 12')
+                tracks_obj.tracks = tracks_obj.tracks.iloc[
+                    tracks_obj.tracks.index.get_level_values('time').hour < 12]
+                tracks_obj.sysyem_tracks = tracks_obj.system_tracks.iloc[
+                    tracks_obj.system_tracks.index.get_level_values('time').hour < 12]
+                tracks_obj.tracks_class = tracks_obj.tracks_class.iloc[
+                    tracks_obj.tracks_class.index.get_level_values('time').hour < 12]
+                tracks_obj.exclusions = tracks_obj.exclusions.iloc[
+                    tracks_obj.exclusions.index.get_level_values('time').hour < 12]
 
             excluded = tracks_obj.exclusions[exclusions]
             excluded = np.any(excluded, 1)
@@ -200,6 +224,103 @@ def get_boring_ACCESS_stats(
 
             except KeyError:
                 print('No included observations.')
+
+    out = [
+        conv_area, strat_area, times, count, system_count,
+        u_shift, v_shift, orientation, eccentricity, offset_mag, durations]
+
+    return out
+
+
+def get_boring_CPOL_stats(
+        save_dir, exclusions=None, regime=None, pope_dir=None):
+
+    if pope_dir is None:
+        pope_dir = '/home/student.unimelb.edu.au/shorte1/'
+        pope_dir += 'Documents/CPOL_analysis/'
+
+    conv_area = []
+    strat_area = []
+    times = []
+    u_shift = []
+    v_shift = []
+    orientation = []
+    eccentricity = []
+    offset_mag = []
+    durations = []
+
+    count = 0
+    system_count = 0
+
+    if exclusions is None:
+        exclusions = [
+            'small_area', 'large_area', 'intersect_border',
+            'intersect_border_convective', 'duration_cond',
+            'small_velocity', 'small_offset']
+
+    years = sorted(list(set(range(1998, 2016)) - {2007, 2008, 2000}))
+    for year in years:
+        print('Year {}.'.format(year))
+        path = save_dir + '{}1001_{}0501.pkl'.format(year, year+1)
+        with open(path, 'rb') as f:
+            tracks_obj = pickle.load(f)
+
+        tracks_obj = cl.redo_exclusions(tracks_obj)
+        tracks_obj = cl.add_monsoon_regime(
+            tracks_obj, base_dir=pope_dir, fake_pope=True)
+
+        excluded = tracks_obj.exclusions[exclusions]
+        excluded = np.any(excluded, 1)
+        included = np.logical_not(excluded)
+
+        ind_1 = len(tracks_obj.params['LEVELS'])-1
+
+        if regime is None:
+            cond = (included == True)
+        else:
+            cond = np.logical_and(
+                tracks_obj.tracks_class['pope_regime'] == regime,
+                included == True)
+
+        sub_classes = tracks_obj.tracks_class.where(cond).dropna()
+
+        inds_all = sub_classes.index.values
+        sub_tracks_all = tracks_obj.tracks.loc[inds_all]
+        try:
+            sub_tracks_conv = sub_tracks_all.xs(0, level='level')
+            sub_tracks_strat = sub_tracks_all.xs(ind_1, level='level')
+            conv_area += list(sub_tracks_conv['proj_area'].values)
+            strat_area += list(sub_tracks_strat['proj_area'].values)
+
+            pos_0 = sub_tracks_conv[['grid_x', 'grid_y']]
+            pos_1 = sub_tracks_strat[['grid_x', 'grid_y']]
+            mag = pos_1-pos_0
+            mag_num = np.sqrt(
+                mag['grid_x'].values**2 + mag['grid_y'].values**2)
+            offset_mag += list(mag_num)
+
+            u_shift += list(sub_tracks_conv['u_shift'].values)
+            v_shift += list(sub_tracks_conv['v_shift'].values)
+            orientation += list(
+                sub_tracks_conv['orientation'].values)
+            eccentricity += list(
+                sub_tracks_conv['eccentricity'].values)
+
+            times += list(
+                sub_tracks_conv.reset_index()['time'].values)
+            count += len(sub_tracks_conv)
+            uids = set([ind[2] for ind in inds_all])
+            system_count += len(uids)
+
+            for uid in uids:
+                times_uid = sub_tracks_conv.xs(
+                    uid, level='uid').reset_index()['time']
+                duration = times_uid.values[-1] - times_uid.values[0]
+                duration = duration.astype('timedelta64[m]')
+                durations.append(duration.astype(int))
+
+        except KeyError:
+            print('No included observations.')
 
     out = [
         conv_area, strat_area, times, count, system_count,
@@ -317,6 +438,58 @@ def count_ACCESS_exclusions(
                     excl = excl.xs(0, level='level')
                     excl = excl.where(excl == True).dropna()
                     exclusions_counts[i+1] += len(excl)
+
+    return exclusions_counts
+
+
+def count_CPOL_exclusions(
+        save_dir, regime=None, pope_dir=None):
+    if pope_dir is None:
+        pope_dir = '/home/student.unimelb.edu.au/shorte1/'
+        pope_dir += 'Documents/CPOL_analysis/'
+
+    exclusions = ['simple_duration_cond']
+    exclusions_list = [
+        'intersect_border', 'intersect_border_convective',
+        'duration_cond', 'small_velocity', 'small_offset']
+
+    exclusions_counts = [0 for i in range(len(exclusions_list)+1)]
+
+    years = sorted(list(set(range(1998, 2016)) - {2007, 2008, 2000}))
+    for year in years:
+        print('Year {}.'.format(year))
+        path = save_dir + '{}1001_{}0501.pkl'.format(year, year+1)
+        with open(path, 'rb') as f:
+            tracks_obj = pickle.load(f)
+
+        tracks_obj = cl.redo_exclusions(tracks_obj)
+        tracks_obj = cl.add_monsoon_regime(
+            tracks_obj, base_dir=pope_dir, fake_pope=True)
+
+        excluded = tracks_obj.exclusions[exclusions]
+        excluded = np.any(excluded, 1)
+        included = np.logical_not(excluded)
+
+        if regime is None:
+            cond = (included == True)
+        else:
+            cond = np.logical_and(
+                tracks_obj.tracks_class['pope_regime'] == regime,
+                included == True)
+
+        sub_classes = tracks_obj.tracks_class.where(cond).dropna()
+
+        inds_all = sub_classes.index.values
+        sub_exclusions = tracks_obj.exclusions.loc[inds_all]
+
+        if len(sub_exclusions) > 0:
+            exclusions_counts[0] += len(
+                sub_exclusions.xs(0, level='level'))
+            for i in range(len(exclusions_list)):
+                excl = sub_exclusions[exclusions_list[i]]
+                excl = excl.xs(0, level='level')
+                excl = excl.where(excl == True).dropna()
+                exclusions_counts[i+1] += len(excl)
 
     return exclusions_counts
 
@@ -589,7 +762,7 @@ def plot_counts_regional_seasonal(
     ax.flatten()[1].grid(which='major', alpha=0.5, axis='y')
     ax.flatten()[1].grid(which='minor', alpha=0.2, axis='y')
 
-    labels = ['42: Katherine', '63: Berrimah', '77: Arafura']
+    labels = ['Tindal', 'Berrimah', 'Arafura']
 
     x = np.arange(len(labels))  # the label locations
     width = 0.35  # the width of the bars
@@ -898,8 +1071,8 @@ def compare_offset(
             ax.flatten()[1].set_yticks(np.arange(0, 11e2, 1e2), minor=True)
             ax.flatten()[i].set_ylabel('Count [-]')
 
-    ax.flatten()[0].set_xlabel('Stratiform Offset Magnitude [m]', labelpad=0)
-    ax.flatten()[1].set_xlabel('Stratiform Offset Magnitude [m]', labelpad=0)
+    ax.flatten()[0].set_xlabel('Stratiform Offset Magnitude [km]', labelpad=0)
+    ax.flatten()[1].set_xlabel('Stratiform Offset Magnitude [km]', labelpad=0)
 
     if labels:
         cl.make_subplot_labels(ax.flatten(), x_shift=-.15)
@@ -992,11 +1165,15 @@ def compare_time(
 
 def gen_error_model_plot(
         z_s=10000, fig=None, ax=None, legend=False,
-        closest='convective', tau=300, r_max=20e3, dr=5e3):
+        closest='convective', tau=252, r_max=20e3, dr=5e3,
+        t_min=0, t_max=None, r_min=0):
     if fig is None or ax is None:
         fig, ax = plt.subplots(1, 1, figsize=(5.5, 3))
 
     cl.init_fonts()
+
+    if t_max == None:
+        t_max = tau
 
     z_c = 1000
 
@@ -1013,10 +1190,10 @@ def gen_error_model_plot(
     for j in range(len(s_mags)):
 
         if closest == 'convective':
-            r_c = np.arange(0, r_max+10, 10)
+            r_c = np.arange(r_min, r_max+10, 10)
             r_s = r_c + s_mags[j]
         elif closest == 'stratiform':
-            r_s = np.arange(0, r_max+10, 10)
+            r_s = np.arange(r_min, r_max+10, 10)
             r_c = r_s + s_mags[j]
 
         elav_s = np.zeros(len(r_c))
@@ -1034,7 +1211,23 @@ def gen_error_model_plot(
             else:
                 elav_c[i] = np.abs(np.arctan(z_c/np.abs(r_c[i])))
 
-        del_t = np.abs(elav_c-elav_s)*(2*tau/np.pi)
+        # import pdb; pdb.set_trace()
+
+        # t1 = 252*((elav_c*180/np.pi-.5)/31.5)**(1/3)
+        # t2 = 252*((elav_s*180/np.pi-.5)/31.5)**(1/3)
+
+        c = 62.57
+        a = 31.5/np.sinh(252/c)
+
+        t1 = np.arcsinh((elav_c*180/np.pi-0.5)/a)*c
+        t2 = np.arcsinh((elav_s*180/np.pi-0.5)/a)*c
+
+        del_t = t2-t1
+        # import pdb; pdb.set_trace()
+        del_t[
+            np.logical_or(
+                elav_c > 32*np.pi/180,
+                elav_s > 32*np.pi/180)] = np.nan
         del_ts.append(del_t)
 
         lab = base_label + '{}'.format(int(s_mags[j]/1000)) + '$ km'
@@ -1046,22 +1239,22 @@ def gen_error_model_plot(
             ax.plot(
                 r_s, del_t, color=colors[j], label=lab, linewidth=1.75)
 
-    ax.set_xticks(np.arange(0, r_max+dr, dr))
-    ax.set_xticks(np.arange(0, r_max+dr/2, dr/2), minor=True)
-    ax.set_xticklabels(np.arange(0, r_max/1e3+dr/1e3, dr/1e3))
+    ax.set_xticks(np.arange(r_min, r_max+dr, dr))
+    ax.set_xticks(np.arange(r_min, r_max+dr/2, dr/2), minor=True)
+    ax.set_xticklabels(np.arange(r_min/1e3, r_max/1e3+dr/1e3, dr/1e3))
     if closest == 'convective':
         ax.set_xlabel(r'$r_c$ [km]')
     else:
         ax.set_xlabel(r'$r_s$ [km]')
 
-    ax.set_yticks(np.arange(0, tau+60, 60))
-    ax.set_yticks(np.arange(0, tau+30, 30), minor=True)
+    ax.set_yticks(np.arange(t_min, t_max+60, 60))
+    ax.set_yticks(np.arange(t_min, t_max+30, 30), minor=True)
     ax.set_ylabel(r'$\Delta t$ [s]')
 
     ax.grid(which='minor', alpha=0.2, axis='both')
     ax.grid(which='major', alpha=0.5, axis='both')
 
-    ax.set_ylim([-20, tau+20])
+    ax.set_ylim([t_min-20, t_max])
 
     lines, labels = ax.get_legend_handles_labels()
     lines = [lines[i] for i in [0, 3, 1, 4, 2]]
@@ -1083,7 +1276,7 @@ def gen_error_model_plot(
 
 
 def plot_deformation(
-        z_c=1e3, z_s=7.5e3, tau=300, fig=None, ax=None,
+        z_c=1e3, z_s=7.5e3, tau=252, fig=None, ax=None,
         conv_radius=10e3, conv_centroid_x=5e3, conv_centroid_y=0,
         strat_radius=16e3, strat_centroid_x=10e3, plot=True,
         strat_centroid_y=0, u=10, v=0, extent=None, dx=None):
@@ -1098,6 +1291,11 @@ def plot_deformation(
     colors = [colors[i] for i in [0, 1, 2, 4, 5, 6]]
 
     theta = np.arange(0, 2*np.pi+2*np.pi/1000, 2*np.pi/1000)
+
+    r_b = z_s/np.tan(32*np.pi/180)
+
+    blind_spot_x = r_b*np.cos(theta)
+    blind_spot_y = r_b*np.sin(theta)
 
     conv_border_x = conv_centroid_x + conv_radius*np.cos(theta)
     conv_border_y = conv_centroid_y + conv_radius*np.sin(theta)
@@ -1122,8 +1320,11 @@ def plot_deformation(
         else:
             elav_c[i] = np.abs(np.arctan(z_c/np.abs(r_c[i])))
 
-    t_c = elav_c*(2*tau/np.pi)
-    t_s = elav_s*(2*tau/np.pi)
+    c = 62.57
+    a = 31.5/np.sinh(252/c)
+
+    t_c = np.arcsinh((elav_c*180/np.pi-0.5)/a)*c
+    t_s = np.arcsinh((elav_s*180/np.pi-0.5)/a)*c
 
     error_strat_border_x = strat_border_x + u*t_s
     error_conv_border_x = conv_border_x + u*t_c
@@ -1155,8 +1356,13 @@ def plot_deformation(
             linewidth=1.75, label='Deformed Stratiform Offset',)
 
         ax.plot(
+            blind_spot_x, blind_spot_y, '--', linewidth=1.75, color='k',
+            alpha=.6, label='Stratiform Blind-Spot Boundary')
+
+        ax.plot(
             conv_border_x, conv_border_y, linewidth=1.75, color=colors[0],
             label='Convective Boundary', alpha=.6)
+
         ax.plot(
             error_conv_border_x, error_conv_border_y, '--', linewidth=1.75,
             color=colors[0], label='Deformed Convective Boundary')
@@ -1170,9 +1376,9 @@ def plot_deformation(
 
         ax.scatter(
             [0], [0], marker='*', s=300, color='red',
-            edgecolors='k')
-        ax.text(
-            -4e3, -5e3, 'Radar', fontsize=12)
+            edgecolors='k', label='Radar')
+        # ax.text(
+        #     -4e3, -5e3, 'Radar', fontsize=12)
 
         title = r'$|\mathrm{\mathbf{s}}|=' + '${:.02f} km, '.format(so_mag/1e3)
         title += r"$|\mathrm{\mathbf{s}}'|=" + '${:.02f} km'.format(
@@ -1216,3 +1422,271 @@ def get_centroid(x, y):
         for i in range(len(x)-1)]).sum()
 
     return A, cx, cy
+
+
+def get_radar_prop_so_stats(
+        save_dir, exclusions=None, regime=None, pope_dir=None,
+        radars=[63, 42, 77]):
+
+    if pope_dir is None:
+        pope_dir = '/home/student.unimelb.edu.au/shorte1/'
+        pope_dir += 'Documents/CPOL_analysis/'
+
+    times = np.arange(0, 24*60+10, 10)
+    offset_mag_list = [[] for i in range(len(times))]
+    prop_mag_list = [[] for i in range(len(times))]
+    conv_area_list = [[] for i in range(len(times))]
+    strat_area_list = [[] for i in range(len(times))]
+    eccentricity_list = [[] for i in range(len(times))]
+    shear_normal_list = [[] for i in range(len(times))]
+    prop_normal_list = [[] for i in range(len(times))]
+    count_list = [0 for i in range(len(times))]
+
+    if exclusions is None:
+        # exclusions = [
+        #     'small_area', 'large_area', 'intersect_border',
+        #     'intersect_border_convective', 'duration_cond',
+        #     'small_velocity', 'small_offset']
+        exclusions = [
+            'small_area', 'large_area', 'intersect_border',
+            'intersect_border_convective', 'simple_duration_cond']
+
+    for radar in radars:
+        for year in [2020, 2021]:
+            print('Radar {}, year {}.'.format(radar, year))
+            years_months = [
+                [year, 10], [year, 11], [year, 12],
+                [year+1, 1], [year+1, 2], [year+1, 3],
+                [year+1, 4]]
+            for year_month in years_months:
+                path = save_dir + 'radar_{}/{}_{}_{:02}.pkl'.format(
+                    radar, radar, year_month[0], year_month[1])
+                with open(path, 'rb') as f:
+                    tracks_obj = pickle.load(f)
+
+                tracks_obj = cl.redo_exclusions(tracks_obj)
+                tracks_obj = cl.add_monsoon_regime(
+                    tracks_obj, base_dir=pope_dir, fake_pope=True)
+
+                excluded = tracks_obj.exclusions[exclusions]
+                excluded = np.any(excluded, 1)
+                included = np.logical_not(excluded)
+
+                if regime is None:
+                    cond = (included == True)
+                else:
+                    cond = np.logical_and(
+                        tracks_obj.tracks_class['pope_regime'] == regime,
+                        included == True)
+
+                sub_classes = tracks_obj.tracks_class.where(cond).dropna()
+
+                inds_all = sub_classes.index.values
+                sub_tracks_all = tracks_obj.tracks.loc[inds_all]
+
+                uids = set([ind[2] for ind in inds_all])
+
+                for uid in uids:
+
+                    sub_tracks_uid = sub_tracks_all.xs(uid, level='uid')
+                    uid_scan_index = np.array(sorted(list(set([
+                        ind[0] for ind in sub_tracks_uid.index.values]))))
+                    uid_scan_index = uid_scan_index - uid_scan_index[0]
+
+                    sub_tracks_conv = sub_tracks_uid.xs(0, level='level')
+                    sub_tracks_strat = sub_tracks_uid.xs(1, level='level')
+                    conv_area = list(sub_tracks_conv['proj_area'].values)
+                    strat_area = list(sub_tracks_strat['proj_area'].values)
+
+                    pos_0 = sub_tracks_conv[['grid_x', 'grid_y']]
+                    pos_1 = sub_tracks_strat[['grid_x', 'grid_y']]
+                    mag = pos_1-pos_0
+                    mag_num = np.sqrt(
+                        mag['grid_x'].values**2 + mag['grid_y'].values**2)
+                    offset_mag = list(mag_num)
+
+                    eccentricity = sub_tracks_conv['eccentricity'].values
+
+                    u_shear = sub_tracks_conv['u_shear'].values
+                    v_shear = sub_tracks_conv['v_shear'].values
+                    u_relative = sub_tracks_conv['u_relative'].values
+                    v_relative = sub_tracks_conv['v_relative'].values
+
+                    shear_angle = np.arctan2(v_shear, u_shear)
+                    shear_angle = np.rad2deg(shear_angle)
+
+                    prop_angle = np.arctan2(v_relative, u_relative)
+                    prop_angle = np.rad2deg(prop_angle)
+
+                    orientation = sub_tracks_conv['orientation_alt'].values
+
+                    prop_mag = np.sqrt(u_relative**2 + v_relative**2)
+
+                    shear_angle = np.mod(shear_angle, 360)
+                    prop_angle = np.mod(prop_angle, 360)
+                    line_normal = np.mod(orientation+90, 360)
+
+                    cosines_shear = np.cos(np.deg2rad(shear_angle-line_normal))
+                    angles_shear = np.arccos(cosines_shear) * 180 / np.pi
+
+                    cosines_prop = np.cos(np.deg2rad(prop_angle-line_normal))
+                    angles_prop = np.arccos(cosines_prop) * 180 / np.pi
+
+                    for i in range(len(uid_scan_index)):
+                        offset_mag_list[uid_scan_index[i]].append(
+                            offset_mag[i])
+                        prop_mag_list[uid_scan_index[i]].append(
+                            prop_mag[i])
+                        conv_area_list[uid_scan_index[i]].append(
+                            conv_area[i])
+                        strat_area_list[uid_scan_index[i]].append(
+                            strat_area[i])
+                        eccentricity_list[uid_scan_index[i]].append(
+                            eccentricity[i])
+                        shear_normal_list[uid_scan_index[i]].append(
+                            angles_shear[i])
+                        prop_normal_list[uid_scan_index[i]].append(
+                            angles_prop[i])
+                        count_list[uid_scan_index[i]] += 1
+
+    out = [
+        count_list,
+        offset_mag_list, prop_mag_list, conv_area_list, strat_area_list,
+        eccentricity_list, shear_normal_list, prop_normal_list]
+
+    return out
+
+
+def get_ACCESS_prop_so_stats(
+        save_dir, exclusions=None, regime=None, pope_dir=None,
+        radars=[63, 42, 77]):
+
+    if pope_dir is None:
+        pope_dir = '/home/student.unimelb.edu.au/shorte1/'
+        pope_dir += 'Documents/CPOL_analysis/'
+
+    times = np.arange(0, 24*60+10, 10)
+    offset_mag_list = [[] for i in range(len(times))]
+    prop_mag_list = [[] for i in range(len(times))]
+    conv_area_list = [[] for i in range(len(times))]
+    strat_area_list = [[] for i in range(len(times))]
+    eccentricity_list = [[] for i in range(len(times))]
+    shear_normal_list = [[] for i in range(len(times))]
+    prop_normal_list = [[] for i in range(len(times))]
+    count_list = [0 for i in range(len(times))]
+
+    if exclusions is None:
+        # exclusions = [
+        #     'small_area', 'large_area', 'intersect_border',
+        #     'intersect_border_convective', 'duration_cond',
+        #     'small_velocity', 'small_offset']
+        exclusions = [
+            'small_area', 'large_area', 'intersect_border',
+            'intersect_border_convective', 'simple_duration_cond']
+
+    for radar in radars:
+        for year in [2020, 2021]:
+            print('Radar {}, year {}.'.format(radar, year))
+            path = save_dir + 'ACCESS_{}/{}1001_{}0501.pkl'.format(
+                radar, year, year+1)
+            with open(path, 'rb') as f:
+                tracks_obj = pickle.load(f)
+
+            tracks_obj = cl.redo_exclusions(tracks_obj)
+            tracks_obj = cl.add_monsoon_regime(
+                tracks_obj, base_dir=pope_dir, fake_pope=True)
+
+            excluded = tracks_obj.exclusions[exclusions]
+            excluded = np.any(excluded, 1)
+            included = np.logical_not(excluded)
+
+            if regime is None:
+                cond = (included == True)
+            else:
+                cond = np.logical_and(
+                    tracks_obj.tracks_class['pope_regime'] == regime,
+                    included == True)
+
+            sub_classes = tracks_obj.tracks_class.where(cond).dropna()
+
+            inds_all = sub_classes.index.values
+            sub_tracks_all = tracks_obj.tracks.loc[inds_all]
+
+            uids = set([ind[2] for ind in inds_all])
+
+            for uid in uids:
+
+                sub_tracks_uid = sub_tracks_all.xs(uid, level='uid')
+                uid_scan_index = np.array(sorted(list(set([
+                    ind[0] for ind in sub_tracks_uid.index.values]))))
+                uid_scan_index = uid_scan_index - uid_scan_index[0]
+
+                # uid_time_index = uid_time_index - uid_time_index[0]
+
+                # import pdb; pdb.set_trace()
+
+                sub_tracks_conv = sub_tracks_uid.xs(0, level='level')
+                sub_tracks_strat = sub_tracks_uid.xs(1, level='level')
+                conv_area = list(sub_tracks_conv['proj_area'].values)
+                strat_area = list(sub_tracks_strat['proj_area'].values)
+
+                pos_0 = sub_tracks_conv[['grid_x', 'grid_y']]
+                pos_1 = sub_tracks_strat[['grid_x', 'grid_y']]
+                mag = pos_1-pos_0
+                mag_num = np.sqrt(
+                    mag['grid_x'].values**2 + mag['grid_y'].values**2)
+                offset_mag = list(mag_num)
+
+                prop_mag = np.sqrt(
+                    sub_tracks_conv['u_relative'].values**2
+                    + sub_tracks_conv['v_relative'].values**2)
+                eccentricity = sub_tracks_conv['eccentricity'].values
+
+                u_shear = sub_tracks_conv['u_shear'].values
+                v_shear = sub_tracks_conv['v_shear'].values
+                u_relative = sub_tracks_conv['u_relative'].values
+                v_relative = sub_tracks_conv['v_relative'].values
+
+                shear_angle = np.arctan2(v_shear, u_shear)
+                shear_angle = np.rad2deg(shear_angle)
+
+                prop_angle = np.arctan2(v_relative, u_relative)
+                prop_angle = np.rad2deg(prop_angle)
+
+                orientation = sub_tracks_conv['orientation_alt'].values
+
+                prop_mag = np.sqrt(u_relative**2 + v_relative**2)
+
+                shear_angle = np.mod(shear_angle, 360)
+                prop_angle = np.mod(prop_angle, 360)
+                line_normal = np.mod(orientation+90, 360)
+
+                cosines_shear = np.cos(np.deg2rad(shear_angle-line_normal))
+                angles_shear = np.arccos(cosines_shear) * 180 / np.pi
+
+                cosines_prop = np.cos(np.deg2rad(prop_angle-line_normal))
+                angles_prop = np.arccos(cosines_prop) * 180 / np.pi
+
+                for i in range(len(uid_scan_index)):
+                    offset_mag_list[uid_scan_index[i]].append(
+                        offset_mag[i])
+                    prop_mag_list[uid_scan_index[i]].append(
+                        prop_mag[i])
+                    conv_area_list[uid_scan_index[i]].append(
+                        conv_area[i])
+                    strat_area_list[uid_scan_index[i]].append(
+                        strat_area[i])
+                    eccentricity_list[uid_scan_index[i]].append(
+                        eccentricity[i])
+                    shear_normal_list[uid_scan_index[i]].append(
+                        angles_shear[i])
+                    prop_normal_list[uid_scan_index[i]].append(
+                        angles_prop[i])
+                    count_list[uid_scan_index[i]] += 1
+
+    out = [
+        count_list,
+        offset_mag_list, prop_mag_list, conv_area_list, strat_area_list,
+        eccentricity_list, shear_normal_list, prop_normal_list]
+
+    return out

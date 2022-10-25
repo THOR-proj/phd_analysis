@@ -1,0 +1,3 @@
+Dataset,Time,Object,Bad Velocity,Bad Stratiform Offset,Inflow Classification Affected?,SO Classification Affected?,Relative SO Classification Affected?,Bad Ellipse Fit,Notes
+,,,,,,,,,
+Radar 77,25/01/21 20:10,363,0,0,0,0,0,1,"Two very small convective cells separated by a notable distance result in extremely eccentric ellipse fitted to convective region. This does not affect convective centroid, or any other downstream classifications."

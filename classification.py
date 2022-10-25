@@ -875,7 +875,7 @@ def plot_propagations(
         color=colors[5], linestyle=linestyle)
 
     if time_thresh is not None:
-        ax2.plot([time_thresh, time_thresh], [0, 1], '--', color='gray')
+        ax2.plot([time_thresh, time_thresh], [0, 1.1], '--', color='gray')
 
     set_ticks(
         ax1, ax2, max(np.max(prop_totals.loc[x].values), maximum),
@@ -885,12 +885,18 @@ def plot_propagations(
     return totals
 
 
-def plot_comparison(test_dir=None, suffix='', maximums=None, title=None):
+def plot_comparison(
+        test_dir=None, suffix='', maximums=None, title=None,
+        time_threshes=None):
 
     if test_dir is None:
         test_dir = ['base', 'two_levels']
     if maximums is None:
         maximums = [800, 600, 800, 600, 600]
+    if time_threshes is None:
+        time_thresh_ACCESS = [180, 120, 120, 150, 120]
+        time_thresh_radar = [180, 120, 120, 150, 120]
+        time_threshes = [time_thresh_ACCESS, time_thresh_radar]
 
     linestyles = ['-', '--']
     legends = [True, False]
@@ -910,19 +916,19 @@ def plot_comparison(test_dir=None, suffix='', maximums=None, title=None):
         plot_offsets(
             class_df, fig_dir, fig=fig_1, ax1=axes_1[0][0], ax2=axes_1[0][1],
             linestyle=linestyles[i], legend=legends[i], maximum=maximums[0],
-            time_thresh=180)
+            time_thresh=time_thresh_radar[0])
 
         # import pdb; pdb.set_trace()
 
         plot_relative_offsets(
             class_df, fig_dir, fig=fig_1, ax1=axes_1[1][0], ax2=axes_1[1][1],
             linestyle=linestyles[i], legend=legends[i],
-            maximum=maximums[1], time_thresh=120)
+            maximum=maximums[1], time_thresh=time_thresh_radar[1])
 
         plot_inflows(
             class_df, fig_dir, fig=fig_1, ax1=axes_1[2][0], ax2=axes_1[2][1],
             linestyle=linestyles[i], legend=legends[i], maximum=maximums[2],
-            time_thresh=120)
+            time_thresh=time_thresh_radar[2])
 
         plt.subplots_adjust(hspace=0.775)
         make_subplot_labels(axes_1.flatten())
@@ -938,12 +944,12 @@ def plot_comparison(test_dir=None, suffix='', maximums=None, title=None):
         plot_tilts(
             class_df, fig_dir, fig=fig_2, ax1=axes_2[0][0], ax2=axes_2[0][1],
             linestyle=linestyles[i], legend=legends[i], maximum=maximums[3],
-            time_thresh=210)
+            time_thresh=time_thresh_radar[3])
 
         plot_propagations(
             class_df, fig_dir, fig=fig_2, ax1=axes_2[1][0], ax2=axes_2[1][1],
             linestyle=linestyles[i], legend=legends[i],
-            maximum=maximums[4], time_thresh=210)
+            maximum=maximums[4], time_thresh=time_thresh_radar[4])
 
         make_subplot_labels(axes_2.flatten())
         plt.subplots_adjust(hspace=0.775)
@@ -1109,14 +1115,18 @@ def plot_all(
     return sen_dfs
 
 
-def plot_sensitivities(sen_dfs, test_dirs, name_abvs=None, suff=''):
+def plot_sensitivities(
+        sen_dfs, test_dirs, name_abvs=None, suff='', alt_layout=False):
 
     if name_abvs is None:
         name_abvs = [
             'Base', 'C2', 'C4', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15',
             'S15', 'A2', 'B5', 'L50', 'L25', 'C']
 
-    fig, axes = plt.subplots(3, 2, figsize=(13, 10))
+    if alt_layout:
+        fig, axes = plt.subplots(2, 3, figsize=(12, 8))
+    else:
+        fig, axes = plt.subplots(3, 2, figsize=(13, 10))
     init_fonts()
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
@@ -1175,6 +1185,11 @@ def plot_sensitivities_comp(
         sen_dfs_1, sen_dfs_2, test_dirs_1, test_dirs_2,
         name_abvs=None, suff=''):
 
+    # import pdb; pdb.set_trace()
+    new_order = [0, 4, 1, 2, 3]
+    sen_dfs_1 = [sen_dfs_1[i] for i in new_order]
+    sen_dfs_2 = [sen_dfs_2[i] for i in new_order]
+
     if name_abvs is None:
         name_abvs = [
             'Base', 'C2', 'C4', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15',
@@ -1188,7 +1203,7 @@ def plot_sensitivities_comp(
     inflow_c = [colors[i] for i in [0, 0, 1, 1, 2, 2, 4, 4, 5, 5]]
     tilt_c = [colors[i] for i in [0, 0, 1, 1, 5, 5]]
     prop_c = [colors[i] for i in [0, 0, 1, 1, 5, 5]]
-    clists = [offset_c, inflow_c, tilt_c, prop_c, offset_c]
+    clists = [offset_c, offset_c, inflow_c, tilt_c, prop_c]
     offset_1 = -.55
     leg_offset = [offset_1, offset_1, offset_1, offset_1, offset_1]
     leg_offset_x = [.475] * 4 + [.475]
@@ -1246,7 +1261,7 @@ def plot_sensitivities_comp(
             width=0.75*ncol/4,
             color=c_list)
 
-        ax.set_xlim(-.5, 15.5)
+        ax.set_xlim(-.5, 9.5)
 
         ax.set_xlabel(None)
         ax.xaxis.set_label_coords(.5, -0.15)
@@ -1272,7 +1287,7 @@ def plot_sensitivities_comp(
     #     test_dir_1=test_dirs_1, test_dir_2=test_dirs_2,
     #     test_names=name_abvs, name_abvs=name_abvs, ncol=5)
     plt.subplots_adjust(hspace=0.65)
-    make_subplot_labels(axes.flatten(), x_shift=-.075)
+    make_subplot_labels(axes.flatten(), x_shift=-.07, y_shift=-.04)
 
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
     fig_dir = base_dir + 'TINT_figures/'

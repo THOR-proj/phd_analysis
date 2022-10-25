@@ -176,12 +176,15 @@ def get_ACCESS_season(
     datetimes = sorted([d for d in datetimes if d in common_times])
 
     tracks_obj = tint.Tracks(params={
-        'AMBIENT': 'ACCESS', 'AMBIENT_BASE_DIR': None,
+        'AMBIENT': 'ERA5',
+        'AMBIENT_BASE_DIR': '/g/data/w40/esh563/era5/pressure-levels/reanalysis/',
+        'DT': 10,
+        'AMBIENT_TIMESTEP': 6,
         'GS_ALT': 0,
         'LEVELS': np.array(
             [[0, 0.5], [1, 1.5]]),
         'WIND_LEVELS': np.array(
-            [[500, 3500], [500, 20000]]),
+            [[500, 2500], [500, 20000]]),
         'FIELD_THRESH': [35, 10],
         'MIN_SIZE': [80, 800],
         'ISO_THRESH': [10, 10],
@@ -231,13 +234,14 @@ def get_oper_month(
         'LEVELS': np.array(
             [[1000, 1500], [500, 20000]]),
         'WIND_LEVELS': np.array(
-            [[500, 3500], [500, 20000]]),
+            [[500, 2500], [500, 20000]]),
         'FIELD_THRESH': [35, 10],
         'MIN_SIZE': [80, 800],
         'ISO_THRESH': [10, 10],
-        'AMBIENT': 'ERA5',
+        'AMBIENT': 'ACCESS',
         'AMBIENT_BASE_DIR': ERA5_dir,
         'AMBIENT_TIMESTEP': 6,
+        'DT': 10,
         'SAVE_DIR': save_dir,
         'RESET_NEW_DAY': True,
         'REFERENCE_GRID_FORMAT': 'ODIM',

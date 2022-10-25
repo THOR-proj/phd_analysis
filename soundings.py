@@ -44,9 +44,14 @@ def read_wyoming_sounding_txt(
     start += '-----------------\n '
     end = 'Station information and sounding indices'
     pattern = '{}(.*?){}'.format(start, end)
-
     soundings_list_revised = [
         re.search(pattern, snd, re.DOTALL).group(1)
+        for snd in soundings_list]
+
+    pattern = '(?<={})(?s)(.*$)'.format(end)
+    end_str = 'Description of the data columns or sounding indices.'
+    properties_list = [
+        re.search(pattern, snd, re.DOTALL).group(1).split(end_str)[0]
         for snd in soundings_list]
 
     new_alts = np.arange(100, 20100, 100)
@@ -78,6 +83,19 @@ def read_wyoming_sounding_txt(
 
         da = xr.Dataset.from_dataframe(df)
         da = da.interp(altitude=new_alts)
+
+        prop = properties_list[i]
+        prop = prop.split('\n')[4:-1]
+        for k in range(len(prop)):
+            try:
+                [lab, val] = prop[k].split(':')
+            except ValueError:
+                continue
+            lab = lab.strip()
+            val = float(val.strip())
+            if lab == 'Convective Available Potential Energy':
+                da[lab] = val
+        # import pdb; pdb.set_trace()
         da_list.append(da)
 
     da = xr.concat(da_list, dim='time')
@@ -87,7 +105,6 @@ def read_wyoming_sounding_txt(
     da['t'] = da['t'] + 273.15
     da['Td'] = da['Td'] + 273.15
 
-    # import pdb; pdb.set_trace()
     da_t_list = [[] for i in range(len(hours))]
     time_array = np.arange(
         np.datetime64('{:04d}-01-01'.format(year)),
@@ -111,7 +128,7 @@ def read_wyoming_sounding_txt(
         new_ds.append(ds_i)
 
     obs_soundings = xr.concat(new_ds, dim='hour')
-    obs_soundings = da.assign_coords({'hour': hours})
+    obs_soundings = obs_soundings.assign_coords({'hour': hours})
 
     return obs_soundings
 
@@ -165,17 +182,20 @@ def plot_skewt(
     if fig is None:
         fig = plt.figure(figsize=figsize)
 
-    p = soundings['p'].values * units.Pa
-    T = (soundings['t'].values-273.15) * units.degC
+    cond = np.logical_not(np.isnan(soundings['p'].values))
+    soundings_trunc = soundings.isel({'altitude':cond})
+
+    p = soundings_trunc['p'].values * units.Pa
+    T = (soundings_trunc['t'].values-273.15) * units.degC
     try:
-        q = soundings['q']
+        q = soundings_trunc['q']
     except KeyError:
         q = mpcalc.specific_humidity_from_dewpoint(
-            p, (soundings['Td'].values - 273.15) * units.degC)
+            p, (soundings_trunc['Td'].values - 273.15) * units.degC)
 
     # u = soundings['u'] * units.meter_per_second
     # v = soundings['v'] * units.meter_per_second
-    heights = soundings['altitude'] * units.meter
+    heights = soundings_trunc['altitude'] * units.meter
     Td = mpcalc.dewpoint_from_specific_humidity(p, T, q)
 
     skew = SkewT(fig=fig, subplot=subplots, rotation=45)
@@ -302,7 +322,7 @@ def plot_skewt(
             loc='lower center', bbox_to_anchor=(1.1, -0.3),
             ncol=4, fancybox=True, shadow=True)
 
-    return skew.ax
+    return skew.ax, CAPE.magnitude, MLCAPE.magnitude
 
 
 def get_ERA5_soundings(lon=130.925, lat=-12.457):
@@ -748,7 +768,7 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
 
 def plot_wind_profile(
         soundings_mean, soundings_var, title=None, fig=None, ax=None,
-        legend=False, xlim=(-5, 15), ylim=(0, 20e3)):
+        legend=False, xlim=(-5, 15), ylim=(0, 20e3), ylabel=True):
 
     if fig is None or ax is None:
         fig, ax = plt.subplots(1, 1, figsize=(6, 5))
@@ -769,18 +789,18 @@ def plot_wind_profile(
     v_t_sig = np.sqrt(soundings_var['v'])
 
     line1 = ax.plot(
-        u_t, u_t.altitude, color=colors[0], label=r'$u$',
+        u_t, u_t.altitude, color=colors[0], label=r'$u$ Mean',
         linewidth=1.75)
     ax.fill_betweenx(
         u_t.altitude, u_t-u_t_sig, u_t+u_t_sig, color=colors[0],
-        alpha=0.1, linewidth=1.75)
+        alpha=0.2, label='Standard Deviation')
 
     line2 = ax.plot(
-        v_t, v_t.altitude, color=colors[0], label=r'$v$',
+        v_t, v_t.altitude, color=colors[0], label=r'$v$ Mean',
         linestyle='dashed')
     ax.fill_betweenx(
         v_t.altitude, v_t-v_t_sig, v_t+v_t_sig, color=colors[0],
-        alpha=0.1, linewidth=1.75, linestyle='--')
+        alpha=0.2)
 
     xtick_min = xlim[0]
     xtick_max = xlim[1]
@@ -788,7 +808,8 @@ def plot_wind_profile(
     ax.set_xticks(np.arange(xtick_min, xtick_max+4, 4))
     ax.set_xticks(np.arange(xtick_min, xtick_max+2, 2), minor=True)
     ax.set_xlabel(r'Velocity [m/s]')
-    ax.set_ylabel(r'Altitude [km]')
+    if ylabel:
+        ax.set_ylabel(r'Altitude [km]')
     ax.set_yticks(np.arange(0, 21e3, 1e3))
     ax.set_yticks(np.arange(0, 20.5e3, .5e3), minor=True)
     ax.set_yticklabels(np.arange(0, 21, 1))

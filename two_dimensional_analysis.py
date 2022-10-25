@@ -639,11 +639,11 @@ def shear_angle_versus_propagation_hist_compare(
             0.1, .89, total_lab, transform=ax.transAxes, size=12,
             backgroundcolor='1')
 
-    plt.subplots_adjust(hspace=0.4)
+    plt.subplots_adjust(hspace=0.45)
     cl.make_subplot_labels(axes.flatten(), size=16, x_shift=-0.175)
 
     axes.flatten()[-2].legend(
-        loc='lower center', bbox_to_anchor=(1.1, -0.5),
+        loc='lower center', bbox_to_anchor=(1.1, -0.55),
         ncol=2, fancybox=True, shadow=True)
 
     plt.savefig(
@@ -721,11 +721,11 @@ def shear_angle_versus_orientation_hist_compare(
             0.1, .89, total_lab, transform=ax.transAxes, size=12,
             backgroundcolor='1')
 
-    plt.subplots_adjust(hspace=0.4)
+    plt.subplots_adjust(hspace=0.45)
     cl.make_subplot_labels(axes.flatten(), size=16, x_shift=-0.175)
 
     axes.flatten()[-2].legend(
-        loc='lower center', bbox_to_anchor=(1.1, -0.5),
+        loc='lower center', bbox_to_anchor=(1.1, -0.55),
         ncol=2, fancybox=True, shadow=True)
 
     plt.savefig(
