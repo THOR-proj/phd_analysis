@@ -3,10 +3,407 @@ sys.path.insert(0, '/home/student.unimelb.edu.au/shorte1/Documents/TINT')
 sys.path.insert(0, '/home/563/esh563/TINT')
 
 import pickle
-
 import numpy as np
 import classification as cl
 import matplotlib.pyplot as plt
+
+
+def get_all_and_QC_radar_stats(
+        save_dir, morning_only=False, radars=[42, 63, 77]):
+    all_obs_radar = get_boring_radar_stats(
+        save_dir, ['simple_duration_cond'], None,
+        radars=radars, morning_only=morning_only)
+    QC_obs_radar = get_boring_radar_stats(
+        save_dir, None, None, radars=radars, morning_only=morning_only)
+
+    all_obs_weak_radar = get_boring_radar_stats(
+        save_dir, ['simple_duration_cond'], 1,
+        radars=radars, morning_only=morning_only)
+    QC_obs_weak_radar = get_boring_radar_stats(
+        save_dir, None, 1,
+        radars=radars, morning_only=morning_only)
+
+    all_obs_active_radar = get_boring_radar_stats(
+        save_dir, ['simple_duration_cond'], 2,
+        radars=radars, morning_only=morning_only)
+    QC_obs_active_radar = get_boring_radar_stats(
+        save_dir, None, 2, radars=radars, morning_only=morning_only)
+
+    all_radar = [
+        all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
+        all_obs_active_radar, QC_obs_active_radar]
+    return all_radar
+
+
+def get_all_and_QC_ACCESS_stats(
+        save_dir, morning_only=False, radars=[42, 63, 77]):
+    all_obs_ACCESS = get_boring_ACCESS_stats(
+        save_dir, ['simple_duration_cond'], None,
+        radars=radars, morning_only=morning_only)
+    QC_obs_ACCESS = get_boring_ACCESS_stats(
+        save_dir, None, None, radars=radars, morning_only=morning_only)
+
+    all_obs_weak_ACCESS = get_boring_ACCESS_stats(
+        save_dir, ['simple_duration_cond'], 1,
+        radars=radars, morning_only=morning_only)
+    QC_obs_weak_ACCESS = get_boring_ACCESS_stats(
+        save_dir, None, 1, radars=radars, morning_only=morning_only)
+
+    all_obs_active_ACCESS = get_boring_ACCESS_stats(
+        save_dir, ['simple_duration_cond'], 2,
+        radars=radars, morning_only=morning_only)
+    QC_obs_active_ACCESS = get_boring_ACCESS_stats(
+        save_dir, None, 2, radars=radars, morning_only=morning_only)
+
+    all_ACCESS = [
+        all_obs_ACCESS, QC_obs_ACCESS, all_obs_weak_ACCESS, QC_obs_weak_ACCESS,
+        all_obs_active_ACCESS, QC_obs_active_ACCESS]
+
+    return all_ACCESS
+
+
+def get_all_time_series(
+        save_dir, morning_only=False, radars=[42, 63, 77]):
+
+    time_series_radar = get_radar_prop_so_stats(
+        save_dir, regime=None, radars=radars)
+
+    time_series_weak_radar = get_radar_prop_so_stats(
+        save_dir, regime=1, radars=radars)
+
+    time_series_active_radar = get_radar_prop_so_stats(
+        save_dir, regime=2, radars=radars)
+
+    time_series_ACCESS = get_ACCESS_prop_so_stats(
+        save_dir, regime=None, radars=radars)
+
+    time_series_weak_ACCESS = get_ACCESS_prop_so_stats(
+        save_dir, regime=1, radars=radars)
+
+    time_series_active_ACCESS = get_ACCESS_prop_so_stats(
+        save_dir, regime=2, radars=radars)
+
+    time_series_all = [
+        time_series_radar, time_series_weak_radar, time_series_active_radar,
+        time_series_ACCESS, time_series_weak_ACCESS, time_series_active_ACCESS]
+
+    return time_series_all
+
+
+def get_all_regional(save_dir):
+
+    all_obs_ACCESS_42 = get_boring_ACCESS_stats(
+        save_dir, ['simple_duration_cond'], None, radars=[42])
+    QC_obs_ACCESS_42 = get_boring_ACCESS_stats(
+        save_dir, None, None, radars=[42])
+
+    all_obs_ACCESS_63 = get_boring_ACCESS_stats(
+        save_dir, ['simple_duration_cond'], None, radars=[63])
+    QC_obs_ACCESS_63 = get_boring_ACCESS_stats(
+        save_dir, None, None, radars=[63])
+
+    all_obs_ACCESS_77 = get_boring_ACCESS_stats(
+        save_dir, ['simple_duration_cond'], None, radars=[77])
+    QC_obs_ACCESS_77 = get_boring_ACCESS_stats(
+        save_dir, None, None, radars=[77])
+
+    all_obs_radar_42 = get_boring_radar_stats(
+        save_dir, ['simple_duration_cond'], None, radars=[42])
+    QC_obs_radar_42 = get_boring_radar_stats(
+        save_dir, None, None, radars=[42])
+
+    all_obs_radar_63 = get_boring_radar_stats(
+        save_dir, ['simple_duration_cond'], None, radars=[63])
+    QC_obs_radar_63 = get_boring_radar_stats(
+        save_dir, None, None, radars=[63])
+
+    all_obs_radar_77 = get_boring_radar_stats(
+        save_dir, ['simple_duration_cond'], None, radars=[77])
+    QC_obs_radar_77 = get_boring_radar_stats(
+        save_dir, None, None, radars=[77])
+
+    all_obs_regional = [
+        all_obs_ACCESS_42, QC_obs_ACCESS_42, all_obs_ACCESS_63, QC_obs_ACCESS_63,
+        all_obs_ACCESS_77, QC_obs_ACCESS_77, all_obs_radar_42, QC_obs_radar_42,
+        all_obs_radar_63, QC_obs_radar_63, all_obs_radar_77, QC_obs_radar_77]
+
+    return all_obs_regional
+
+
+def plot_regional_seasonal_and_so(all_obs_regional):
+    density = False
+
+
+
+    fig, axes = plt.subplots(3, 2, figsize=(12, 7))
+
+    plot_counts_regional_seasonal(
+        all_obs_radar, all_obs_weak_radar, all_obs_active_radar,
+        all_obs_ACCESS, all_obs_weak_ACCESS, all_obs_active_ACCESS,
+        QC_obs_radar, QC_obs_weak_radar, QC_obs_active_radar,
+        QC_obs_ACCESS, QC_obs_weak_ACCESS, QC_obs_active_ACCESS,
+        all_obs_radar_42, all_obs_radar_63, all_obs_radar_77,
+        all_obs_ACCESS_42, all_obs_ACCESS_63, all_obs_ACCESS_77,
+        QC_obs_radar_42, QC_obs_radar_63, QC_obs_radar_77,
+        QC_obs_ACCESS_42, QC_obs_ACCESS_63, QC_obs_ACCESS_77,
+        fig=fig, ax=axes[:2, :], legend=False, sp_labels=False)
+
+    bs.compare_offset(
+        all_obs_radar, all_obs_ACCESS,
+        QC_obs_radar, QC_obs_ACCESS, density=density,
+        fig=fig, ax=axes[2,:])
+
+    cl.make_subplot_labels(axes.flatten(), x_shift=-.13)
+
+    axes.flatten()[-2].legend(
+        loc='lower center', bbox_to_anchor=(1.1, -0.65),
+        ncol=2, fancybox=True, shadow=True)
+
+    plt.savefig(
+        fig_dir + '/regional_seasonal_counts_offset_{}.png'.format(suff), dpi=200,
+        facecolor='w', edgecolor='white', bbox_inches='tight')
+
+
+def plot_all_diurnal(all_radar, all_ACCESS, fig_dir, suff):
+
+    [
+        all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
+        all_obs_active_radar, QC_obs_active_radar] = all_radar
+
+    [
+        all_obs_ACCESS, QC_obs_ACCESS, all_obs_weak_ACCESS, QC_obs_weak_ACCESS,
+        all_obs_active_ACCESS, QC_obs_active_ACCESS] = all_ACCESS
+
+    density = False
+
+    fig, axes = plt.subplots(3, 2, figsize=(12, 8))
+
+    compare_time(
+        all_obs_radar, all_obs_ACCESS,
+        QC_obs_radar, QC_obs_ACCESS, density=density,
+        title='All Monsoon Regimes', fig=fig, ax=axes[0, :])
+
+    compare_time(
+        all_obs_weak_radar, all_obs_weak_ACCESS,
+        QC_obs_weak_radar, QC_obs_weak_ACCESS, density=density,
+        title='Weak Monsoon', fig=fig, ax=axes[1, :])
+
+    compare_time(
+        all_obs_active_radar, all_obs_active_ACCESS,
+        QC_obs_active_radar, QC_obs_active_ACCESS, density=density,
+        title='Active Monsoon', fig=fig, ax=axes[2, :])
+
+    axes.flatten()[-2].legend(
+        loc='lower center', bbox_to_anchor=(1.1, -1.10),
+        ncol=2, fancybox=True, shadow=True)
+
+    plt.subplots_adjust(hspace=1.1)
+
+    cl.make_subplot_labels(axes.flatten(), x_shift=-.14)
+
+    maximums = [10e3, 4e2, 8e3, 3e2, 2e3, 2.5e2]
+    dy = [2e3, 1e2, 2e3, .5e2, .5e3, .5e2]
+
+    for i in range(len(axes.flatten())):
+        axes.flatten()[i].set_yticks(np.arange(0, maximums[i]+dy[i], dy[i]))
+        axes.flatten()[i].set_yticks(
+            np.arange(0, maximums[i]+dy[i]/2, dy[i]/2), minor=True)
+        axes.flatten()[i].grid(which='minor', alpha=0.2, axis='y')
+        axes.flatten()[i].grid(which='major', alpha=0.5, axis='y')
+
+    plt.savefig(
+        fig_dir + '/time_ACCESS_radar_active_compare_{}.png'.format(suff),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
+
+def plot_all_orientations(all_radar, all_ACCESS, fig_dir, suff):
+    fig, axes = plt.subplots(3, 2, figsize=(12, 7))
+
+    density = False
+
+    [
+        all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
+        all_obs_active_radar, QC_obs_active_radar] = all_radar
+
+    [
+        all_obs_ACCESS, QC_obs_ACCESS, all_obs_weak_ACCESS, QC_obs_weak_ACCESS,
+        all_obs_active_ACCESS, QC_obs_active_ACCESS] = all_ACCESS
+
+    compare_orientation(
+        all_obs_radar, all_obs_ACCESS,
+        QC_obs_radar, QC_obs_ACCESS, density=density,
+        title='All Monsoon Regimes', fig=fig, ax=axes[0, :])
+
+    compare_orientation(
+        all_obs_weak_radar, all_obs_weak_ACCESS,
+        QC_obs_weak_radar, QC_obs_weak_ACCESS, density=density,
+        title='Weak Monsoon', fig=fig, ax=axes[1, :])
+
+    compare_orientation(
+        all_obs_active_radar, all_obs_active_ACCESS,
+        QC_obs_active_radar, QC_obs_active_ACCESS, density=density,
+        title='Active Monsoon', fig=fig, ax=axes[2, :])
+
+    axes.flatten()[-2].legend(
+        loc='lower center', bbox_to_anchor=(1.1, -0.75),
+        ncol=2, fancybox=True, shadow=True)
+
+    plt.subplots_adjust(hspace=.65)
+
+    cl.make_subplot_labels(axes.flatten(), x_shift=-.14)
+
+    maximums = [8e3, 4e2, 8e3, 2.5e2, 2e3, 2e2]
+    dy = [2e3, 1e2, 2e3, .5e2, .5e3, .5e2]
+
+    for i in range(len(axes.flatten())):
+        axes.flatten()[i].set_yticks(np.arange(0, maximums[i]+dy[i], dy[i]))
+        axes.flatten()[i].set_yticks(
+            np.arange(0, maximums[i]+dy[i]/2, dy[i]/2), minor=True)
+        axes.flatten()[i].grid(which='minor', alpha=0.2, axis='y')
+        axes.flatten()[i].grid(which='major', alpha=0.5, axis='y')
+
+    plt.savefig(
+        fig_dir + '/orientation_ACCESS_radar_active_compare_{}.png'.format(suff),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
+
+def plot_all_eccentricities(fig_dir, all_radar, all_ACCESS, suff):
+
+    density = False
+
+    [
+        all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
+        all_obs_active_radar, QC_obs_active_radar] = all_radar
+
+    [
+        all_obs_ACCESS, QC_obs_ACCESS, all_obs_weak_ACCESS, QC_obs_weak_ACCESS,
+        all_obs_active_ACCESS, QC_obs_active_ACCESS] = all_ACCESS
+
+    compare_eccentricity(
+        all_obs_radar, all_obs_ACCESS,
+        QC_obs_radar, QC_obs_ACCESS, density=density,
+        title='All Monsoon Regimes')
+
+    plt.savefig(
+        fig_dir + 'shape_ACCESS_radar_all_{}.png'.format(suff),
+        dpi=200, facecolor='w',
+        edgecolor='white', bbox_inches='tight')
+
+    compare_eccentricity(
+        all_obs_weak_radar, all_obs_weak_ACCESS,
+        QC_obs_weak_radar, QC_obs_weak_ACCESS, density=density,
+        title='Weak Monsoon')
+
+    plt.savefig(
+        fig_dir + 'shape_ACCESS_radar_weak_{}.png'.format(suff),
+        dpi=200, facecolor='w',
+        edgecolor='white', bbox_inches='tight')
+
+    compare_eccentricity(
+        all_obs_active_radar, all_obs_active_ACCESS,
+        QC_obs_active_radar, QC_obs_active_ACCESS, density=density,
+        title='Active Monsoon')
+
+    plt.savefig(
+        fig_dir + 'shape_ACCESS_radar_active_{}.png'.format(suff),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
+
+def plot_all_velocities(fig_dir, all_radar, all_ACCESS, suff):
+
+    density = False
+
+    [
+        all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
+        all_obs_active_radar, QC_obs_active_radar] = all_radar
+
+    [
+        all_obs_ACCESS, QC_obs_ACCESS, all_obs_weak_ACCESS, QC_obs_weak_ACCESS,
+        all_obs_active_ACCESS, QC_obs_active_ACCESS] = all_ACCESS
+
+    fig, axes = plt.subplots(3, 2, figsize=(12, 7))
+
+    compare_velocities(
+        all_obs_radar, all_obs_ACCESS,
+        QC_obs_radar, QC_obs_ACCESS, density=density,
+        title='All Monsoon Regimes', labels=False,
+        legend=False, fig=fig, ax=axes[0, :])
+
+    compare_velocities(
+        all_obs_weak_radar, all_obs_weak_ACCESS,
+        QC_obs_weak_radar, QC_obs_weak_ACCESS, density=density, labels=False,
+        title='Weak Monsoon', legend=False, fig=fig, ax=axes[1, :])
+
+    compare_velocities(
+        all_obs_active_radar, all_obs_active_ACCESS,
+        QC_obs_active_radar, QC_obs_active_ACCESS, density=density,
+        labels=False, title='Active Monsoon', fig=fig, ax=axes[2, :])
+
+    plt.subplots_adjust(hspace=.65)
+
+    cl.make_subplot_labels(axes.flatten(), x_shift=-.14)
+
+    axes.flatten()[-2].legend(
+        loc='lower center', bbox_to_anchor=(1.1, -0.75),
+        ncol=2, fancybox=True, shadow=True)
+
+    maximums = [2.5e4, 10e2, 2e4, 10e2, 8e3, 8e2]
+    dy = [.5e4, 2e2, .5e4, 2e2, 2e3, 2e2]
+
+    for i in range(len(axes.flatten())):
+        axes.flatten()[i].set_yticks(np.arange(0, maximums[i]+dy[i], dy[i]))
+        axes.flatten()[i].set_yticks(
+            np.arange(0, maximums[i]+dy[i]/2, dy[i]/2), minor=True)
+        axes.flatten()[i].grid(which='minor', alpha=0.2, axis='y')
+        axes.flatten()[i].grid(which='major', alpha=0.5, axis='y')
+
+    plt.savefig(
+        fig_dir + '/zonal_ACCESS_radar_active_compare_{}.png'.format(suff),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+
+    fig, axes = plt.subplots(3, 2, figsize=(12, 7))
+
+    direction='meri'
+
+    compare_velocities(
+        all_obs_radar, all_obs_ACCESS,
+        QC_obs_radar, QC_obs_ACCESS, density=density,
+        title='All Monsoon Regimes', labels=False,
+        legend=False, fig=fig, ax=axes[0, :], direction=direction)
+
+    compare_velocities(
+        all_obs_weak_radar, all_obs_weak_ACCESS,
+        QC_obs_weak_radar, QC_obs_weak_ACCESS, density=density, labels=False,
+        title='Weak Monsoon', legend=False, fig=fig, ax=axes[1, :],
+        direction=direction)
+
+    compare_velocities(
+        all_obs_active_radar, all_obs_active_ACCESS,
+        QC_obs_active_radar, QC_obs_active_ACCESS, density=density,
+        labels=False, title='Active Monsoon', fig=fig, ax=axes[2, :],
+        direction=direction)
+
+    plt.subplots_adjust(hspace=.65)
+
+    cl.make_subplot_labels(axes.flatten(), x_shift=-.14)
+
+    axes.flatten()[-2].legend(
+        loc='lower center', bbox_to_anchor=(1.1, -0.75),
+        ncol=2, fancybox=True, shadow=True)
+
+    maximums = [2.5e4, 10e2, 2e4, 10e2, 8e3, 8e2]
+    dy = [.5e4, 2e2, .5e4, 2e2, 2e3, 2e2]
+
+    for i in range(len(axes.flatten())):
+        axes.flatten()[i].set_yticks(np.arange(0, maximums[i]+dy[i], dy[i]))
+        axes.flatten()[i].set_yticks(
+            np.arange(0, maximums[i]+dy[i]/2, dy[i]/2), minor=True)
+        axes.flatten()[i].grid(which='minor', alpha=0.2, axis='y')
+        axes.flatten()[i].grid(which='major', alpha=0.5, axis='y')
+
+    plt.savefig(
+        fig_dir + '/meridional_ACCESS_radar_active_compare_{}.png'.format(suff),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
 
 def get_boring_radar_stats(
