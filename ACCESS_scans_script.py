@@ -14,7 +14,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-save_dir = '/g/data/w40/esh563/TINT_tracks/'
+save_dir = '/g/data/w40/esh563/TINT_tracks/ACCESS_radar_base/'
 fig_dir = '/g/data/w40/esh563/TINT_figures/'
 
 print('Getting year {}'.format(args.year))
