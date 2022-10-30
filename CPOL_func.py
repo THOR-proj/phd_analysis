@@ -312,8 +312,8 @@ def gen_ACCESS_verification_figures(
             'uid_ind': None, 'line_coords': False, 'center_cell': False,
             'cell_ind': 10, 'winds': False, 'winds_fn': None,
             'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
-            'leg_loc': 2, 'label_type': 'velocities',
-            'system_winds': ['shift', 'ambient_mean', 'relative'],
+            'leg_loc': 2, 'label_type': 'shear',
+            'system_winds': ['shift', 'shear', 'relative'],
             'boundary': True, 'exclude': True, 'exclusions': exclusions}
 
         figures.two_level(
@@ -387,8 +387,8 @@ def gen_operational_verification_figures(
                 'uid_ind': None, 'line_coords': False, 'center_cell': False,
                 'cell_ind': 10, 'winds': False, 'winds_fn': None,
                 'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
-                'leg_loc': 2, 'label_type': 'velocities',
-                'system_winds': ['shift', 'ambient_mean', 'relative'],
+                'leg_loc': 2, 'label_type': 'shear',
+                'system_winds': ['shift', 'shear', 'relative'],
                 'boundary': True, 'exclude': True, 'exclusions': exclusions}
 
             figures.two_level(

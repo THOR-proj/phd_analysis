@@ -20,4 +20,4 @@ fig_dir = '/g/data/w40/esh563/TINT_figures/'
 print('Getting year {}'.format(args.year))
 cf.gen_operational_verification_figures(
     save_dir, fig_dir, radar=args.radar,
-    year=args.year)
+    year=args.year, suffix='_shear')

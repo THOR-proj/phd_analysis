@@ -9,25 +9,34 @@ import matplotlib.pyplot as plt
 
 
 def get_all_and_QC_radar_stats(
-        save_dir, morning_only=False, radars=[42, 63, 77]):
+        save_dir, class_thresh=None, excl_thresh=None,
+        exclusions=None, morning_only=False, radars=[42, 63, 77]):
     all_obs_radar = get_boring_radar_stats(
-        save_dir, ['simple_duration_cond'], None,
+        save_dir, class_thresh=None, excl_thresh=None,
+        exclusions=['simple_duration_cond'], regime=None,
         radars=radars, morning_only=morning_only)
     QC_obs_radar = get_boring_radar_stats(
-        save_dir, None, None, radars=radars, morning_only=morning_only)
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=None, radars=radars,
+        morning_only=morning_only)
 
     all_obs_weak_radar = get_boring_radar_stats(
-        save_dir, ['simple_duration_cond'], 1,
-        radars=radars, morning_only=morning_only)
+        save_dir, exclusions=['simple_duration_cond'],
+        class_thresh=None, excl_thresh=None,
+        regime=1, radars=radars, morning_only=morning_only)
     QC_obs_weak_radar = get_boring_radar_stats(
-        save_dir, None, 1,
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=1,
         radars=radars, morning_only=morning_only)
 
     all_obs_active_radar = get_boring_radar_stats(
-        save_dir, ['simple_duration_cond'], 2,
+        save_dir, exclusions=['simple_duration_cond'],
+        class_thresh=None, excl_thresh=None, regime=2,
         radars=radars, morning_only=morning_only)
     QC_obs_active_radar = get_boring_radar_stats(
-        save_dir, None, 2, radars=radars, morning_only=morning_only)
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=2, radars=radars,
+        morning_only=morning_only)
 
     all_radar = [
         all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
@@ -36,24 +45,34 @@ def get_all_and_QC_radar_stats(
 
 
 def get_all_and_QC_ACCESS_stats(
-        save_dir, morning_only=False, radars=[42, 63, 77]):
+        save_dir, exclusions=None, class_thresh=None,
+        excl_thresh=None, morning_only=False, radars=[42, 63, 77]):
     all_obs_ACCESS = get_boring_ACCESS_stats(
-        save_dir, ['simple_duration_cond'], None,
+        save_dir, class_thresh=None, excl_thresh=None,
+        exclusions=['simple_duration_cond'], regime=None,
         radars=radars, morning_only=morning_only)
     QC_obs_ACCESS = get_boring_ACCESS_stats(
-        save_dir, None, None, radars=radars, morning_only=morning_only)
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=None,
+        radars=radars, morning_only=morning_only)
 
     all_obs_weak_ACCESS = get_boring_ACCESS_stats(
-        save_dir, ['simple_duration_cond'], 1,
+        save_dir, class_thresh=None, excl_thresh=None,
+        exclusions=['simple_duration_cond'], regime=1,
         radars=radars, morning_only=morning_only)
     QC_obs_weak_ACCESS = get_boring_ACCESS_stats(
-        save_dir, None, 1, radars=radars, morning_only=morning_only)
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=1,
+        radars=radars, morning_only=morning_only)
 
     all_obs_active_ACCESS = get_boring_ACCESS_stats(
-        save_dir, ['simple_duration_cond'], 2,
+        save_dir, class_thresh=None, excl_thresh=None,
+        exclusions=['simple_duration_cond'], regime=2,
         radars=radars, morning_only=morning_only)
     QC_obs_active_ACCESS = get_boring_ACCESS_stats(
-        save_dir, None, 2, radars=radars, morning_only=morning_only)
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=2,
+        radars=radars, morning_only=morning_only)
 
     all_ACCESS = [
         all_obs_ACCESS, QC_obs_ACCESS, all_obs_weak_ACCESS, QC_obs_weak_ACCESS,
@@ -63,25 +82,32 @@ def get_all_and_QC_ACCESS_stats(
 
 
 def get_all_time_series(
-        save_dir, morning_only=False, radars=[42, 63, 77]):
+        save_dir, exclusions=None, class_thresh=None,
+        excl_thresh=None, morning_only=False, radars=[42, 63, 77]):
 
     time_series_radar = get_radar_prop_so_stats(
-        save_dir, regime=None, radars=radars)
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=None, radars=radars)
 
     time_series_weak_radar = get_radar_prop_so_stats(
-        save_dir, regime=1, radars=radars)
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=1, radars=radars)
 
     time_series_active_radar = get_radar_prop_so_stats(
-        save_dir, regime=2, radars=radars)
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=2, radars=radars)
 
     time_series_ACCESS = get_ACCESS_prop_so_stats(
-        save_dir, regime=None, radars=radars)
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=None, radars=radars)
 
     time_series_weak_ACCESS = get_ACCESS_prop_so_stats(
-        save_dir, regime=1, radars=radars)
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=1, radars=radars)
 
     time_series_active_ACCESS = get_ACCESS_prop_so_stats(
-        save_dir, regime=2, radars=radars)
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=2, radars=radars)
 
     time_series_all = [
         time_series_radar, time_series_weak_radar, time_series_active_radar,
@@ -90,37 +116,51 @@ def get_all_time_series(
     return time_series_all
 
 
-def get_all_regional(save_dir):
+def get_all_regional(
+        save_dir, exclusions=None,
+        class_thresh=None, excl_thresh=None):
 
     all_obs_ACCESS_42 = get_boring_ACCESS_stats(
-        save_dir, ['simple_duration_cond'], None, radars=[42])
+        save_dir, exclusions=['simple_duration_cond'], class_thresh=None,
+        excl_thresh=None, regime=None, radars=[42])
     QC_obs_ACCESS_42 = get_boring_ACCESS_stats(
-        save_dir, None, None, radars=[42])
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=None, radars=[42])
 
     all_obs_ACCESS_63 = get_boring_ACCESS_stats(
-        save_dir, ['simple_duration_cond'], None, radars=[63])
+        save_dir,  exclusions=['simple_duration_cond'], class_thresh=None,
+        excl_thresh=None, regime=None, radars=[63])
     QC_obs_ACCESS_63 = get_boring_ACCESS_stats(
-        save_dir, None, None, radars=[63])
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=None, radars=[63])
 
     all_obs_ACCESS_77 = get_boring_ACCESS_stats(
-        save_dir, ['simple_duration_cond'], None, radars=[77])
+        save_dir,  exclusions=['simple_duration_cond'], class_thresh=None,
+        excl_thresh=None, regime=None, radars=[77])
     QC_obs_ACCESS_77 = get_boring_ACCESS_stats(
-        save_dir, None, None, radars=[77])
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=None, radars=[77])
 
     all_obs_radar_42 = get_boring_radar_stats(
-        save_dir, ['simple_duration_cond'], None, radars=[42])
+        save_dir,  exclusions=['simple_duration_cond'], class_thresh=None,
+        excl_thresh=None, regime=None, radars=[42])
     QC_obs_radar_42 = get_boring_radar_stats(
-        save_dir, None, None, radars=[42])
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=None, radars=[42])
 
     all_obs_radar_63 = get_boring_radar_stats(
-        save_dir, ['simple_duration_cond'], None, radars=[63])
+        save_dir,  exclusions=['simple_duration_cond'], class_thresh=None,
+        excl_thresh=None, regime=None, radars=[63])
     QC_obs_radar_63 = get_boring_radar_stats(
-        save_dir, None, None, radars=[63])
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=None, radars=[63])
 
     all_obs_radar_77 = get_boring_radar_stats(
-        save_dir, ['simple_duration_cond'], None, radars=[77])
+        save_dir,  exclusions=['simple_duration_cond'], class_thresh=None,
+        excl_thresh=None, regime=None, radars=[77])
     QC_obs_radar_77 = get_boring_radar_stats(
-        save_dir, None, None, radars=[77])
+        save_dir, exclusions=exclusions, class_thresh=class_thresh,
+        excl_thresh=excl_thresh, regime=None, radars=[77])
 
     all_obs_regional = [
         all_obs_ACCESS_42, QC_obs_ACCESS_42, all_obs_ACCESS_63, QC_obs_ACCESS_63,
@@ -130,10 +170,25 @@ def get_all_regional(save_dir):
     return all_obs_regional
 
 
-def plot_regional_seasonal_and_so(all_obs_regional):
+def plot_regional_seasonal_and_so(
+        all_obs_regional, all_radar, all_ACCESS, fig_dir, suff):
     density = False
 
+    [
+        all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
+        all_obs_active_radar, QC_obs_active_radar] = all_radar
 
+    [
+        all_obs_ACCESS, QC_obs_ACCESS, all_obs_weak_ACCESS, QC_obs_weak_ACCESS,
+        all_obs_active_ACCESS, QC_obs_active_ACCESS] = all_ACCESS
+
+    [
+        all_obs_ACCESS_42, QC_obs_ACCESS_42,
+        all_obs_ACCESS_63, QC_obs_ACCESS_63,
+        all_obs_ACCESS_77, QC_obs_ACCESS_77,
+        all_obs_radar_42, QC_obs_radar_42,
+        all_obs_radar_63, QC_obs_radar_63,
+        all_obs_radar_77, QC_obs_radar_77] = all_obs_regional
 
     fig, axes = plt.subplots(3, 2, figsize=(12, 7))
 
@@ -148,10 +203,10 @@ def plot_regional_seasonal_and_so(all_obs_regional):
         QC_obs_ACCESS_42, QC_obs_ACCESS_63, QC_obs_ACCESS_77,
         fig=fig, ax=axes[:2, :], legend=False, sp_labels=False)
 
-    bs.compare_offset(
+    compare_offset(
         all_obs_radar, all_obs_ACCESS,
         QC_obs_radar, QC_obs_ACCESS, density=density,
-        fig=fig, ax=axes[2,:])
+        fig=fig, ax=axes[2, :])
 
     cl.make_subplot_labels(axes.flatten(), x_shift=-.13)
 
@@ -160,8 +215,8 @@ def plot_regional_seasonal_and_so(all_obs_regional):
         ncol=2, fancybox=True, shadow=True)
 
     plt.savefig(
-        fig_dir + '/regional_seasonal_counts_offset_{}.png'.format(suff), dpi=200,
-        facecolor='w', edgecolor='white', bbox_inches='tight')
+        fig_dir + '/regional_seasonal_counts_offset_{}.png'.format(suff),
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
 
 def plot_all_diurnal(all_radar, all_ACCESS, fig_dir, suff):
@@ -267,7 +322,148 @@ def plot_all_orientations(all_radar, all_ACCESS, fig_dir, suff):
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
 
-def plot_all_eccentricities(fig_dir, all_radar, all_ACCESS, suff):
+def plot_all_time_series(time_series_all, fig_dir, suff):
+
+    [
+        time_series_radar, time_series_weak_radar,
+        time_series_active_radar, time_series_ACCESS,
+        time_series_weak_ACCESS, time_series_active_ACCESS] = time_series_all
+
+    fig, axes = plt.subplots(5, 3, figsize=(12, 12))
+
+    cl.init_fonts()
+
+    x = np.arange(0, 24*60+10, 10)
+
+    radar_d_list = [
+        time_series_radar, time_series_weak_radar, time_series_active_radar]
+    ACCESS_d_list = [
+        time_series_ACCESS, time_series_weak_ACCESS, time_series_active_ACCESS]
+
+    y_lims = [(0, 4000), (0, 40), (0, 8), (0, 2000), (0, 10000)]
+    dy = [1000, 10, 2, 500, 2000]
+    # y_labels = [
+    #     r'$|\mathrm{\mathbf{s}}|$ [km]',
+    #     r'$|\mathrm{\mathbf{v}}_r|$ [m/s]',
+    #     r'Convective Area [km$^2$]']
+    y_labels = [
+        r'Observation Count [-]',
+        r'Stratiform Offset [km]',
+        r'Flow-Relative Speed [m/s]',
+        r'Convective Area [km$^2$]',
+        r'Stratiform Area [km$^2$]']
+
+    for k in range(axes.shape[1]):
+        j = 0
+        axes[j, k].plot(x, radar_d_list[k][0], '', label='Radar Count')
+
+        axes[j, k].plot(x, ACCESS_d_list[k][0], label='ACCESS Mean')
+
+        y_lim = y_lims[j]
+
+        axes[j, k].set_xlim([0, 240])
+        axes[j, k].set_xticks(np.arange(0, 270, 30))
+        axes[j, k].set_yticks(
+            np.arange(y_lim[0], y_lim[1]+dy[j], dy[j]))
+        axes[j, k].set_yticks(
+            np.arange(y_lim[0], y_lim[1]+int(dy[j]/2), int(dy[j]/2)),
+            minor=True)
+
+        axes[j, k].set_ylim(y_lim)
+        axes[j, k].set_ylabel(y_labels[j])
+        axes[j, k].grid(which='major', alpha=0.5, axis='both')
+        axes[j, k].grid(which='minor', alpha=0.2, axis='y')
+
+        axes[j, k].ticklabel_format(
+            axis='y', style='sci', scilimits=(0, 0))
+
+    for j in range(1, axes.shape[0]):
+        for k in range(axes.shape[1]):
+
+            index = j
+
+            radar_d = radar_d_list[k]
+            ACCESS_d = ACCESS_d_list[k]
+
+            [
+                means_radar, sig_radar, means_ACCESS, sig_ACCESS] = [
+                np.zeros(len(radar_d[index])) for i in range(4)]
+
+            lens_radar = np.array(
+                [len(radar_d[index][i]) for i in range(len(radar_d[index]))])
+            lens_ACCESS = np.array(
+                [len(ACCESS_d[index][i]) for i in range(len(ACCESS_d[index]))])
+
+            for i in range(len(radar_d[index])):
+                if lens_radar[i] > 0:
+                    means_radar[i] = np.nanmean(radar_d[index][i])
+                    sig_radar[i] = np.sqrt(np.nanvar(radar_d[index][i]))
+                if lens_ACCESS[i] > 0:
+                    means_ACCESS[i] = np.array(np.nanmean(ACCESS_d[index][i]))
+                    sig_ACCESS[i] = np.sqrt(np.nanvar(ACCESS_d[index][i]))
+
+            if j == 1:
+                means_radar = means_radar/1000
+                sig_radar = sig_radar/1000
+                means_ACCESS = means_ACCESS/1000
+                sig_ACCESS = sig_ACCESS/1000
+
+            axes[j, k].plot(x, means_radar, '', label='Radar Mean')
+            axes[j, k].fill_between(
+                x, means_radar+sig_radar, means_radar-sig_radar, alpha=0.2,
+                label='Radar Standard Deviation')
+
+            axes[j, k].plot(x, means_ACCESS, label='ACCESS Mean')
+            axes[j, k].fill_between(
+                x, means_ACCESS+sig_ACCESS, means_ACCESS-sig_ACCESS, alpha=0.2,
+                label='ACCESS Standard Deviation')
+
+            y_lim = y_lims[j]
+
+            axes[j, k].set_xlim([0, 240])
+            axes[j, k].set_xticks(np.arange(0, 270, 30))
+            axes[j, k].set_yticks(
+                np.arange(y_lim[0], y_lim[1]+dy[j], dy[j]))
+            axes[j, k].set_yticks(
+                np.arange(y_lim[0], y_lim[1]+int(dy[j]/2), int(dy[j]/2)),
+                minor=True)
+
+            axes[j, k].set_ylim(y_lim)
+            axes[j, k].set_ylabel(y_labels[j])
+            axes[j, k].grid(which='major', alpha=0.5, axis='both')
+            axes[j, k].grid(which='minor', alpha=0.2, axis='y')
+
+            if j == 3 or j == 4:
+                axes[j, k].ticklabel_format(
+                    axis='y', style='sci', scilimits=(0, 0))
+
+    for j in range(3):
+        axes[4, j].set_xlabel('Time since Detection [min]')
+
+    titles = ['All Regimes', 'Weak Monsoon', 'Active Monsoon']
+
+    for j in range(3):
+        axes[0, j].set_title(titles[j], fontsize=12)
+
+    cl.make_subplot_labels(axes.flatten(), x_shift=-.3, y_shift=.07)
+    plt.subplots_adjust(wspace=.25, hspace=.4)
+
+    lines, labels = axes[-1, 0].get_legend_handles_labels()
+
+    lines = [lines[i] for i in [0, 2, 1, 3]]
+    labels = [labels[i] for i in [0, 2, 1, 3]]
+
+    axes[-1, 0].legend(
+        loc='lower center', bbox_to_anchor=(1.7, -0.75),
+        ncol=4, fancybox=True, shadow=True)
+
+    plt.savefig(
+        fig_dir + '/time_series_{}.png'.format(suff),
+        dpi=200, facecolor='w',
+        edgecolor='white', bbox_inches='tight')
+
+
+def plot_all_eccentricities(all_radar, all_ACCESS, fig_dir, suff):
 
     density = False
 
@@ -285,7 +481,7 @@ def plot_all_eccentricities(fig_dir, all_radar, all_ACCESS, suff):
         title='All Monsoon Regimes')
 
     plt.savefig(
-        fig_dir + 'shape_ACCESS_radar_all_{}.png'.format(suff),
+        fig_dir + '/shape_ACCESS_radar_all_{}.png'.format(suff),
         dpi=200, facecolor='w',
         edgecolor='white', bbox_inches='tight')
 
@@ -295,7 +491,7 @@ def plot_all_eccentricities(fig_dir, all_radar, all_ACCESS, suff):
         title='Weak Monsoon')
 
     plt.savefig(
-        fig_dir + 'shape_ACCESS_radar_weak_{}.png'.format(suff),
+        fig_dir + '/shape_ACCESS_radar_weak_{}.png'.format(suff),
         dpi=200, facecolor='w',
         edgecolor='white', bbox_inches='tight')
 
@@ -305,11 +501,11 @@ def plot_all_eccentricities(fig_dir, all_radar, all_ACCESS, suff):
         title='Active Monsoon')
 
     plt.savefig(
-        fig_dir + 'shape_ACCESS_radar_active_{}.png'.format(suff),
+        fig_dir + '/shape_ACCESS_radar_active_{}.png'.format(suff),
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
 
-def plot_all_velocities(fig_dir, all_radar, all_ACCESS, suff):
+def plot_all_velocities(all_radar, all_ACCESS, fig_dir, suff):
 
     density = False
 
@@ -407,8 +603,8 @@ def plot_all_velocities(fig_dir, all_radar, all_ACCESS, suff):
 
 
 def get_boring_radar_stats(
-        save_dir, exclusions=None, regime=None, pope_dir=None,
-        radars=[63, 42, 77], morning_only=False):
+        save_dir, exclusions=None, class_thresh=None, excl_thresh=None,
+        regime=None, pope_dir=None, radars=[63, 42, 77], morning_only=False):
 
     if pope_dir is None:
         pope_dir = '/home/student.unimelb.edu.au/shorte1/'
@@ -446,7 +642,9 @@ def get_boring_radar_stats(
                 with open(path, 'rb') as f:
                     tracks_obj = pickle.load(f)
 
-                tracks_obj = cl.redo_exclusions(tracks_obj)
+                tracks_obj = cl.redo_exclusions(
+                    tracks_obj, class_thresh=class_thresh,
+                    excl_thresh=excl_thresh)
                 tracks_obj = cl.add_monsoon_regime(
                     tracks_obj, base_dir=pope_dir, fake_pope=True)
 
@@ -521,7 +719,8 @@ def get_boring_radar_stats(
 
 
 def get_boring_ACCESS_stats(
-        save_dir, exclusions=None, regime=None, pope_dir=None,
+        save_dir, class_thresh=None, excl_thresh=None,
+        exclusions=None, regime=None, pope_dir=None,
         radars=[63, 42, 77], morning_only=False):
 
     if pope_dir is None:
@@ -555,7 +754,9 @@ def get_boring_ACCESS_stats(
             with open(path, 'rb') as f:
                 tracks_obj = pickle.load(f)
 
-            tracks_obj = cl.redo_exclusions(tracks_obj)
+            tracks_obj = cl.redo_exclusions(
+                tracks_obj, class_thresh=class_thresh,
+                excl_thresh=excl_thresh)
             tracks_obj = cl.add_monsoon_regime(
                 tracks_obj, base_dir=pope_dir, fake_pope=True)
 
@@ -1209,6 +1410,46 @@ def plot_counts_regional_seasonal(
     plt.subplots_adjust(hspace=.4)
 
 
+def compare_all_sizes(all_radar, all_ACCESS, fig_dir, suff):
+
+    density = False
+
+    [
+        all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
+        all_obs_active_radar, QC_obs_active_radar] = all_radar
+
+    [
+        all_obs_ACCESS, QC_obs_ACCESS, all_obs_weak_ACCESS, QC_obs_weak_ACCESS,
+        all_obs_active_ACCESS, QC_obs_active_ACCESS] = all_ACCESS
+
+    compare_sizes(
+        all_obs_radar, all_obs_ACCESS,
+        QC_obs_radar, QC_obs_ACCESS, density=density,
+        title='All Monsoon Regimes')
+    plt.savefig(
+        fig_dir + '/sizes_ACCESS_radar_all_{}.png'.format(suff),
+        dpi=200, facecolor='w',
+        edgecolor='white', bbox_inches='tight')
+
+    compare_sizes(
+        all_obs_weak_radar, all_obs_weak_ACCESS,
+        QC_obs_weak_radar, QC_obs_weak_ACCESS, density=density,
+        title='Weak Monsoon')
+    plt.savefig(
+        fig_dir + '/sizes_ACCESS_radar_weak_{}.png'.format(suff),
+        dpi=200, facecolor='w',
+        edgecolor='white', bbox_inches='tight')
+
+    compare_sizes(
+        all_obs_active_radar, all_obs_active_ACCESS,
+        QC_obs_active_radar, QC_obs_active_ACCESS, density=density,
+        title='Active Monsoon')
+    plt.savefig(
+        fig_dir + '/sizes_ACCESS_radar_active_{}.png'.format(suff),
+        dpi=200, facecolor='w',
+        edgecolor='white', bbox_inches='tight')
+
+
 def compare_sizes(
         all_obs_radar, all_obs_ACCESS,
         QC_obs_radar, QC_obs_ACCESS, density=True, title=None):
@@ -1822,8 +2063,8 @@ def get_centroid(x, y):
 
 
 def get_radar_prop_so_stats(
-        save_dir, exclusions=None, regime=None, pope_dir=None,
-        radars=[63, 42, 77]):
+        save_dir, exclusions=None, class_thresh=None, excl_thresh=None,
+        regime=None, pope_dir=None, radars=[63, 42, 77]):
 
     if pope_dir is None:
         pope_dir = '/home/student.unimelb.edu.au/shorte1/'
@@ -1861,7 +2102,9 @@ def get_radar_prop_so_stats(
                 with open(path, 'rb') as f:
                     tracks_obj = pickle.load(f)
 
-                tracks_obj = cl.redo_exclusions(tracks_obj)
+                tracks_obj = cl.redo_exclusions(
+                    tracks_obj, class_thresh=class_thresh,
+                    excl_thresh=excl_thresh)
                 tracks_obj = cl.add_monsoon_regime(
                     tracks_obj, base_dir=pope_dir, fake_pope=True)
 
@@ -1955,7 +2198,8 @@ def get_radar_prop_so_stats(
 
 
 def get_ACCESS_prop_so_stats(
-        save_dir, exclusions=None, regime=None, pope_dir=None,
+        save_dir, exclusions=None, class_thresh=None,
+        excl_thresh=None, regime=None, pope_dir=None,
         radars=[63, 42, 77]):
 
     if pope_dir is None:
@@ -1989,7 +2233,8 @@ def get_ACCESS_prop_so_stats(
             with open(path, 'rb') as f:
                 tracks_obj = pickle.load(f)
 
-            tracks_obj = cl.redo_exclusions(tracks_obj)
+            tracks_obj = cl.redo_exclusions(
+                tracks_obj, class_thresh=class_thresh, excl_thresh=excl_thresh)
             tracks_obj = cl.add_monsoon_regime(
                 tracks_obj, base_dir=pope_dir, fake_pope=True)
 
