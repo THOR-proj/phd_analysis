@@ -768,7 +768,8 @@ def get_ACCESS_C_soundings(lon=130.925, lat=-12.457):
 
 def plot_wind_profile(
         soundings_mean, soundings_var, title=None, fig=None, ax=None,
-        legend=False, xlim=(-5, 15), ylim=(0, 20e3), ylabel=True):
+        legend=False, xlim=(-5, 15), ylim=(0, 20e3), ylabel=True,
+        dx=4, dy=1e3):
 
     if fig is None or ax is None:
         fig, ax = plt.subplots(1, 1, figsize=(6, 5))
@@ -805,14 +806,14 @@ def plot_wind_profile(
     xtick_min = xlim[0]
     xtick_max = xlim[1]
 
-    ax.set_xticks(np.arange(xtick_min, xtick_max+4, 4))
-    ax.set_xticks(np.arange(xtick_min, xtick_max+2, 2), minor=True)
+    ax.set_xticks(np.arange(xtick_min, xtick_max+dx, dx))
+    ax.set_xticks(np.arange(xtick_min, xtick_max+dx/2, dx/2), minor=True)
     ax.set_xlabel(r'Velocity [m/s]')
     if ylabel:
         ax.set_ylabel(r'Altitude [km]')
-    ax.set_yticks(np.arange(0, 21e3, 1e3))
-    ax.set_yticks(np.arange(0, 20.5e3, .5e3), minor=True)
-    ax.set_yticklabels(np.arange(0, 21, 1))
+    ax.set_yticks(np.arange(0, 20e3+dy, dy))
+    ax.set_yticks(np.arange(0, 20e3+dy/2, dy/2), minor=True)
+    ax.set_yticklabels(np.arange(0, 20+dy/1e3, dy/1e3).astype(int))
     ax.set_xlim([xtick_min, xtick_max])
     ax.set_ylim(ylim)
 

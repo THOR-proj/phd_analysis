@@ -1261,7 +1261,7 @@ def plot_sensitivities_comp(
             width=0.75*ncol/4,
             color=c_list)
 
-        ax.set_xlim(-.5, 9.5)
+        ax.set_xlim(-.5, len(name_abvs)-.5)
 
         ax.set_xlabel(None)
         ax.xaxis.set_label_coords(.5, -0.15)

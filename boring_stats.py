@@ -87,27 +87,33 @@ def get_all_time_series(
 
     time_series_radar = get_radar_prop_so_stats(
         save_dir, exclusions=exclusions, class_thresh=class_thresh,
-        excl_thresh=excl_thresh, regime=None, radars=radars)
+        excl_thresh=excl_thresh, regime=None, radars=radars,
+        morning_only=morning_only)
 
     time_series_weak_radar = get_radar_prop_so_stats(
         save_dir, exclusions=exclusions, class_thresh=class_thresh,
-        excl_thresh=excl_thresh, regime=1, radars=radars)
+        excl_thresh=excl_thresh, regime=1, radars=radars,
+        morning_only=morning_only)
 
     time_series_active_radar = get_radar_prop_so_stats(
         save_dir, exclusions=exclusions, class_thresh=class_thresh,
-        excl_thresh=excl_thresh, regime=2, radars=radars)
+        excl_thresh=excl_thresh, regime=2, radars=radars,
+        morning_only=morning_only)
 
     time_series_ACCESS = get_ACCESS_prop_so_stats(
         save_dir, exclusions=exclusions, class_thresh=class_thresh,
-        excl_thresh=excl_thresh, regime=None, radars=radars)
+        excl_thresh=excl_thresh, regime=None, radars=radars,
+        morning_only=morning_only)
 
     time_series_weak_ACCESS = get_ACCESS_prop_so_stats(
         save_dir, exclusions=exclusions, class_thresh=class_thresh,
-        excl_thresh=excl_thresh, regime=1, radars=radars)
+        excl_thresh=excl_thresh, regime=1, radars=radars,
+        morning_only=morning_only)
 
     time_series_active_ACCESS = get_ACCESS_prop_so_stats(
         save_dir, exclusions=exclusions, class_thresh=class_thresh,
-        excl_thresh=excl_thresh, regime=2, radars=radars)
+        excl_thresh=excl_thresh, regime=2, radars=radars,
+        morning_only=morning_only)
 
     time_series_all = [
         time_series_radar, time_series_weak_radar, time_series_active_radar,
@@ -117,50 +123,61 @@ def get_all_time_series(
 
 
 def get_all_regional(
-        save_dir, exclusions=None,
+        save_dir, exclusions=None, morning_only=False,
         class_thresh=None, excl_thresh=None):
 
     all_obs_ACCESS_42 = get_boring_ACCESS_stats(
         save_dir, exclusions=['simple_duration_cond'], class_thresh=None,
-        excl_thresh=None, regime=None, radars=[42])
+        excl_thresh=None, regime=None, radars=[42], morning_only=morning_only)
     QC_obs_ACCESS_42 = get_boring_ACCESS_stats(
         save_dir, exclusions=exclusions, class_thresh=class_thresh,
-        excl_thresh=excl_thresh, regime=None, radars=[42])
+        excl_thresh=excl_thresh, regime=None, radars=[42],
+        morning_only=morning_only)
 
     all_obs_ACCESS_63 = get_boring_ACCESS_stats(
         save_dir,  exclusions=['simple_duration_cond'], class_thresh=None,
-        excl_thresh=None, regime=None, radars=[63])
+        excl_thresh=None, regime=None, radars=[63],
+        morning_only=morning_only)
     QC_obs_ACCESS_63 = get_boring_ACCESS_stats(
         save_dir, exclusions=exclusions, class_thresh=class_thresh,
-        excl_thresh=excl_thresh, regime=None, radars=[63])
+        excl_thresh=excl_thresh, regime=None, radars=[63],
+        morning_only=morning_only)
 
     all_obs_ACCESS_77 = get_boring_ACCESS_stats(
         save_dir,  exclusions=['simple_duration_cond'], class_thresh=None,
-        excl_thresh=None, regime=None, radars=[77])
+        excl_thresh=None, regime=None, radars=[77],
+        morning_only=morning_only)
     QC_obs_ACCESS_77 = get_boring_ACCESS_stats(
         save_dir, exclusions=exclusions, class_thresh=class_thresh,
-        excl_thresh=excl_thresh, regime=None, radars=[77])
+        excl_thresh=excl_thresh, regime=None, radars=[77],
+        morning_only=morning_only)
 
     all_obs_radar_42 = get_boring_radar_stats(
         save_dir,  exclusions=['simple_duration_cond'], class_thresh=None,
-        excl_thresh=None, regime=None, radars=[42])
+        excl_thresh=None, regime=None, radars=[42],
+        morning_only=morning_only)
     QC_obs_radar_42 = get_boring_radar_stats(
         save_dir, exclusions=exclusions, class_thresh=class_thresh,
-        excl_thresh=excl_thresh, regime=None, radars=[42])
+        excl_thresh=excl_thresh, regime=None, radars=[42],
+        morning_only=morning_only)
 
     all_obs_radar_63 = get_boring_radar_stats(
         save_dir,  exclusions=['simple_duration_cond'], class_thresh=None,
-        excl_thresh=None, regime=None, radars=[63])
+        excl_thresh=None, regime=None, radars=[63],
+        morning_only=morning_only)
     QC_obs_radar_63 = get_boring_radar_stats(
         save_dir, exclusions=exclusions, class_thresh=class_thresh,
-        excl_thresh=excl_thresh, regime=None, radars=[63])
+        excl_thresh=excl_thresh, regime=None, radars=[63],
+        morning_only=morning_only)
 
     all_obs_radar_77 = get_boring_radar_stats(
         save_dir,  exclusions=['simple_duration_cond'], class_thresh=None,
-        excl_thresh=None, regime=None, radars=[77])
+        excl_thresh=None, regime=None, radars=[77],
+        morning_only=morning_only)
     QC_obs_radar_77 = get_boring_radar_stats(
         save_dir, exclusions=exclusions, class_thresh=class_thresh,
-        excl_thresh=excl_thresh, regime=None, radars=[77])
+        excl_thresh=excl_thresh, regime=None, radars=[77],
+        morning_only=morning_only)
 
     all_obs_regional = [
         all_obs_ACCESS_42, QC_obs_ACCESS_42, all_obs_ACCESS_63, QC_obs_ACCESS_63,
@@ -1964,20 +1981,20 @@ def plot_deformation(
     t_c = np.arcsinh((elav_c*180/np.pi-0.5)/a)*c
     t_s = np.arcsinh((elav_s*180/np.pi-0.5)/a)*c
 
-    error_strat_border_x = strat_border_x + u*t_s
-    error_conv_border_x = conv_border_x + u*t_c
-    error_strat_border_y = strat_border_y + v*t_s
-    error_conv_border_y = conv_border_y + v*t_c
+    orig_strat_border_x = strat_border_x - u*t_s
+    orig_conv_border_x = conv_border_x - u*t_c
+    orig_strat_border_y = strat_border_y - v*t_s
+    orig_conv_border_y = conv_border_y - v*t_c
 
-    c_conv_error = get_centroid(error_conv_border_x, error_conv_border_y)
-    c_strat_error = get_centroid(error_strat_border_x, error_strat_border_y)
+    c_conv_orig = get_centroid(orig_conv_border_x, orig_conv_border_y)
+    c_strat_orig = get_centroid(orig_strat_border_x, orig_strat_border_y)
 
     so_mag = np.sqrt(
         (conv_centroid_x - strat_centroid_x)**2
         + (conv_centroid_y - strat_centroid_y)**2)
-    so_error_mag = np.sqrt(
-        (c_conv_error[1] - c_strat_error[1])**2
-        + (c_conv_error[2] - c_strat_error[2])**2)
+    so_orig_mag = np.sqrt(
+        (c_conv_orig[1] - c_strat_orig[1])**2
+        + (c_conv_orig[2] - c_strat_orig[2])**2)
 
     if plot is True:
 
@@ -1988,10 +2005,10 @@ def plot_deformation(
             linewidth=1.75, label='Stratiform Offset', alpha=.6,)
 
         ax.plot(
-            [c_conv_error[1], c_strat_error[1]],
-            [c_conv_error[2], c_strat_error[2]], linestyle='--',
+            [c_conv_orig[1], c_strat_orig[1]],
+            [c_conv_orig[2], c_strat_orig[2]], linestyle='--',
             color=prop_cycle.by_key()['color'][3],
-            linewidth=1.75, label='Deformed Stratiform Offset',)
+            linewidth=1.75, label='Original Stratiform Offset')
 
         ax.plot(
             blind_spot_x, blind_spot_y, '--', linewidth=1.75, color='k',
@@ -1999,18 +2016,18 @@ def plot_deformation(
 
         ax.plot(
             conv_border_x, conv_border_y, linewidth=1.75, color=colors[0],
-            label='Convective Boundary', alpha=.6)
+            label='Scanned Convective Boundary', alpha=.6)
 
         ax.plot(
-            error_conv_border_x, error_conv_border_y, '--', linewidth=1.75,
-            color=colors[0], label='Deformed Convective Boundary')
+            orig_conv_border_x, orig_conv_border_y, '--', linewidth=1.75,
+            color=colors[0], label='Original Convective Boundary')
         ax.plot(
             strat_border_x, strat_border_y, linewidth=1.75, color=colors[1],
-            label='Stratiform Boundary', alpha=.6)
+            label='Scanned Stratiform Boundary', alpha=.6)
         ax.plot(
-            error_strat_border_x, error_strat_border_y, '--',
+            orig_strat_border_x, orig_strat_border_y, '--',
             linewidth=1.75, color=colors[1],
-            label='Deformed Stratiform Boundary')
+            label='Original Stratiform Boundary')
 
         ax.scatter(
             [0], [0], marker='*', s=300, color='red',
@@ -2020,7 +2037,7 @@ def plot_deformation(
 
         title = r'$|\mathrm{\mathbf{s}}|=' + '${:.02f} km, '.format(so_mag/1e3)
         title += r"$|\mathrm{\mathbf{s}}'|=" + '${:.02f} km'.format(
-            so_error_mag/1e3)
+            so_orig_mag/1e3)
 
         ax.set_title(title)
 
@@ -2043,7 +2060,7 @@ def plot_deformation(
         ax.set_xlabel(r'$x$ [km]')
         ax.set_ylabel(r'$y$ [km]')
 
-    return so_error_mag
+    return so_orig_mag
 
 
 def get_centroid(x, y):
@@ -2064,7 +2081,8 @@ def get_centroid(x, y):
 
 def get_radar_prop_so_stats(
         save_dir, exclusions=None, class_thresh=None, excl_thresh=None,
-        regime=None, pope_dir=None, radars=[63, 42, 77]):
+        regime=None, pope_dir=None, radars=[63, 42, 77],
+        morning_only=False):
 
     if pope_dir is None:
         pope_dir = '/home/student.unimelb.edu.au/shorte1/'
@@ -2107,6 +2125,17 @@ def get_radar_prop_so_stats(
                     excl_thresh=excl_thresh)
                 tracks_obj = cl.add_monsoon_regime(
                     tracks_obj, base_dir=pope_dir, fake_pope=True)
+
+                if morning_only:
+                    print('Restricting to hour UTC < 12')
+                    tracks_obj.tracks = tracks_obj.tracks.iloc[
+                        tracks_obj.tracks.index.get_level_values('time').hour < 12]
+                    tracks_obj.sysyem_tracks = tracks_obj.system_tracks.iloc[
+                        tracks_obj.system_tracks.index.get_level_values('time').hour < 12]
+                    tracks_obj.tracks_class = tracks_obj.tracks_class.iloc[
+                        tracks_obj.tracks_class.index.get_level_values('time').hour < 12]
+                    tracks_obj.exclusions = tracks_obj.exclusions.iloc[
+                        tracks_obj.exclusions.index.get_level_values('time').hour < 12]
 
                 excluded = tracks_obj.exclusions[exclusions]
                 excluded = np.any(excluded, 1)
@@ -2200,7 +2229,7 @@ def get_radar_prop_so_stats(
 def get_ACCESS_prop_so_stats(
         save_dir, exclusions=None, class_thresh=None,
         excl_thresh=None, regime=None, pope_dir=None,
-        radars=[63, 42, 77]):
+        radars=[63, 42, 77], morning_only=False):
 
     if pope_dir is None:
         pope_dir = '/home/student.unimelb.edu.au/shorte1/'
@@ -2234,9 +2263,21 @@ def get_ACCESS_prop_so_stats(
                 tracks_obj = pickle.load(f)
 
             tracks_obj = cl.redo_exclusions(
-                tracks_obj, class_thresh=class_thresh, excl_thresh=excl_thresh)
+                tracks_obj, class_thresh=class_thresh,
+                excl_thresh=excl_thresh)
             tracks_obj = cl.add_monsoon_regime(
                 tracks_obj, base_dir=pope_dir, fake_pope=True)
+
+            if morning_only:
+                print('Restricting to hour UTC < 12')
+                tracks_obj.tracks = tracks_obj.tracks.iloc[
+                    tracks_obj.tracks.index.get_level_values('time').hour < 12]
+                tracks_obj.sysyem_tracks = tracks_obj.system_tracks.iloc[
+                    tracks_obj.system_tracks.index.get_level_values('time').hour < 12]
+                tracks_obj.tracks_class = tracks_obj.tracks_class.iloc[
+                    tracks_obj.tracks_class.index.get_level_values('time').hour < 12]
+                tracks_obj.exclusions = tracks_obj.exclusions.iloc[
+                    tracks_obj.exclusions.index.get_level_values('time').hour < 12]
 
             excluded = tracks_obj.exclusions[exclusions]
             excluded = np.any(excluded, 1)
