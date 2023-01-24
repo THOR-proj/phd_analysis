@@ -230,24 +230,38 @@ def get_oper_month(
         if (int(str(d)[0:4]) == year and int(str(d)[5:7]) == month)])
 
     tracks_obj = tint.Tracks(params={
-        'GS_ALT': 1000,
+        'GS_ALT': 1500,  # m
+        # Layers to identify objects within.
         'LEVELS': np.array(
-            [[1000, 1500], [500, 20000]]),
-        'WIND_LEVELS': np.array(
-            [[500, 2500], [500, 20000]]),
-        'FIELD_THRESH': [35, 10],
-        'MIN_SIZE': [80, 800],
-        'ISO_THRESH': [10, 10],
-        'AMBIENT': 'ACCESS',
-        'AMBIENT_BASE_DIR': ERA5_dir,
-        'AMBIENT_TIMESTEP': 6,
-        'DT': 10,
+            [[500, 3500], [3500, 7500], [7500, 10000]]),  # m
+        # Interval in the above array used for tracking.
+        'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
         'SAVE_DIR': save_dir,
-        'RESET_NEW_DAY': True,
         'REFERENCE_GRID_FORMAT': 'ODIM',
         'INPUT_TYPE': 'OPER_DATETIMES',
         'REFERENCE_RADAR': radar,
-        'REMOTE': True})
+        'REMOTE': True,
+        'DT': 6})
+
+    # tracks_obj = tint.Tracks(params={
+    #     'GS_ALT': 1000,
+    #     'LEVELS': np.array(
+    #         [[1000, 1500], [500, 20000]]),
+    #     'WIND_LEVELS': np.array(
+    #         [[500, 2500], [500, 20000]]),
+    #     'FIELD_THRESH': [35, 10],
+    #     'MIN_SIZE': [80, 800],
+    #     'ISO_THRESH': [10, 10],
+    #     'AMBIENT': 'ACCESS',
+    #     'AMBIENT_BASE_DIR': ERA5_dir,
+    #     'AMBIENT_TIMESTEP': 6,
+    #     'DT': 10,
+    #     'SAVE_DIR': save_dir,
+    #     'RESET_NEW_DAY': True,
+    #     'REFERENCE_GRID_FORMAT': 'ODIM',
+    #     'INPUT_TYPE': 'OPER_DATETIMES',
+    #     'REFERENCE_RADAR': radar,
+    #     'REMOTE': True})
 
     grids = (
         date for date in datetimes)
