@@ -229,11 +229,11 @@ def get_oper_month(
     #     d for d in common_datetimes
     #     if (int(str(d)[0:4]) == year and int(str(d)[5:7]) == month)])
 
-    start_datetime = np.datetime64('{:04}-{:02}-01'.format(year, month))
+    start_datetime = np.datetime64('{:04}-{:02}-01T00:00:00'.format(year, month))
     if month == 12:
-        end_datetime = np.datetime64('{:04}-01-01'.format(year+1))
+        end_datetime = np.datetime64('{:04}-01-01T00:00:00'.format(year+1))
     else:
-        end_datetime = np.datetime64('{:04}-{:02}-01'.format(year, month+1))
+        end_datetime = np.datetime64('{:04}-{:02}-01T00:00:00'.format(year, month+1))
 
     datetimes = np.arange(
         start_datetime, end_datetime, np.timedelta64(12, 'm'))
