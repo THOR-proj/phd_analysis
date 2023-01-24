@@ -221,13 +221,22 @@ def get_oper_month(
     if save_dir is None:
         save_dir = '/g/data/w40/esh563/TINT_tracks/'
 
-    common_datetimes = np.loadtxt(
-        '/home/563/esh563/CPOL_analysis/radar_common_times.csv',
-        dtype=str).astype(np.datetime64)
+    # common_datetimes = np.loadtxt(
+    #     '/home/563/esh563/CPOL_analysis/radar_common_times.csv',
+    #     dtype=str).astype(np.datetime64)
+    #
+    # datetimes = sorted([
+    #     d for d in common_datetimes
+    #     if (int(str(d)[0:4]) == year and int(str(d)[5:7]) == month)])
 
-    datetimes = sorted([
-        d for d in common_datetimes
-        if (int(str(d)[0:4]) == year and int(str(d)[5:7]) == month)])
+    start_datetime = np.datetime64('{}-{}-01'.format(year, month))
+    if month == 12:
+        end_datetime = np.datetime64('{}-01-01'.format(year+1))
+    else:
+        end_datetime = np.datetime64('{}-01-01'.format(year, month+1))
+
+    datetimes = np.arange(
+        start_datetime, end_datetime, np.timedelta64(10, 'm'))
 
     tracks_obj = tint.Tracks(params={
         'GS_ALT': 1500,  # m
