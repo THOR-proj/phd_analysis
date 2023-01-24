@@ -233,7 +233,7 @@ def get_oper_month(
     if month == 12:
         end_datetime = np.datetime64('{}-01-01'.format(year+1))
     else:
-        end_datetime = np.datetime64('{}-01-01'.format(year, month+1))
+        end_datetime = np.datetime64('{}-{}-01'.format(year, month+1))
 
     datetimes = np.arange(
         start_datetime, end_datetime, np.timedelta64(10, 'm'))
@@ -250,7 +250,7 @@ def get_oper_month(
         'INPUT_TYPE': 'OPER_DATETIMES',
         'REFERENCE_RADAR': radar,
         'REMOTE': True,
-        'DT': 6})
+        'DT': 10})
 
     # tracks_obj = tint.Tracks(params={
     #     'GS_ALT': 1000,
