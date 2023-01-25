@@ -353,7 +353,8 @@ def gen_operational_verification_figures(
         save_dir, fig_dir, radar=63, year=2020, exclusions=None, suffix='',
         start_date=None, end_date=None, month=12):
 
-    fig_dir += '/radar_{}_{}_verification_scans{}/'.format(radar, year, suffix)
+    fig_dir += '/radar_{}/radar_{}_{}_verification_scans{}/'.format(
+        radar, radar, year, suffix)
 
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
