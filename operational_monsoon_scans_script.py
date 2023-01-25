@@ -24,8 +24,8 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-save_dir = '/g/data/w40/esh563/TINT_tracks/national/{}/'.format(args.radar)
-fig_dir = '/g/data/w40/esh563/TINT_figures/national/{}/'.format(args.radar)
+save_dir = '/g/data/w40/esh563/TINT_tracks/national/'
+fig_dir = '/g/data/w40/esh563/TINT_figures/national/'
 
 if not os.path.exists(fig_dir):
     os.makedirs(fig_dir)
