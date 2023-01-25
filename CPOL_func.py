@@ -229,11 +229,14 @@ def get_oper_month(
     #     d for d in common_datetimes
     #     if (int(str(d)[0:4]) == year and int(str(d)[5:7]) == month)])
 
-    start_datetime = np.datetime64('{:04}-{:02}-01T00:00:00'.format(year, month))
+    start_datetime = np.datetime64(
+        '{:04}-{:02}-01T00:00:00'.format(year, month))
     if month == 12:
-        end_datetime = np.datetime64('{:04}-01-01T00:00:00'.format(year+1))
+        end_datetime = np.datetime64(
+            '{:04}-01-01T00:00:00'.format(year+1))
     else:
-        end_datetime = np.datetime64('{:04}-{:02}-01T00:00:00'.format(year, month+1))
+        end_datetime = np.datetime64(
+            '{:04}-{:02}-01T00:00:00'.format(year, month+1))
 
     datetimes = np.arange(
         start_datetime, end_datetime, np.timedelta64(12, 'm'))
@@ -314,7 +317,7 @@ def gen_ACCESS_verification_figures(
     # len(excluded)/3
 
     included = np.logical_not(excluded)
-    included = included.where(included==True).dropna()
+    included = included.where(included == True).dropna()
     scans = included
 
     if start_date is not None and end_date is not None:
@@ -380,7 +383,7 @@ def gen_operational_verification_figures(
     # len(excluded)/3
 
     included = np.logical_not(excluded)
-    included = included.where(included==True).dropna()
+    included = included.where(included == True).dropna()
     scans = included
     if start_date is not None and end_date is not None:
         scans = scans.loc[:, slice(start_date, end_date), :, :]
@@ -403,13 +406,13 @@ def gen_operational_verification_figures(
         params = {
             'uid_ind': None, 'line_coords': False, 'center_cell': False,
             'cell_ind': 10, 'winds': False, 'winds_fn': None,
-            'crosshair': False, 'fontsize': 16, 'colorbar_flag': True,
+            'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
             'leg_loc': 2, 'label_type': 'velocities',
             'system_winds': ['shift', 'relative', 'ambient_mean'],
             'boundary': True, 'exclude': True, 'exclusions': exclusions}
 
         figures.two_level(
-            tracks_obj, grid, params=params, alt1=2000, alt2=7500)
+            tracks_obj, grid, params=params, alt1=2000, alt2=8000)
         save_path = fig_dir + '{}.png'.format(s)
         plt.savefig(
             save_path, dpi=200, facecolor='w', edgecolor='white',
