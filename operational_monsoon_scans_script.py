@@ -3,6 +3,7 @@ sys.path.insert(0, '/home/563/esh563/TINT')
 import CPOL_func as cf
 import argparse
 import numpy as np
+import os
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
@@ -23,8 +24,11 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-save_dir = '/g/data/w40/esh563/TINT_tracks/ACCESS_radar_base/'
-fig_dir = '/g/data/w40/esh563/TINT_figures/'
+save_dir = '/g/data/w40/esh563/TINT_tracks/national/{}/'.format(args.radar)
+fig_dir = '/g/data/w40/esh563/TINT_figures/national/{}/'.format(args.radar)
+
+if not os.path.exists(fig_dir):
+    os.makedirs(fig_dir)
 
 start_date = np.datetime64('{:04}-{:02}-01'.format(args.year, args.month))
 if args.month == 12:

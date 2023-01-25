@@ -410,12 +410,12 @@ def gen_operational_verification_figures(
                 'uid_ind': None, 'line_coords': False, 'center_cell': False,
                 'cell_ind': 10, 'winds': False, 'winds_fn': None,
                 'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
-                'leg_loc': 2, 'label_type': 'shear',
-                'system_winds': ['shift', 'shear', 'relative'],
+                'leg_loc': 2, 'label_type': 'velocities',
+                'system_winds': ['shift', 'relative', 'ambient_mean'],
                 'boundary': True, 'exclude': True, 'exclusions': exclusions}
 
             figures.two_level(
-                tracks_obj, grid, params=params, alt1=1000, alt2='col_max')
+                tracks_obj, grid, params=params, alt1=2000, alt2=7500)
             save_path = fig_dir + '{}.png'.format(s)
             plt.savefig(
                 save_path, dpi=200, facecolor='w', edgecolor='white',
