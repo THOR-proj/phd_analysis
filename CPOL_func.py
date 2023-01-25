@@ -403,7 +403,7 @@ def gen_operational_verification_figures(
         params = {
             'uid_ind': None, 'line_coords': False, 'center_cell': False,
             'cell_ind': 10, 'winds': False, 'winds_fn': None,
-            'crosshair': False, 'fontsize': 10, 'colorbar_flag': True,
+            'crosshair': False, 'fontsize': 16, 'colorbar_flag': True,
             'leg_loc': 2, 'label_type': 'velocities',
             'system_winds': ['shift', 'relative', 'ambient_mean'],
             'boundary': True, 'exclude': True, 'exclusions': exclusions}
