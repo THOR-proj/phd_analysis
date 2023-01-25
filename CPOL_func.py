@@ -351,7 +351,7 @@ def gen_ACCESS_verification_figures(
 
 def gen_operational_verification_figures(
         save_dir, fig_dir, radar=63, year=2020, exclusions=None, suffix='',
-        start_date=None, end_date=None):
+        start_date=None, end_date=None, month=12):
 
     fig_dir += '/radar_{}_{}_verification_scans{}/'.format(radar, year, suffix)
 
@@ -359,68 +359,61 @@ def gen_operational_verification_figures(
         os.makedirs(fig_dir)
         print('Creating new directory.')
 
-    years_months = [
-        [year, 10], [year, 11], [year, 12],
-        [year+1, 1], [year+1, 2], [year+1, 3],
-        [year+1, 4]]
-
     if exclusions is None:
         exclusions = [
             'small_area', 'large_area', 'intersect_border',
             'intersect_border_convective', 'duration_cond',
             'small_velocity', 'small_offset']
 
-    for year_month in years_months:
+    path = save_dir + 'radar_{}/{:02}_{:04}_{:02}.pkl'.format(
+        radar, radar, year, month)
+    with open(path, 'rb') as f:
+        tracks_obj = pickle.load(f)
 
-        path = save_dir + 'radar_{}/{}_{}_{:02}.pkl'.format(
-            radar, radar, year_month[0], year_month[1])
-        with open(path, 'rb') as f:
-            tracks_obj = pickle.load(f)
+    # tracks_obj = cl.redo_exclusions(tracks_obj)
 
-        # tracks_obj = cl.redo_exclusions(tracks_obj)
+    excluded = tracks_obj.exclusions[exclusions]
+    excluded = excluded.xs(0, level='level')
+    excluded = np.any(excluded, 1)
+    # excluded = excluded.where(excluded==False).dropna()
+    # len(excluded)/3
 
-        excluded = tracks_obj.exclusions[exclusions]
-        excluded = excluded.xs(0, level='level')
-        excluded = np.any(excluded, 1)
-        # excluded = excluded.where(excluded==False).dropna()
-        # len(excluded)/3
+    included = np.logical_not(excluded)
+    included = included.where(included==True).dropna()
+    scans = included
+    if start_date is not None and end_date is not None:
+        scans = scans.loc[:, slice(start_date, end_date), :, :]
+    scans = sorted(np.unique(scans.index.get_level_values(1).values))
 
-        included = np.logical_not(excluded)
-        included = included.where(included==True).dropna()
-        scans = included
-        if start_date is not None and end_date is not None:
-            scans = scans.loc[:, slice(start_date, end_date), :, :]
-        scans = sorted(np.unique(scans.index.get_level_values(1).values))
+    file_list = None
+    tmp_dir = tempfile.mkdtemp(dir=save_dir)
+    tracks_obj.params['REMOTE'] = True
 
-        file_list = None
-        tmp_dir = tempfile.mkdtemp(dir=save_dir)
-        tracks_obj.params['REMOTE'] = True
+    for s in scans:
 
-        for s in scans:
+        grid, file_list = tint.process_operational_radar.get_grid(
+            s, tracks_obj.params, tracks_obj.reference_grid,
+            tmp_dir, file_list)
 
-            grid, file_list = tint.process_operational_radar.get_grid(
-                s, tracks_obj.params, tracks_obj.reference_grid,
-                tmp_dir, file_list)
+        current_time = str(datetime.datetime.now())[0:-7]
+        current_time = current_time.replace(" ", "_").replace(":", "_")
+        current_time = current_time.replace("-", "")
 
-            current_time = str(datetime.datetime.now())[0:-7]
-            current_time = current_time.replace(" ", "_").replace(":", "_")
-            current_time = current_time.replace("-", "")
+        params = {
+            'uid_ind': None, 'line_coords': False, 'center_cell': False,
+            'cell_ind': 10, 'winds': False, 'winds_fn': None,
+            'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
+            'leg_loc': 2, 'label_type': 'velocities',
+            'system_winds': ['shift', 'relative', 'ambient_mean'],
+            'boundary': True, 'exclude': True, 'exclusions': exclusions}
 
-            params = {
-                'uid_ind': None, 'line_coords': False, 'center_cell': False,
-                'cell_ind': 10, 'winds': False, 'winds_fn': None,
-                'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
-                'leg_loc': 2, 'label_type': 'velocities',
-                'system_winds': ['shift', 'relative', 'ambient_mean'],
-                'boundary': True, 'exclude': True, 'exclusions': exclusions}
-
-            figures.two_level(
-                tracks_obj, grid, params=params, alt1=2000, alt2=7500)
-            save_path = fig_dir + '{}.png'.format(s)
-            plt.savefig(
-                save_path, dpi=200, facecolor='w', edgecolor='white',
-                bbox_inches='tight')
-            plt.close('all')
+        figures.two_level(
+            tracks_obj, grid, params=params, alt1=2000, alt2=7500)
+        save_path = fig_dir + '{}.png'.format(s)
+        plt.savefig(
+            save_path, dpi=200, facecolor='w', edgecolor='white',
+            bbox_inches='tight')
+        plt.close('all')
 
     shutil.rmtree(tmp_dir)
 

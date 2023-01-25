@@ -39,6 +39,6 @@ else:
 print('Getting year {}'.format(args.year))
 cf.gen_operational_verification_figures(
     save_dir, fig_dir, radar=args.radar,
-    year=args.data_year, exclusions=['simple_duration_cond'],
+    year=args.year, month=args.month, exclusions=['simple_duration_cond'],
     suffix='_{}_{}'.format(args.year, args.month),
     start_date=start_date, end_date=end_date)
