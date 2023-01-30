@@ -229,17 +229,27 @@ def get_oper_month(
     #     d for d in common_datetimes
     #     if (int(str(d)[0:4]) == year and int(str(d)[5:7]) == month)])
 
-    start_datetime = np.datetime64(
-        '{:04}-{:02}-01T00:00:00'.format(year, month))
-    if month == 12:
-        end_datetime = np.datetime64(
-            '{:04}-01-01T00:00:00'.format(year+1))
-    else:
-        end_datetime = np.datetime64(
-            '{:04}-{:02}-01T00:00:00'.format(year, month+1))
+    coverage = pd.read_csv('/home/563/esh563/CPOL_analysis/coverage.csv')
+    coverage.index = pd.to_datetime(coverage.index)
+    coverage.columns = coverage.columns.astype(int)
+    common_datetimes = coverage.loc[:, radar].where(
+        coverage.loc[:, radar] == 1).dropna().index.values
 
-    datetimes = np.arange(
-        start_datetime, end_datetime, np.timedelta64(12, 'm'))
+    datetimes = sorted([
+        d for d in common_datetimes
+        if (int(str(d)[0:4]) == year and int(str(d)[5:7]) == month)])
+
+    # start_datetime = np.datetime64(
+    #     '{:04}-{:02}-01T00:00:00'.format(year, month))
+    # if month == 12:
+    #     end_datetime = np.datetime64(
+    #         '{:04}-01-01T00:00:00'.format(year+1))
+    # else:
+    #     end_datetime = np.datetime64(
+    #         '{:04}-{:02}-01T00:00:00'.format(year, month+1))
+    #
+    # datetimes = np.arange(
+    #     start_datetime, end_datetime, np.timedelta64(12, 'm'))
 
     tracks_obj = tint.Tracks(params={
         'GS_ALT': 1500,  # m
