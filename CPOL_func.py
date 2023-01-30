@@ -229,7 +229,8 @@ def get_oper_month(
     #     d for d in common_datetimes
     #     if (int(str(d)[0:4]) == year and int(str(d)[5:7]) == month)])
 
-    coverage = pd.read_csv('/home/563/esh563/CPOL_analysis/coverage.csv')
+    coverage = pd.read_csv(
+        '/home/563/esh563/CPOL_analysis/coverage.csv', index_col=0)
     coverage.index = pd.to_datetime(coverage.index)
     coverage.columns = coverage.columns.astype(int)
     common_datetimes = coverage.loc[:, radar].where(
