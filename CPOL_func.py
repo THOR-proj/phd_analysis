@@ -236,21 +236,23 @@ def get_oper_month(
     common_datetimes = coverage.loc[:, radar].where(
         coverage.loc[:, radar] == 1).dropna().index.values
 
-    datetimes = sorted([
-        d for d in common_datetimes
-        if (int(str(d)[0:4]) == year and int(str(d)[5:7]) == month)])
+    print(common_datetimes)
 
-    # start_datetime = np.datetime64(
-    #     '{:04}-{:02}-01T00:00:00'.format(year, month))
-    # if month == 12:
-    #     end_datetime = np.datetime64(
-    #         '{:04}-01-01T00:00:00'.format(year+1))
-    # else:
-    #     end_datetime = np.datetime64(
-    #         '{:04}-{:02}-01T00:00:00'.format(year, month+1))
-    #
-    # datetimes = np.arange(
-    #     start_datetime, end_datetime, np.timedelta64(12, 'm'))
+    start_datetime = np.datetime64(
+        '{:04}-{:02}-01T00:00:00'.format(year, month))
+    if month == 12:
+        end_datetime = np.datetime64(
+            '{:04}-01-01T00:00:00'.format(year+1))
+    else:
+        end_datetime = np.datetime64(
+            '{:04}-{:02}-01T00:00:00'.format(year, month+1))
+
+    datetimes = np.arange(
+        start_datetime, end_datetime, np.timedelta64(12, 'm'))
+
+    datetimes = sorted([
+        d for d in datetimes
+        if np.datetime64(str(d)[:10]) in common_datetimes])
 
     tracks_obj = tint.Tracks(params={
         'GS_ALT': 1500,  # m
@@ -289,12 +291,15 @@ def get_oper_month(
     grids = (
         date for date in datetimes)
 
-    tracks_obj.get_tracks(grids, b_path=b_path)
+    if len(common_datetimes) > 0:
+        tracks_obj.get_tracks(grids, b_path=b_path)
 
-    out_file_name = save_dir + '{:02d}_{:04d}_{:02d}.pkl'.format(
-        radar, year, month)
-    with open(out_file_name, 'wb') as f:
-        pickle.dump(tracks_obj, f)
+        out_file_name = save_dir + '{:02d}_{:04d}_{:02d}.pkl'.format(
+            radar, year, month)
+        with open(out_file_name, 'wb') as f:
+            pickle.dump(tracks_obj, f)
+    else:
+        print('Empty month: Skipping.')
 
     return tracks_obj
 
