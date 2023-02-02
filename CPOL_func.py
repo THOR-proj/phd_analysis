@@ -372,8 +372,8 @@ def gen_operational_verification_figures(
         save_dir, fig_dir, radar=63, year=2020, exclusions=None, suffix='',
         start_date=None, end_date=None, month=12):
 
-    fig_dir += '/radar_{}/radar_{}_{}_verification_scans{}/'.format(
-        radar, radar, year, suffix)
+    fig_dir += '/radar_{}_{}_verification_scans{}/'.format(
+        radar, year, suffix)
 
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
@@ -385,8 +385,7 @@ def gen_operational_verification_figures(
             'intersect_border_convective', 'duration_cond',
             'small_velocity', 'small_offset']
 
-    path = save_dir + 'radar_{}/{:02}_{:04}_{:02}.pkl'.format(
-        radar, radar, year, month)
+    path = save_dir + '/{:02}_{:04}_{:02}.pkl'.format(radar, year, month)
     with open(path, 'rb') as f:
         tracks_obj = pickle.load(f)
 
