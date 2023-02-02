@@ -43,7 +43,7 @@ else:
 
 print('Getting year {}'.format(args.year))
 cf.gen_operational_verification_figures(
-    args.out, args.figures, radar=args.radar,
+    args.tracks, args.figures, radar=args.radar,
     year=args.year, month=args.month, exclusions=['simple_duration_cond'],
     suffix='_{}_{}'.format(args.year, args.month),
     start_date=start_date, end_date=end_date)
