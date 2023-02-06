@@ -7,12 +7,15 @@ import sys
 sys.path.insert(0, '/home/563/esh563/TINT')
 sys.path.insert(0, '/home/563/esh563/CPOL_analysis')
 import tint
+from tint import process_ACCESS as ACC
+from tint import process_operational_radar as po
 from tint.visualisation import figures
 import matplotlib.pyplot as plt
 import datetime
 import tempfile
 import shutil
 import classification as cl
+from data_utils import extract_datetimes
 
 
 def CPOL_files_from_datetime_list(datetimes, base_dir=None):
@@ -229,6 +232,8 @@ def get_oper_month(
     #     d for d in common_datetimes
     #     if (int(str(d)[0:4]) == year and int(str(d)[5:7]) == month)])
 
+    import pdb; pdb.set_trace()
+
     coverage = pd.read_csv(
         '/home/563/esh563/CPOL_analysis/coverage.csv', index_col=0)
     coverage.index = pd.to_datetime(coverage.index)
@@ -247,11 +252,11 @@ def get_oper_month(
         end_datetime = np.datetime64(
             '{:04}-{:02}-01T00:00:00'.format(year, month+1))
 
-    datetimes = np.arange(
-        start_datetime, end_datetime, np.timedelta64(12, 'm'))
+    days = np.arange(
+        start_datetime, end_datetime, np.timedelta64(1, 'D'))
 
-    datetimes = sorted([
-        d for d in datetimes
+    days = sorted([
+        d for d in days
         if np.datetime64(str(d)[:10]) in common_datetimes])
 
     tracks_obj = tint.Tracks(params={
@@ -266,7 +271,8 @@ def get_oper_month(
         'INPUT_TYPE': 'OPER_DATETIMES',
         'REFERENCE_RADAR': radar,
         'REMOTE': True,
-        'DT': 12})
+        'USE_DAY_GRIDS': True,
+        'DT': 10})
 
     # tracks_obj = tint.Tracks(params={
     #     'GS_ALT': 1000,
@@ -288,10 +294,56 @@ def get_oper_month(
     #     'REFERENCE_RADAR': radar,
     #     'REMOTE': True})
 
-    grids = (
-        date for date in datetimes)
+    day_grids = (
+        day for day in days)
 
-    if len(common_datetimes) > 0:
+    if tracks_obj.params['REFERENCE_RADAR'] == 31:
+        if datetime < np.datetime64('2011-12-01'):
+            suffix = 'a'
+        elif (
+                datetime >= np.datetime64('2011-12-01')
+                and datetime < np.datetime64('2019-05-14')):
+            suffix = 'b'
+        else:
+            suffix = 'c'
+    elif tracks_obj.params['REFERENCE_RADAR'] == 32:
+        if datetime < np.datetime64('2019-12-28'):
+            suffix = 'a'
+        else:
+            suffix = 'b'
+    elif tracks_obj.params['REFERENCE_RADAR'] == 48:
+        if datetime < np.datetime64('2014-04-23'):
+            suffix = 'a'
+        else:
+            suffix = 'b'
+    elif tracks_obj.params['REFERENCE_RADAR'] == 52:
+        if datetime < np.datetime64('2016-04-05'):
+            suffix = 'a'
+        else:
+            suffix = 'b'
+    else:
+        suffix = ''
+
+    if len(days) > 0:
+
+        # path = '/g/data/w40/esh563/reference_grids/'
+        path = '/g/data/w40/esh563/reference_grids/'
+        path += 'reference_grid_{}{}.h5'.format(
+            tracks_obj.params['REFERENCE_RADAR'], suffix)
+        tracks_obj.reference_grid = ACC.get_reference_grid(
+            path, tracks_obj.params['REFERENCE_GRID_FORMAT'])
+
+        new_grid, file_list = po.get_grid(
+            days[0], tracks_obj.params,
+            tracks_obj.reference_grid, tracks_obj.tmp_dir, None)
+
+        dt_list = extract_datetimes(file_list)
+
+        grids = (day for day in dt_list)
+
+        tracks_obj.params['DT'] = np.argmax(
+            np.bincount((np.diff(np.array(dt_list))).astype(int)))
+
         tracks_obj.get_tracks(grids, b_path=b_path)
 
         out_file_name = save_dir + '{:02d}_{:04d}_{:02d}.pkl'.format(
