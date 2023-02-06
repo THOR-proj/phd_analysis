@@ -334,8 +334,8 @@ def get_oper_month(
             path, tracks_obj.params['REFERENCE_GRID_FORMAT'])
 
         new_grid, file_list = po.get_grid(
-            days[0], tracks_obj.params,
-            tracks_obj.reference_grid, tracks_obj.tmp_dir, None)
+            days[0], tracks_obj.params, tracks_obj.reference_grid,
+            tracks_obj.tmp_dir, None)
 
         dt_list = extract_datetimes(file_list)
 
