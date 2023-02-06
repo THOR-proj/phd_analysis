@@ -15,7 +15,7 @@ import datetime
 import tempfile
 import shutil
 import classification as cl
-from data_utils import extract_datetimes
+from tint.grid_utils import extract_datetimes
 
 
 def CPOL_files_from_datetime_list(datetimes, base_dir=None):
