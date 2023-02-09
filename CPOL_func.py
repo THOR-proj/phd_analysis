@@ -305,10 +305,10 @@ def get_oper_month(
 
         grids = (day for day in dt_list)
 
-        tracks_obj.params['DT'] = np.argmax(
-            np.bincount((np.diff(np.array(dt_list))).astype(int)))
+        tracks_obj.params['DT'] = int(np.argmax(
+            np.bincount((np.diff(np.array(dt_list))).astype(int)))/60)
 
-        tracks_obj.get_tracks(grids, b_path=b_path)
+        tracks_obj.get_tracks(grids, day_grids=day_grids, b_path=b_path)
 
         out_file_name = save_dir + '{:02d}_{:04d}_{:02d}.pkl'.format(
             radar, year, month)
