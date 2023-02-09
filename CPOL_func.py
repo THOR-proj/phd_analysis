@@ -232,8 +232,6 @@ def get_oper_month(
     #     d for d in common_datetimes
     #     if (int(str(d)[0:4]) == year and int(str(d)[5:7]) == month)])
 
-    import pdb; pdb.set_trace()
-
     coverage = pd.read_csv(
         '/home/563/esh563/CPOL_analysis/coverage.csv', index_col=0)
     coverage.index = pd.to_datetime(coverage.index)
@@ -297,41 +295,7 @@ def get_oper_month(
     day_grids = (
         day for day in days)
 
-    if tracks_obj.params['REFERENCE_RADAR'] == 31:
-        if datetime < np.datetime64('2011-12-01'):
-            suffix = 'a'
-        elif (
-                datetime >= np.datetime64('2011-12-01')
-                and datetime < np.datetime64('2019-05-14')):
-            suffix = 'b'
-        else:
-            suffix = 'c'
-    elif tracks_obj.params['REFERENCE_RADAR'] == 32:
-        if datetime < np.datetime64('2019-12-28'):
-            suffix = 'a'
-        else:
-            suffix = 'b'
-    elif tracks_obj.params['REFERENCE_RADAR'] == 48:
-        if datetime < np.datetime64('2014-04-23'):
-            suffix = 'a'
-        else:
-            suffix = 'b'
-    elif tracks_obj.params['REFERENCE_RADAR'] == 52:
-        if datetime < np.datetime64('2016-04-05'):
-            suffix = 'a'
-        else:
-            suffix = 'b'
-    else:
-        suffix = ''
-
     if len(days) > 0:
-
-        # path = '/g/data/w40/esh563/reference_grids/'
-        path = '/g/data/w40/esh563/reference_grids/'
-        path += 'reference_grid_{}{}.h5'.format(
-            tracks_obj.params['REFERENCE_RADAR'], suffix)
-        tracks_obj.reference_grid = ACC.get_reference_grid(
-            path, tracks_obj.params['REFERENCE_GRID_FORMAT'])
 
         new_grid, file_list = po.get_grid(
             days[0], tracks_obj.params, tracks_obj.reference_grid,
