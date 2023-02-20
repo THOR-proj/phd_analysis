@@ -292,6 +292,7 @@ def get_oper_month(
 
     day_grids = (
         day for day in days)
+    next(day_grids)
 
     if len(days) > 0:
 
@@ -301,7 +302,7 @@ def get_oper_month(
 
         dt_list = extract_datetimes(file_list)
 
-        grids = (day for day in dt_list)
+        grids = (dt for dt in dt_list)
 
         tracks_obj.params['DT'] = int(np.argmax(
             np.bincount((np.diff(np.array(dt_list))).astype(int)))/60)
