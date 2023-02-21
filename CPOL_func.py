@@ -301,11 +301,31 @@ def get_oper_month(
             tracks_obj.tmp_dir, None)
 
         dt_list = extract_datetimes(file_list)
-
         grids = (dt for dt in dt_list)
 
-        tracks_obj.params['DT'] = int(np.argmax(
-            np.bincount((np.diff(np.array(dt_list))).astype(int)))/60)
+        tracks_obj.params['DT'] = int(np.argmax(np.bincount((np.diff(
+            np.array(dt_list))).astype(int)))/60)
+
+        if tracks_obj.params['DT'] < 7:
+            scale_factor = np.ceil(
+                10/tracks_obj.params['DT']).astype(int)
+            tracks_obj.params['DT'] = tracks_obj.params['DT']*scale_factor
+            new_file_inds = [
+                i for i in np.arange(0, len(dt_list))
+                if dt_list[i].astype('<M8[m]') in
+                np.arange(
+                    dt_list[0].astype('<M8[m]'),
+                    dt_list[i].astype('<M8[m]')+np.timedelta64(1, 'D'),
+                    np.timedelta64(tracks_obj.params['DT'], 'm'))]
+            new_file_list = [
+                tracks_obj.file_list[new_file_inds[i]]
+                for i in np.arange(len(new_file_inds))]
+            new_dt_list = [
+                dt_list[new_file_inds[i]]
+                for i in np.arange(len(new_file_inds))]
+            tracks_obj.file_list = new_file_list
+            grids = (day for day in new_dt_list)
+            new_datetime = next(grids)
 
         tracks_obj.get_tracks(grids, day_grids=day_grids, b_path=b_path)
 
