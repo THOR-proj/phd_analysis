@@ -240,7 +240,7 @@ def get_oper_month(
         coverage.loc[:, radar] == 1).dropna().index.values
 
     start_datetime = np.datetime64(
-        '{:04}-{:02}-01T00:00:00'.format(year, month))
+        '{:04}-{:02}-15T00:00:00'.format(year, month))
     if month == 12:
         end_datetime = np.datetime64(
             '{:04}-01-01T00:00:00'.format(year+1))
@@ -301,7 +301,9 @@ def get_oper_month(
             tracks_obj.tmp_dir, None)
 
         dt_list = extract_datetimes(file_list)
-        grids = (dt for dt in dt_list)
+        grids = (
+            dt for dt in dt_list
+            if (dt >= start_datetime and dt <= end_datetime))
 
         tracks_obj.params['DT'] = int(np.argmax(np.bincount((np.diff(
             np.array(dt_list))).astype(int)))/60)
@@ -324,7 +326,9 @@ def get_oper_month(
                 dt_list[new_file_inds[i]]
                 for i in np.arange(len(new_file_inds))]
             tracks_obj.file_list = new_file_list
-            grids = (day for day in new_dt_list)
+            grids = (
+                dt for dt in new_dt_list
+                if (dt >= start_datetime and dt <= end_datetime))
             new_datetime = next(grids)
 
         tracks_obj.get_tracks(grids, day_grids=day_grids, b_path=b_path)
