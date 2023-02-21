@@ -240,7 +240,7 @@ def get_oper_month(
         coverage.loc[:, radar] == 1).dropna().index.values
 
     start_datetime = np.datetime64(
-        '{:04}-{:02}-15T00:00:00'.format(year, month))
+        '{:04}-{:02}-01T00:00:00'.format(year, month))
     if month == 12:
         end_datetime = np.datetime64(
             '{:04}-01-01T00:00:00'.format(year+1))
