@@ -290,11 +290,11 @@ def get_oper_month(
     #     'REFERENCE_RADAR': radar,
     #     'REMOTE': True})
 
-    day_grids = (
-        day for day in days)
-    next(day_grids)
-
     if len(days) > 0:
+
+        day_grids = (
+            day for day in days)
+        next(day_grids)
 
         new_grid, file_list = po.get_grid(
             days[0], tracks_obj.params, tracks_obj.reference_grid,
@@ -303,10 +303,11 @@ def get_oper_month(
         dt_list = extract_datetimes(file_list)
         grids = (
             dt for dt in dt_list
-            if (dt >= start_datetime and dt <= end_datetime))
+            if (dt >= start_datetime+np.timedelta64(0, 'h') and dt <= end_datetime))
 
-        tracks_obj.params['DT'] = int(np.argmax(np.bincount((np.diff(
-            np.array(dt_list))).astype(int)))/60)
+        if len(dt_list) >= 2:
+            tracks_obj.params['DT'] = int(np.argmax(np.bincount((np.diff(
+                np.array(dt_list))).astype(int)))/60)
 
         if tracks_obj.params['DT'] < 7:
             scale_factor = np.ceil(
@@ -320,20 +321,20 @@ def get_oper_month(
                     dt_list[i].astype('<M8[m]')+np.timedelta64(1, 'D'),
                     np.timedelta64(tracks_obj.params['DT'], 'm'))]
             new_file_list = [
-                tracks_obj.file_list[new_file_inds[i]]
+                file_list[new_file_inds[i]]
                 for i in np.arange(len(new_file_inds))]
             new_dt_list = [
                 dt_list[new_file_inds[i]]
                 for i in np.arange(len(new_file_inds))]
-            tracks_obj.file_list = new_file_list
+            file_list = new_file_list
             grids = (
                 dt for dt in new_dt_list
-                if (dt >= start_datetime and dt <= end_datetime))
+                if (dt >= start_datetime+np.timedelta64(0, 'h') and dt <= end_datetime))
             new_datetime = next(grids)
 
         tracks_obj.get_tracks(grids, day_grids=day_grids, b_path=b_path)
 
-        out_file_name = save_dir + '{:02d}_{:04d}_{:02d}.pkl'.format(
+        out_file_name = save_dir + '/{:02d}_{:04d}_{:02d}.pkl'.format(
             radar, year, month)
         with open(out_file_name, 'wb') as f:
             pickle.dump(tracks_obj, f)
@@ -411,8 +412,11 @@ def gen_operational_verification_figures(
         save_dir, fig_dir, radar=63, year=2020, exclusions=None, suffix='',
         start_date=None, end_date=None, month=12):
 
-    fig_dir += '/radar_{}_{}_verification_scans{}/'.format(
-        radar, year, suffix)
+    print('Creating figures for radar {} year {} month {}'.format(
+        radar, year, month))
+
+    fig_dir += '/{}_{:04d}_{:02d}{}/'.format(
+        radar, year, month, suffix)
 
     if not os.path.exists(fig_dir):
         os.makedirs(fig_dir)
@@ -425,10 +429,17 @@ def gen_operational_verification_figures(
             'small_velocity', 'small_offset']
 
     path = save_dir + '/{:02}_{:04}_{:02}.pkl'.format(radar, year, month)
-    with open(path, 'rb') as f:
-        tracks_obj = pickle.load(f)
+    try:
+        with open(path, 'rb') as f:
+            tracks_obj = pickle.load(f)
+    except FileNotFoundError:
+        print('File {} does not exist. Confirm tracks were created.'.format(path))
+        return
 
     # tracks_obj = cl.redo_exclusions(tracks_obj)
+    if len(tracks_obj.tracks)==0:
+        print('Empty tracks file. Quitting.')
+        return
 
     excluded = tracks_obj.exclusions[exclusions]
     excluded = excluded.xs(0, level='level')
@@ -439,6 +450,7 @@ def gen_operational_verification_figures(
     included = np.logical_not(excluded)
     included = included.where(included == True).dropna()
     scans = included
+
     if start_date is not None and end_date is not None:
         scans = scans.loc[:, slice(start_date, end_date), :, :]
     scans = sorted(np.unique(scans.index.get_level_values(1).values))
