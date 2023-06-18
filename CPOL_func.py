@@ -294,20 +294,32 @@ def get_oper_month(
 
         day_grids = (
             day for day in days)
-        next(day_grids)
+        good_day = False
 
-        new_grid, file_list = po.get_grid(
-            days[0], tracks_obj.params, tracks_obj.reference_grid,
-            tracks_obj.tmp_dir, None)
+        while good_day is False:
 
-        dt_list = extract_datetimes(file_list)
-        grids = (
-            dt for dt in dt_list
-            if (dt >= start_datetime+np.timedelta64(0, 'h') and dt <= end_datetime))
+            try:
+                day_grid = next(day_grids)
+            except StopIteration:
+                print('All bad data this month: Skipping.')
+                return
 
-        if len(dt_list) >= 2:
-            tracks_obj.params['DT'] = int(np.argmax(np.bincount((np.diff(
-                np.array(dt_list))).astype(int)))/60)
+            new_grid, file_list = po.get_grid(
+                day_grid, tracks_obj.params, tracks_obj.reference_grid,
+                tracks_obj.tmp_dir, None)
+
+            dt_list = extract_datetimes(file_list)
+            grids = (
+                dt for dt in dt_list
+                if (dt >= start_datetime+np.timedelta64(0, 'h') and dt <= end_datetime))
+
+            if len(dt_list) >= 2:
+                tracks_obj.params['DT'] = int(np.argmax(np.bincount((np.diff(
+                    np.array(dt_list))).astype(int)))/60)
+            if tracks_obj.params['DT'] > 0:
+                good_day = True
+            else:
+                print('Bad day of data, trying next day.')
 
         if tracks_obj.params['DT'] < 7:
             scale_factor = np.ceil(

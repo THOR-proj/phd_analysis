@@ -9,6 +9,12 @@ from tint.objects import classify_tracks, get_exclusion_categories
 from tint.objects import get_system_tracks
 import os
 
+import cartopy.crs as ccrs
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import cartopy.feature as cfeature
+import matplotlib.ticker as mticker
+from matplotlib.lines import Line2D
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 base_dir = '/media/shorte1/Ewan\'s Hard Drive/phd/data/CPOL/'
 save_dir = '/home/student.unimelb.edu.au/shorte1/Documents/TINT_tracks/'
@@ -18,110 +24,53 @@ ERA5_dir += 'pressure-levels/reanalysis/'
 WRF_dir = '/media/shorte1/Ewan\'s Hard Drive/phd/data/caine_WRF_data/'
 
 
-def create_ACCESS_counts(
-        save_dir, tracks_base_dir, class_thresh=None,
-        excl_thresh=None, non_linear_conds=None, exclusions=None,
-        morning_only=False):
-
-    test_names = [
-        'ACCESS_63', 'ACCESS_77', 'ACCESS_42']
-
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-        print('Creating new directory.')
-
-    tracks_dir = [
-        tracks_base_dir + '/ACCESS_63',
-        tracks_base_dir + '/ACCESS_77',
-        tracks_base_dir + '/ACCESS_42']
-
-    class_threshes = [
-        class_thresh, class_thresh, class_thresh]
-
-    excl_threshes = [
-        excl_thresh, excl_thresh, excl_thresh]
-
-    non_linear_conds = [
-        non_linear_conds, non_linear_conds, non_linear_conds]
-
-    for i in range(len(tracks_dir)):
-
-        print('Getting classes for test:{}.'.format(test_names[i]))
-        class_df = get_counts(
-            base_dir='/home/student.unimelb.edu.au/shorte1/Documents/CPOL_analysis/',
-            tracks_dir=tracks_dir[i],
-            class_thresh=class_threshes[i], excl_thresh=excl_threshes[i],
-            non_linear=non_linear_conds[i], years=[2020, 2021], fake_pope=True,
-            exclusions=exclusions, morning_only=morning_only)
-
-        out_file_name = save_dir + '{}_classes.pkl'.format(test_names[i])
-        with open(out_file_name, 'wb') as f:
-            pickle.dump(class_df, f)
-
-    radar = [63, 42, 77]
-    classes = []
-    for r in radar:
-        fn = save_dir + 'ACCESS_{}_classes.pkl'.format(r)
-        with open(fn, 'rb') as f:
-            df = pickle.load(f)
-        df = pd.concat({r: df}, names=['radar'])
-        classes.append(df)
-
-    combined_classes = pd.concat(classes)
-    out_fn = save_dir + 'combined_ACCESS_classes.pkl'
-    with open(out_fn, 'wb') as f:
-        pickle.dump(combined_classes, f)
-
-
 def create_oper_radar_counts(
         save_dir, tracks_base_dir, class_thresh=None,
         excl_thresh=None, non_linear_conds=None, exclusions=None,
-        morning_only=False):
-
-    test_names = [
-        'radar_63', 'radar_77', 'radar_42']
-
-    tracks_dir = [
-        tracks_base_dir + '/radar_63',
-        tracks_base_dir + '/radar_77',
-        tracks_base_dir + '/radar_42']
+        morning_only=False, radar=[42, 63, 77], years=range(2012, 2023)):
 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
         print('Creating new directory.')
 
-    radar = [63, 77, 42]
+    included_radar = [
+        2, 3, 4, 5, 6, 8, 9, 14, 16, 17,
+        19, 22, 23, 24, 25, 27, 28, 29, 31, 32,
+        33, 36, 37, 40, 41, 42, 44, 46, 48,
+        49, 50, 52, 53, 54, 55, 56, 63, 64,
+        66, 67, 68, 69, 70, 71, 72, 73, 75, 76, 77]
 
-    class_threshes = [
-        class_thresh, class_thresh, class_thresh]
+    for r in included_radar:
+        for y in years:
 
-    excl_threshes = [
-        excl_thresh, excl_thresh, excl_thresh]
+            dir_ry = tracks_base_dir + '/radar_{}/{}/'.format(r, y)
 
-    non_linear_conds = [
-        non_linear_conds, non_linear_conds, non_linear_conds]
+            print('Getting classes for radar {}, year {}.'.format(r, y))
+            class_df = get_counts_radar(
+                base_dir='/home/student.unimelb.edu.au/shorte1/Documents/CPOL_analysis/',
+                tracks_dir=dir_ry, class_thresh=class_thresh,
+                excl_thresh=excl_thresh, non_linear=non_linear_conds,
+                years=[y], radar=r, exclusions=exclusions,
+                morning_only=morning_only)
 
-    for i in range(len(test_names)):
-
-        print('Getting classes for test:{}.'.format(test_names[i]))
-        class_df = get_counts_radar(
-            base_dir='/home/student.unimelb.edu.au/shorte1/Documents/CPOL_analysis/',
-            tracks_dir=tracks_dir[i], class_thresh=class_threshes[i],
-            excl_thresh=excl_threshes[i], non_linear=non_linear_conds[i],
-            years=[2020, 2021], radar=radar[i], exclusions=exclusions,
-            morning_only=morning_only)
-
-        out_file_name = save_dir + '{}_classes.pkl'.format(test_names[i])
-        with open(out_file_name, 'wb') as f:
-            pickle.dump(class_df, f)
+            if class_df is not None:
+                out_file_name = dir_ry + '/{:02d}_{:04d}_classes.pkl'.format(r, y)
+                with open(out_file_name, 'wb') as f:
+                    pickle.dump(class_df, f)
 
     classes = []
-    for r in radar:
-        fn = save_dir + 'radar_{}_classes.pkl'.format(r)
-        with open(fn, 'rb') as f:
-            df = pickle.load(f)
-        df = pd.concat({r: df}, names=['radar'])
-        classes.append(df)
+    for r in included_radar:
+        for y in years:
+            dir_ry = tracks_base_dir + '/radar_{}/{}/'.format(r, y)
+            fn = dir_ry + '/{:02d}_{:04d}_classes.pkl'.format(r, y)
+            try:
+                with open(fn, 'rb') as f:
+                    df = pickle.load(f)
+                df = pd.concat({r: df}, names=['radar'])
+                classes.append(df)
+            except FileNotFoundError:
+                print('Missing file. Skipping.')
+                continue
 
     combined_classes = pd.concat(classes)
     out_fn = save_dir + 'combined_radar_classes.pkl'
@@ -191,6 +140,7 @@ def get_sub_tracks(tracks_obj, non_linear=False, exclusions=None):
     excluded = np.logical_or(np.any(excluded, 1), quad_bound)
     included = np.logical_not(excluded)
     sub_tracks = tracks_obj.tracks_class.where(included == True).dropna()
+
     if len(sub_tracks) == 0:
         sub_tracks = None
     else:
@@ -314,7 +264,7 @@ def get_counts(
 def get_counts_radar(
         base_dir=None, tracks_dir='base',
         non_linear=False, class_thresh=None, excl_thresh=None,
-        years=[2020, 2021], radar=63, fake_pope=True, exclusions=None,
+        years=[2013], radar=63, fake_pope=False, exclusions=None,
         morning_only=False):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
@@ -322,16 +272,18 @@ def get_counts_radar(
         year_list, month_list, uid, time, offset_type, rel_offset_type,
         inflow_type, tilt_dir, prop_dir, pope_regime, hour] = [
         [] for i in range(11)]
-    for base_year in years:
-        year_month = [
-            [base_year, 10], [base_year, 11], [base_year, 12],
-            [base_year+1, 1], [base_year+1, 2], [base_year+1, 3],
-            [base_year+1, 4]]
-        for ym in year_month:
-            year = ym[0]
-            month = ym[1]
-            tracks_obj = load_op_month(
-                year, month, radar, tracks_dir=tracks_dir)
+    for y in years:
+        for m in range(1, 13):
+            try:
+                tracks_obj = load_op_month(
+                    y, m, radar, tracks_dir=tracks_dir)
+            except FileNotFoundError:
+                print('No tracks file. Skipping')
+                continue
+
+            if len(tracks_obj.tracks) < 4:
+                print('No tracks. Skipping')
+                continue
 
             if morning_only:
                 print('Restricting to hour UTC < 12')
@@ -369,8 +321,8 @@ def get_counts_radar(
                 hours = obj.time.values
                 hours = [int(h.astype(str)[11:13]) for h in hours]
                 for j in range(len(scan_label)):
-                    year_list.append(year)
-                    month_list.append(month)
+                    year_list.append(y)
+                    month_list.append(m)
                     uid.append(i)
                     time.append(scan_label[j]*10)
                     offset_type.append(offset[j])
@@ -380,32 +332,36 @@ def get_counts_radar(
                     prop_dir.append(prop[j])
                     pope_regime.append(int(pope[j]))
                     hour.append(hours[j])
-    class_dic = {
-        'year': year_list, 'month': month_list, 'uid': uid, 'time': time,
-        'hour': hour, 'offset_type': offset_type,
-        'rel_offset_type': rel_offset_type, 'inflow_type': inflow_type,
-        'tilt_dir': tilt_dir, 'prop_dir': prop_dir,
-        'pope_regime': pope_regime}
-    class_df = pd.DataFrame(class_dic)
-    class_df.set_index(['year', 'month', 'uid', 'time'], inplace=True)
-    class_df.sort_index(inplace=True)
 
-    class_df['inflow_type'] = class_df['inflow_type'].str.replace(
-        'Ambiguous (Low Relative Velocity)', 'Ambiguous', regex=False)
-    class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
-        'Ambiguous (Perpendicular Shear)', 'Perpendicular Shear', regex=False)
-    class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
-        'Ambiguous (Low Shear)', 'Ambiguous', regex=False)
-    class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
-        'Ambiguous (Small Stratiform Offset)', 'Ambiguous', regex=False)
-    class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
-        'Ambiguous (On Quadrant Boundary)', 'Ambiguous', regex=False)
-    class_df['prop_dir'] = class_df['prop_dir'].str.replace(
-        'Ambiguous (Perpendicular Shear)', 'Perpendicular Shear', regex=False)
-    class_df['prop_dir'] = class_df['prop_dir'].str.replace(
-        'Ambiguous (Low Shear)', 'Ambiguous', regex=False)
-    class_df['prop_dir'] = class_df['prop_dir'].str.replace(
-        'Ambiguous (Low Relative Velocity)', 'Ambiguous', regex=False)
+    if len(year_list) > 0:
+        class_dic = {
+            'year': year_list, 'month': month_list, 'uid': uid, 'time': time,
+            'hour': hour, 'offset_type': offset_type,
+            'rel_offset_type': rel_offset_type, 'inflow_type': inflow_type,
+            'tilt_dir': tilt_dir, 'prop_dir': prop_dir,
+            'pope_regime': pope_regime}
+        class_df = pd.DataFrame(class_dic)
+        class_df.set_index(['year', 'month', 'uid', 'time'], inplace=True)
+        class_df.sort_index(inplace=True)
+
+        class_df['inflow_type'] = class_df['inflow_type'].str.replace(
+            'Ambiguous (Low Relative Velocity)', 'Ambiguous', regex=False)
+        class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
+            'Ambiguous (Perpendicular Shear)', 'Perpendicular Shear', regex=False)
+        class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
+            'Ambiguous (Low Shear)', 'Ambiguous', regex=False)
+        class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
+            'Ambiguous (Small Stratiform Offset)', 'Ambiguous', regex=False)
+        class_df['tilt_dir'] = class_df['tilt_dir'].str.replace(
+            'Ambiguous (On Quadrant Boundary)', 'Ambiguous', regex=False)
+        class_df['prop_dir'] = class_df['prop_dir'].str.replace(
+            'Ambiguous (Perpendicular Shear)', 'Perpendicular Shear', regex=False)
+        class_df['prop_dir'] = class_df['prop_dir'].str.replace(
+            'Ambiguous (Low Shear)', 'Ambiguous', regex=False)
+        class_df['prop_dir'] = class_df['prop_dir'].str.replace(
+            'Ambiguous (Low Relative Velocity)', 'Ambiguous', regex=False)
+    else:
+        class_df = None
 
     return class_df
 
@@ -513,10 +469,23 @@ def plot_offsets(
     else:
         x_var = 'time'
     offset_types = counts_df.groupby([x_var, 'offset_type']).sum()
-    TS = offset_types.xs('Trailing Stratiform', level='offset_type')
-    LS = offset_types.xs('Leading Stratiform', level='offset_type')
-    LeS = offset_types.xs('Parallel Stratiform (Left)', level='offset_type')
-    RiS = offset_types.xs('Parallel Stratiform (Right)', level='offset_type')
+    # import pdb; pdb.set_trace()
+    try:
+        TS = offset_types.xs('Trailing Stratiform', level='offset_type')
+    except KeyError:
+        TS = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        LS = offset_types.xs('Leading Stratiform', level='offset_type')
+    except KeyError:
+        LS = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        LeS = offset_types.xs('Parallel Stratiform (Left)', level='offset_type')
+    except KeyError:
+        LeS = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        RiS = offset_types.xs('Parallel Stratiform (Right)', level='offset_type')
+    except KeyError:
+        RiS = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
     # max_time = max(
     #     [max(off_type.index.values) for off_type in [TS, LS, LeS, RiS]])
     if diurnal:
@@ -589,14 +558,26 @@ def plot_relative_offsets(
     else:
         x_var = 'time'
     offset_types = counts_df.groupby([x_var, 'rel_offset_type']).sum()
-    TS = offset_types.xs(
-        'Relative Trailing Stratiform', level='rel_offset_type')
-    LS = offset_types.xs(
+    try:
+        TS = offset_types.xs(
+            'Relative Trailing Stratiform', level='rel_offset_type')
+    except KeyError:
+        TS = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        LS = offset_types.xs(
         'Relative Leading Stratiform', level='rel_offset_type')
-    LeS = offset_types.xs(
-        'Relative Parallel Stratiform (Left)', level='rel_offset_type')
-    RiS = offset_types.xs(
-        'Relative Parallel Stratiform (Right)', level='rel_offset_type')
+    except KeyError:
+        LS = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        LeS = offset_types.xs(
+            'Relative Parallel Stratiform (Left)', level='rel_offset_type')
+    except KeyError:
+        LeS = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        RiS = offset_types.xs(
+            'Relative Parallel Stratiform (Right)', level='rel_offset_type')
+    except KeyError:
+        RiS = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
     # max_time = max(
     #     [max(off_type.index.values) for off_type in [TS, LS, LeS, RiS]])
     if diurnal:
@@ -674,11 +655,26 @@ def plot_inflows(
     else:
         x_var = 'time'
     inflow_types = counts_df.groupby([x_var, 'inflow_type']).sum()
-    A = inflow_types.xs('Ambiguous', level='inflow_type')
-    FF = inflow_types.xs('Front Fed', level='inflow_type')
-    RF = inflow_types.xs('Rear Fed', level='inflow_type')
-    LeF = inflow_types.xs('Parallel Fed (Left)', level='inflow_type')
-    RiF = inflow_types.xs('Parallel Fed (Right)', level='inflow_type')
+    try:
+        A = inflow_types.xs('Ambiguous', level='inflow_type')
+    except:
+        A = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        FF = inflow_types.xs('Front Fed', level='inflow_type')
+    except:
+        FF = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        RF = inflow_types.xs('Rear Fed', level='inflow_type')
+    except KeyError:
+        RF = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        LeF = inflow_types.xs('Parallel Fed (Left)', level='inflow_type')
+    except KeyError:
+        LeF = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        RiF = inflow_types.xs('Parallel Fed (Right)', level='inflow_type')
+    except KeyError:
+        RiF = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
     # max_time = max(
     #     [max(off_type.index.values) for off_type in [A, FF, RF, LeF, RiF]])
 
@@ -758,9 +754,18 @@ def plot_tilts(
     else:
         x_var = 'time'
     tilt_types = counts_df.groupby([x_var, 'tilt_dir']).sum()
-    SP = tilt_types.xs('Perpendicular Shear', level='tilt_dir')
-    UST = tilt_types.xs('Up-Shear Tilted', level='tilt_dir')
-    DST = tilt_types.xs('Down-Shear Tilted', level='tilt_dir')
+    try:
+        SP = tilt_types.xs('Perpendicular Shear', level='tilt_dir')
+    except KeyError:
+        SP = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        UST = tilt_types.xs('Up-Shear Tilted', level='tilt_dir')
+    except:
+        UST = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        DST = tilt_types.xs('Down-Shear Tilted', level='tilt_dir')
+    except:
+        DST = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
     # max_time = max(
     #     [max(off_type.index.values) for off_type in [SP, UST, DST]])
     if diurnal:
@@ -829,9 +834,18 @@ def plot_propagations(
     else:
         x_var = 'time'
     tilt_types = counts_df.groupby([x_var, 'prop_dir']).sum()
-    SP = tilt_types.xs('Perpendicular Shear', level='prop_dir')
-    USP = tilt_types.xs('Up-Shear Propagating', level='prop_dir')
-    DSP = tilt_types.xs('Down-Shear Propagating', level='prop_dir')
+    try:
+        SP = tilt_types.xs('Perpendicular Shear', level='prop_dir')
+    except:
+        SP = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        USP = tilt_types.xs('Up-Shear Propagating', level='prop_dir')
+    except:
+        USP = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
+    try:
+        DSP = tilt_types.xs('Down-Shear Propagating', level='prop_dir')
+    except:
+        DSP = pd.DataFrame({'time': [0], 'counts': [0]}).set_index('time')
     # max_time = max(
     #     [max(off_type.index.values) for off_type in [SP, USP, DSP]])
     if diurnal:
@@ -965,56 +979,47 @@ def plot_comparison(
 
 
 def plot_all(
-        test_dir=None, test_names=None, diurnal=False,
-        time_threshes=None):
+        diurnal=False, time_threshes=None, radars=[42, 63, 77]):
 
-    if (test_dir is None) or (test_names is None):
-        test_dir = [
-            'base', 'lower_conv_level', 'higher_conv_level',
-            'four_levels', 'no_steiner', 'lower_ref_thresh',
-            'higher_shear_thresh', 'higher_rel_vel_thresh', 'higher_theta_e',
-            'higher_offset_thresh',
-            'higher_area_thresh', 'higher_border_thresh', 'linear_50',
-            'linear_25', 'combined']
-        test_names = [
-            'Base', 'Lower Convective Level', 'Higher Convective Level',
-            'Four Levels', 'No Steiner', 'Lower Reflectivitiy Thresholds',
-            'Higher Shear Threshold', 'Higher Relative Velocity Threshold',
-            'Higher Quadrant Buffer', 'Higher Stratiform Offset Threshold',
-            'Higher Minimum Area Threshold',
-            'Stricter Border Intersection Threshold',
-            '50 km Linearity Threshold',
-            '25 km Reduced Axis Ratio Linearity Threshold', 'Combined']
     if time_threshes is None:
-        time_threshes = [[None]*5]*len(test_names)
+        time_threshes = [[None]*5]
 
-    test = []
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    class_path = base_dir + 'TINT_tracks/national/combined_radar_classes.pkl'
+
     [TS, LS, LeS, RiS, offset_total] = [[] for i in range(5)]
     [RTS, RLS, RLeS, RRiS, rel_offset_total] = [[] for i in range(5)]
     [FF, RF, LeF, RiF, A_inflow, inflow_total] = [[] for i in range(6)]
     [UST, DST, A_tilt, tilt_total] = [[] for i in range(4)]
     [USP, DSP, A_prop, prop_total] = [[] for i in range(4)]
 
-    for i in range(len(test_dir)):
-    # for i in [0]:
-        base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
-        class_path = base_dir + 'TINT_tracks/'
-        class_path += '{}_classes.pkl'.format(test_dir[i])
-        fig_dir = base_dir + 'TINT_figures/'
-        fig_dir += test_dir[i] + '/'
+    with open(class_path, 'rb') as f:
+        class_df_all = pickle.load(f)
+
+    # for r in radars:
+    for radar in radars:
+
+        print('Plotting radar {}.'.format(radar))
+
+        fig_dir = base_dir + 'TINT_figures/national/radar_{}/'.format(radar)
 
         if not os.path.exists(fig_dir):
             os.makedirs(fig_dir)
             print('Creating new directory.')
-        with open(class_path, 'rb') as f:
-            class_df = pickle.load(f)
-        test.append(test_names[i])
+
+        try:
+            # import pdb; pdb.set_trace()
+            class_df = class_df_all.loc[radar, :, :, :, :]
+
+        except KeyError:
+            print('Missing data. Skipping')
+            return
 
         fig, axes = initialise_fig(height=10, n_subplots=6)
 
         offset_summary = plot_offsets(
             class_df, fig_dir, fig=fig, ax1=axes[0][0], ax2=axes[0][1],
-            diurnal=diurnal, time_thresh=time_threshes[i][0])
+            diurnal=diurnal, time_thresh=None)
         TS.append(offset_summary[0].values[0])
         LS.append(offset_summary[1].values[0])
         LeS.append(offset_summary[2].values[0])
@@ -1023,7 +1028,7 @@ def plot_all(
 
         rel_offset_summary = plot_relative_offsets(
             class_df, fig_dir, fig=fig, ax1=axes[1][0], ax2=axes[1][1],
-            diurnal=diurnal, time_thresh=time_threshes[i][1])
+            diurnal=diurnal, time_thresh=None)
         RTS.append(rel_offset_summary[0].values[0])
         RLS.append(rel_offset_summary[1].values[0])
         RLeS.append(rel_offset_summary[2].values[0])
@@ -1032,7 +1037,7 @@ def plot_all(
 
         inflow_summary = plot_inflows(
             class_df, fig_dir, fig=fig, ax1=axes[2][0], ax2=axes[2][1],
-            diurnal=diurnal, time_thresh=time_threshes[i][2])
+            diurnal=diurnal, time_thresh=None)
         FF.append(inflow_summary[0].values[0])
         RF.append(inflow_summary[1].values[0])
         LeF.append(inflow_summary[2].values[0])
@@ -1051,7 +1056,7 @@ def plot_all(
 
         tilt_summary = plot_tilts(
             class_df, fig_dir, fig=fig, ax1=axes[0][0], ax2=axes[0][1],
-            diurnal=diurnal, time_thresh=time_threshes[i][3])
+            diurnal=diurnal, time_thresh=None)
         UST.append(tilt_summary[0].values[0])
         DST.append(tilt_summary[1].values[0])
         A_tilt.append(tilt_summary[2].values[0])
@@ -1059,7 +1064,7 @@ def plot_all(
 
         prop_summary = plot_propagations(
             class_df, fig_dir, fig=fig, ax1=axes[1][0], ax2=axes[1][1],
-            diurnal=diurnal, time_thresh=time_threshes[i][4])
+            diurnal=diurnal, time_thresh=None)
         USP.append(prop_summary[1].values[0])
         DSP.append(prop_summary[0].values[0])
         A_prop.append(prop_summary[2].values[0])
@@ -1076,57 +1081,52 @@ def plot_all(
         plt.close('all')
 
     offset_sensitivity_df = pd.DataFrame({
-        'Test': test, 'Trailing Stratiform': TS,
+        'Radar': radars, 'Trailing Stratiform': TS,
         'Leading Stratiform': LS, 'Left Stratiform': LeS,
         'Right Stratiform': RiS, 'Total': offset_total})
-    offset_sensitivity_df = offset_sensitivity_df.set_index('Test')
+    offset_sensitivity_df = offset_sensitivity_df.set_index('Radar')
 
     inflow_sensitivity_df = pd.DataFrame({
-        'Test': test, 'Front Fed': FF,
+        'Radar': radars, 'Front Fed': FF,
         'Rear Fed': RF, 'Left Fed': LeF,
         'Right Fed': RiF, 'Ambiguous': A_inflow,
         'Total': inflow_total})
-    inflow_sensitivity_df = inflow_sensitivity_df.set_index('Test')
+    inflow_sensitivity_df = inflow_sensitivity_df.set_index('Radar')
 
     tilt_sensitivity_df = pd.DataFrame({
-        'Test': test, 'Up-Shear Tilted': UST,
+        'Radar': radars, 'Up-Shear Tilted': UST,
         'Down-Shear Tilted': DST, 'Shear Perpendicular': A_tilt,
         'Total': tilt_total})
-    tilt_sensitivity_df = tilt_sensitivity_df.set_index('Test')
+    tilt_sensitivity_df = tilt_sensitivity_df.set_index('Radar')
 
     prop_sensitivity_df = pd.DataFrame({
-        'Test': test, 'Down-Shear Propagating': DSP,
+        'Radar': radars, 'Down-Shear Propagating': DSP,
         'Up-Shear Propagating': USP, 'Shear Perpendicular': A_prop,
         'Total': prop_total})
-    prop_sensitivity_df = prop_sensitivity_df.set_index('Test')
+    prop_sensitivity_df = prop_sensitivity_df.set_index('Radar')
 
     rel_offset_sensitivity_df = pd.DataFrame({
-        'Test': test, 'Relative Trailing Stratiform': RTS,
+        'Radar': radars, 'Relative Trailing Stratiform': RTS,
         'Relative Leading Stratiform': RLS,
         'Relative Left Stratiform': RLeS,
         'Relative Right Stratiform': RRiS,
         'Total': rel_offset_total})
-    rel_offset_sensitivity_df = rel_offset_sensitivity_df.set_index('Test')
+    rel_offset_sensitivity_df = rel_offset_sensitivity_df.set_index('Radar')
 
-    sen_dfs = [
+    radar_dfs = [
         offset_sensitivity_df, inflow_sensitivity_df,
         tilt_sensitivity_df, prop_sensitivity_df, rel_offset_sensitivity_df]
 
-    return sen_dfs
+    return radar_dfs
 
 
 def plot_sensitivities(
-        sen_dfs, test_dirs, name_abvs=None, suff='', alt_layout=False):
-
-    if name_abvs is None:
-        name_abvs = [
-            'Base', 'C2', 'C4', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15',
-            'S15', 'A2', 'B5', 'L50', 'L25', 'C']
+        sen_dfs, suff='', alt_layout=False):
 
     if alt_layout:
         fig, axes = plt.subplots(2, 3, figsize=(12, 8))
     else:
-        fig, axes = plt.subplots(3, 2, figsize=(13, 10))
+        fig, axes = plt.subplots(6, 1, figsize=(13, 20))
     init_fonts()
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
@@ -1146,12 +1146,9 @@ def plot_sensitivities(
             base_ratios.loc[:, c] = (
                 base_ratios.loc[:, c]/sen_dfs[i].loc[:, 'Total'])
 
-        base_ratios = base_ratios.reset_index(drop=True)
-        base_ratios.loc[:, 'Test'] = np.array(name_abvs)
-        base_ratios = base_ratios.set_index('Test')
         max_rat = np.ceil(base_ratios.max().max()*10)/10
 
-        ax = axes[i // 2, i % 2]
+        ax = axes[i]
         ncol = len(base_ratios.columns)
         ax = base_ratios.plot(
             kind='bar', stacked=False, fontsize=12, rot=0, ax=ax,
@@ -1168,18 +1165,154 @@ def plot_sensitivities(
         ax.grid(which='minor', alpha=0.2, axis='y')
         ax.grid(which='major', alpha=0.5, axis='y')
 
-    category_breakdown(
-        fig=fig, ax=axes[2, 1], leg_offset_h=-.71, test_dir=test_dirs,
-        test_names=name_abvs, name_abvs=name_abvs)
+    # category_breakdown(
+    #     fig=fig, ax=axes[2, 1], leg_offset_h=-.71, test_dir=test_dirs,
+    #     test_names=name_abvs, name_abvs=name_abvs)
     plt.subplots_adjust(hspace=0.65)
     make_subplot_labels(axes.flatten())
 
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
-    fig_dir = base_dir + 'TINT_figures/'
+    fig_dir = base_dir + 'TINT_figures/national/'
     plt.savefig(
         fig_dir + 'total_ratio_sensitivities{}.png'.format(suff),
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
+
+def plot_pie_map(radar_dfs):
+
+    radar_info = pd.read_csv(
+        '~/Documents/phd/AURA_analysis/radar_site_list.csv', index_col=0)
+
+    radars = [
+        2, 3, 4, 5, 6, 8, 9, 14, 16, 17, 19, 22, 23, 24, 25, 27, 28, 29, 31, 32,
+        33, 36, 37, 40, 41, 42, 44, 46, 48, 49, 50, 52, 53, 54, 55, 56, 63, 64,
+        66, 67, 68, 69, 70, 71, 72, 73, 75, 76, 77]
+
+    good_radar = radar_info.loc[radars]
+    # import pdb; pdb.set_trace()
+    # new_order = [0, 4, 1, 2, 3]
+    # radar_dfs_alt = [radar_dfs[i] for i in new_order]
+
+    init_fonts()
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    offset_c = [colors[i] for i in [0, 1, 2, 4]]
+    inflow_c = [colors[i] for i in [0, 1, 2, 4, 5]]
+    tilt_c = [colors[i] for i in [0, 1, 5]]
+    prop_c = [colors[i] for i in [0, 1, 5]]
+    clists = [offset_c, inflow_c, tilt_c, prop_c, offset_c]
+    names = [
+        'Stratiform-Offset', 'Inflow', 'Tilt', 'Propagation',
+        'Relative Stratiform-Offset']
+    offset_1 = -.575
+    # leg_offset = [offset_1, offset_1, offset_1, offset_1, offset_1]
+    # leg_offset_x = [.475] * 4 + [.475]
+    # leg_columns = [2, 3, 2, 2, 2]
+
+    def plot_pie_inset(data, ilon, ilat, ax, width, colors, text=''):
+        ax_sub= inset_axes(
+            ax, width=width, height=width, loc=10,
+            bbox_to_anchor=(ilon, ilat),
+            bbox_transform=ax.transData,
+            borderpad=0)
+        # ax_sub.text(text, ilon, ilat)
+        wedges, texts= ax_sub.pie(
+            data, colors=colors,
+            normalize=True,
+            wedgeprops = {
+                "edgecolor" : "black",
+                'linewidth': .75,
+                'antialiased': True})
+
+    fig = plt.figure(figsize=(12, 48))
+    for i in [0, 1, 4, 2, 3]:
+        base_ratios = radar_dfs[i].drop('Total', axis=1)
+        c_list = clists[i]
+        for c in base_ratios.columns:
+            base_ratios.loc[:, c] = (
+                base_ratios.loc[:, c]/radar_dfs[i].loc[:, 'Total'])
+
+        max_rat = np.ceil(base_ratios.max().max()*10)/10
+
+        ncol = len(base_ratios.columns)
+
+        ax = fig.add_subplot(5, 1, i+1, projection=ccrs.PlateCarree())
+        ax.set_title(names[i])
+        ax.coastlines(resolution='50m', zorder=1)
+
+        ax.set_extent([112, 155, -10, -45], crs=ccrs.PlateCarree())
+        grid = ax.gridlines(
+            crs=ccrs.PlateCarree(), draw_labels=True,
+            linewidth=1, color='gray', alpha=0.4, linestyle='--')
+
+        grid.xlocator = mticker.FixedLocator(np.arange(105, 160, 5))
+        grid.ylocator = mticker.FixedLocator(np.arange(-50, -5, 5))
+
+        states_provinces_50m = cfeature.NaturalEarthFeature(
+            category='cultural',
+            name='admin_1_states_provinces_lines',
+            scale='50m',
+            facecolor='none')
+        ax.add_feature(states_provinces_50m, edgecolor='grey', zorder=1)
+
+        c_land = tuple(np.array([249.0, 246.0, 216.0])/256)
+        c_water = tuple(np.array([252.0, 252.0, 256.0])/256)
+
+        land_50m = cfeature.NaturalEarthFeature(
+            'physical', 'land', '50m',
+            edgecolor='face',
+            facecolor=c_land)
+        ax.add_feature(land_50m, zorder=0)
+
+        ocean_50m = cfeature.NaturalEarthFeature(
+            'physical', 'ocean', '50m',
+            edgecolor='face',
+            facecolor=c_water)
+        ax.add_feature(ocean_50m, zorder=0)
+
+        grid.right_labels = False
+        grid.top_labels = False
+
+        arrow = False
+
+        for radar in radars:
+            # Plot pie chart
+            # import pdb; pdb.set_trace()
+            pie_data = base_ratios.loc[radar]
+            good_radar_i = good_radar.loc[[radar]].iloc[0]
+
+            lat, lon = good_radar_i[['site_lat', 'site_lon']]
+            total = radar_dfs[i].loc[radar, 'Total']
+            plot_pie_inset(
+                pie_data, lon, lat, ax, 0.6, colors=c_list,
+                text=total)
+
+        # ax = base_ratios.plot(
+        #     kind='bar', stacked=False, fontsize=12, rot=0, ax=ax,
+        #     yticks=np.arange(0, max_rat+0.1, 0.1), width=0.625*ncol/4,
+        #     color=c_list)
+        # ax.set_xlabel(None)
+        # ax.xaxis.set_label_coords(.5, -0.15)
+        # ax.set_ylabel('Ratio [-]', fontsize=14)
+        # ax.legend(
+        #     loc='lower center',
+        #     bbox_to_anchor=(leg_offset_x[i], leg_offset[i]),
+        #     ncol=leg_columns[i], fancybox=True, shadow=True)
+        # ax.set_yticks(np.arange(0, max_rat+0.05, 0.05), minor=True)
+        # ax.grid(which='minor', alpha=0.2, axis='y')
+        # ax.grid(which='major', alpha=0.5, axis='y')
+
+    # category_breakdown(
+    #     fig=fig, ax=axes[2, 1], leg_offset_h=-.71, test_dir=test_dirs,
+    #     test_names=name_abvs, name_abvs=name_abvs)
+    # plt.subplots_adjust(hspace=0.65)
+    # make_subplot_labels(axes.flatten())
+
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    fig_dir = base_dir + 'TINT_figures/national/'
+    plt.savefig(
+        fig_dir + 'pie_chart.png',
+        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
 def plot_sensitivities_comp(
         sen_dfs_1, sen_dfs_2, test_dirs_1, test_dirs_2,
@@ -1778,18 +1911,10 @@ def compare_categories(
         new_col_order.append(new_col_names_2[i])
     pivot_counts = pivot_counts[new_col_order]
 
-    ww = 0.7*5/4
-
     pivot_counts.plot(
         kind='bar', stacked=False, rot=0, ax=ax,
-        yticks=np.arange(0, 0.7, 0.1), width=ww,
-        color=colors, xlabel=None, legend=False, edgecolor='k', linewidth=.5)
-
-    plt.plot([.5, .5], [0, .6], 'k', alpha=.5, linewidth=.5)
-    plt.plot([1.5, 1.5], [0, .6], 'k', alpha=.5, linewidth=.5)
-    plt.plot([2.5, 2.5], [0, .6], 'k', alpha=.5, linewidth=.5)
-
-    ax.set_xlim([-.5, 3.5])
+        yticks=np.arange(0, 0.7, 0.1), width=0.6*5/4,
+        color=colors, xlabel=None, legend=False)
 
     plt.sca(ax)
     plt.ylabel('Ratio [-]')
@@ -2316,20 +2441,10 @@ def monsoon_comparison_ACCESS_radar(
         new_col_order.append(new_col_names_2[i])
     ratios_df = ratios_df[new_col_order]
 
-    ww = 0.9*4/4
-
     ratios_df.plot(
         kind='bar', stacked=False, rot=0, fontsize=12, ax=ax,
-        yticks=np.arange(0, 1.1, 0.1), width=ww,
-        color=colors, legend=False, edgecolor='k', linewidth=0.5)
-
-    ax.plot([.5, .5], [0, 1], 'k', alpha=.5, linewidth=.5)
-    ax.plot([1.5, 1.5], [0, 1], 'k', alpha=.5, linewidth=.5)
-    ax.plot([2.5, 2.5], [0, 1], 'k', alpha=.5, linewidth=.5)
-
-    ax.set_xlim([-.5, 2.5])
-    ax.set_ylim([0, 1])
-
+        yticks=np.arange(0, 1.1, 0.1), width=0.7*4/4,
+        color=colors, legend=False)
     ax.set_xlabel(None)
     # ax.xaxis.set_label_coords(.5, -0.15)
     ax.set_ylabel('Ratio [-]', fontsize=14)
