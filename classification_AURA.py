@@ -1188,6 +1188,37 @@ def plot_pie_map(radar_dfs):
         33, 36, 37, 40, 41, 42, 44, 46, 48, 49, 50, 52, 53, 54, 55, 56, 63, 64,
         66, 67, 68, 69, 70, 71, 72, 73, 75, 76, 77]
 
+    offset_dic = dict(zip(
+        radars, [[0, 0] for i in range(len(radars))]))
+    offset_dic[24] = [-.5, 2]
+    offset_dic[66] = [3, 1]
+    offset_dic[50] = [-2, 1.5]
+    offset_dic[71] = [-2.25, 1]
+    offset_dic[54] = [3.25, -.5]
+    offset_dic[3] = [2, -3.5]
+    offset_dic[76] = [2, 1.5]
+    offset_dic[37] = [-2, -1.5]
+    offset_dic[64] = [1.5, 1.75]
+    offset_dic[46] = [-1.5, -1.75]
+    offset_dic[49] = [-3, 2]
+    offset_dic[68] = [-1.5, -3.5]
+    offset_dic[55] = [-1.25, 1.25]
+    offset_dic[69] = [-3.75, .75]
+    offset_dic[32] = [2.5, 1.5]
+    offset_dic[40] = [.5, -4]
+    offset_dic[28] = [2.5, -1]
+    offset_dic[8] = [2, 2.5]
+    offset_dic[23] = [1.25, 2.5]
+    offset_dic[41] = [0, 2.5]
+    offset_dic[19] = [-1, 2]
+    offset_dic[29] = [1, 2]
+    offset_dic[73] = [-3, 0]
+    offset_dic[22] = [1, 2]
+    offset_dic[72] = [-1.75, 1.25]
+    offset_dic[56] = [-2, 0]
+    offset_dic[63] = [-2, 0]
+    offset_dic[42] = [-2, -2]
+
     good_radar = radar_info.loc[radars]
     # import pdb; pdb.set_trace()
     # new_order = [0, 4, 1, 2, 3]
@@ -1208,24 +1239,55 @@ def plot_pie_map(radar_dfs):
     # leg_offset = [offset_1, offset_1, offset_1, offset_1, offset_1]
     # leg_offset_x = [.475] * 4 + [.475]
     # leg_columns = [2, 3, 2, 2, 2]
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    fig_dir = base_dir + 'TINT_figures/national/'
 
-    def plot_pie_inset(data, ilon, ilat, ax, width, colors, text=''):
-        ax_sub= inset_axes(
-            ax, width=width, height=width, loc=10,
-            bbox_to_anchor=(ilon, ilat),
-            bbox_transform=ax.transData,
-            borderpad=0)
-        # ax_sub.text(text, ilon, ilat)
-        wedges, texts= ax_sub.pie(
-            data, colors=colors,
-            normalize=True,
-            wedgeprops = {
-                "edgecolor" : "black",
-                'linewidth': .75,
+    def pct_fmt(pct):
+        if pct > 15:
+            return "{:1.0f}".format(pct)
+        else:
+            return ''
+
+    def plot_pie_inset(
+            data, ilon, ilat, ax, width, total, radar, offsets, colors):
+        width = 5*width
+        ax_sub = ax.inset_axes(
+            bounds=[
+                ilon-width/2+offsets[0], ilat-width/2+offsets[1],
+                width, width],
+            transform=ax.transData,
+            zorder=1)
+
+        # patches, texts, other = ax_sub.pie(
+        #     data, colors=colors, autopct=lambda pct: pct_fmt(pct),
+        #     normalize=True, pctdistance=.6,
+        #     textprops={'fontsize': 10},
+        #     wedgeprops={
+        #         'edgecolor' : 'black',
+        #         'linewidth': 0.75,
+        #         'antialiased': True})
+        patches, texts = ax_sub.pie(
+            data, colors=colors, normalize=True,
+            wedgeprops={
+                'edgecolor' : 'black',
+                'linewidth': 1,
                 'antialiased': True})
 
-    fig = plt.figure(figsize=(12, 48))
+        [p.set_zorder(2) for p in patches]
+
+        # ax_sub.text(
+        #     ilon+offsets[0], ilat+offsets[1]-width/2,
+        #     str(total), transform=ax.transData, fontsize=10,
+        #     horizontalalignment='center', backgroundcolor='1',
+        #     bbox=dict(facecolor='white', alpha=0.5, linewidth=0, pad=-.3),
+        #     zorder=1)
+        return patches, texts
+
+    leg_col = [5, 6, 4, 4, 2]
+    offsets = [-.115, -.115, -.115, -.115, -.15]
+
     for i in [0, 1, 4, 2, 3]:
+    # for i in [0]:
         base_ratios = radar_dfs[i].drop('Total', axis=1)
         c_list = clists[i]
         for c in base_ratios.columns:
@@ -1233,14 +1295,14 @@ def plot_pie_map(radar_dfs):
                 base_ratios.loc[:, c]/radar_dfs[i].loc[:, 'Total'])
 
         max_rat = np.ceil(base_ratios.max().max()*10)/10
-
         ncol = len(base_ratios.columns)
 
-        ax = fig.add_subplot(5, 1, i+1, projection=ccrs.PlateCarree())
+        fig = plt.figure(figsize=(12, 8))
+        ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
         ax.set_title(names[i])
         ax.coastlines(resolution='50m', zorder=1)
 
-        ax.set_extent([112, 155, -10, -45], crs=ccrs.PlateCarree())
+        ax.set_extent([110, 160, -9, -44], crs=ccrs.PlateCarree())
         grid = ax.gridlines(
             crs=ccrs.PlateCarree(), draw_labels=True,
             linewidth=1, color='gray', alpha=0.4, linestyle='--')
@@ -1273,46 +1335,64 @@ def plot_pie_map(radar_dfs):
         grid.right_labels = False
         grid.top_labels = False
 
+        # import pdb; pdb.set_trace()
         arrow = False
+        max_tot = np.max(radar_dfs[i].loc[:, 'Total'].values)
+        min = 50
 
         for radar in radars:
             # Plot pie chart
             # import pdb; pdb.set_trace()
+            if radar_dfs[i].loc[radar, 'Total'] < min:
+                continue
+
             pie_data = base_ratios.loc[radar]
             good_radar_i = good_radar.loc[[radar]].iloc[0]
 
             lat, lon = good_radar_i[['site_lat', 'site_lon']]
             total = radar_dfs[i].loc[radar, 'Total']
-            plot_pie_inset(
-                pie_data, lon, lat, ax, 0.6, colors=c_list,
-                text=total)
 
-        # ax = base_ratios.plot(
-        #     kind='bar', stacked=False, fontsize=12, rot=0, ax=ax,
-        #     yticks=np.arange(0, max_rat+0.1, 0.1), width=0.625*ncol/4,
-        #     color=c_list)
-        # ax.set_xlabel(None)
-        # ax.xaxis.set_label_coords(.5, -0.15)
-        # ax.set_ylabel('Ratio [-]', fontsize=14)
-        # ax.legend(
-        #     loc='lower center',
-        #     bbox_to_anchor=(leg_offset_x[i], leg_offset[i]),
-        #     ncol=leg_columns[i], fancybox=True, shadow=True)
-        # ax.set_yticks(np.arange(0, max_rat+0.05, 0.05), minor=True)
-        # ax.grid(which='minor', alpha=0.2, axis='y')
-        # ax.grid(which='major', alpha=0.5, axis='y')
+            lin_scale = .6
+            width = 1*lin_scale + (total-min)/(max_tot-min)*(1-lin_scale)
 
-    # category_breakdown(
-    #     fig=fig, ax=axes[2, 1], leg_offset_h=-.71, test_dir=test_dirs,
-    #     test_names=name_abvs, name_abvs=name_abvs)
-    # plt.subplots_adjust(hspace=0.65)
-    # make_subplot_labels(axes.flatten())
+            patches, other = plot_pie_inset(
+                pie_data, lon, lat, ax, width,
+                total, radar, offset_dic[radar], colors=c_list)
 
-    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
-    fig_dir = base_dir + 'TINT_figures/national/'
-    plt.savefig(
-        fig_dir + 'pie_chart.png',
-        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+            if offset_dic[radar] != [0, 0]:
+
+                ax.quiver(
+                    lon+offset_dic[radar][0], lat+offset_dic[radar][1],
+                    -offset_dic[radar][0], -offset_dic[radar][1],
+                    edgecolor='black', zorder=3, angles='xy',
+                    scale_units='xy', scale=1, width=.004,
+                    facecolor=(1, 1, 1, 0.4),
+                    linewidth=1)
+            dot = ax.scatter(
+                [lon], [lat], s=30, marker='o', color=colors[3],
+                zorder=4, linewidth=1, edgecolor='black')
+
+            ax.text(
+                lon+offset_dic[radar][0],
+                lat+offset_dic[radar][1]+.95*5*width/2,
+                '#' + str(radar), fontsize=10,
+                horizontalalignment='center',
+                bbox=dict(facecolor='white', alpha=0.85, linewidth=0, pad=-.3),
+                zorder=3)
+            # ax.arrow(
+            #     lon+offset_dic[radar][0], lat+offset_dic[radar][1],
+            #     -offset_dic[radar][0], -offset_dic[radar][1],
+            #     width=.1, color='k', zorder=2, alpha=.4)
+
+        plt.legend(
+            patches, list(pie_data.index),
+            loc='lower center',
+            bbox_to_anchor=(.5, offsets[i]),
+            ncol=leg_col[i], fancybox=True, shadow=True)
+        plt.savefig(
+            fig_dir + 'pie_chart_{}.png'.format(
+                names[i].replace('-', '_',).replace(' ', '_').lower()),
+            dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
 def plot_sensitivities_comp(
         sen_dfs_1, sen_dfs_2, test_dirs_1, test_dirs_2,
