@@ -42,6 +42,7 @@ else:
     end_date = np.datetime64('{:04}-{:02}-01'.format(args.year, args.month+1))
 
 print('Getting year {}'.format(args.year))
+
 cf.gen_operational_verification_figures(
     args.tracks, args.figures, radar=args.radar,
     year=args.year, month=args.month, exclusions=['simple_duration_cond'],

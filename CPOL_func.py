@@ -16,6 +16,7 @@ import tempfile
 import shutil
 import classification as cl
 from tint.grid_utils import extract_datetimes
+from zipfile import BadZipFile
 
 
 def CPOL_files_from_datetime_list(datetimes, base_dir=None):
@@ -304,9 +305,13 @@ def get_oper_month(
                 print('All bad data this month: Skipping.')
                 return
 
-            new_grid, file_list = po.get_grid(
-                day_grid, tracks_obj.params, tracks_obj.reference_grid,
-                tracks_obj.tmp_dir, None)
+            try:
+                new_grid, file_list = po.get_grid(
+                    day_grid, tracks_obj.params, tracks_obj.reference_grid,
+                    tracks_obj.tmp_dir, None)
+            except BadZipFile:
+                print('Bad Zip. Skipping')
+                continue
 
             dt_list = extract_datetimes(file_list)
             grids = (
@@ -316,7 +321,7 @@ def get_oper_month(
             if len(dt_list) >= 2:
                 tracks_obj.params['DT'] = int(np.argmax(np.bincount((np.diff(
                     np.array(dt_list))).astype(int)))/60)
-            if tracks_obj.params['DT'] > 0:
+            if tracks_obj.params['DT'] > 0 and len(file_list) >= 6:
                 good_day = True
             else:
                 print('Bad day of data, trying next day.')
@@ -452,16 +457,19 @@ def gen_operational_verification_figures(
     if len(tracks_obj.tracks)==0:
         print('Empty tracks file. Quitting.')
         return
+    try:
+        excluded = tracks_obj.exclusions[exclusions]
+        excluded = excluded.xs(0, level='level')
+        excluded = np.any(excluded, 1)
+        # excluded = excluded.where(excluded==False).dropna()
+        # len(excluded)/3
 
-    excluded = tracks_obj.exclusions[exclusions]
-    excluded = excluded.xs(0, level='level')
-    excluded = np.any(excluded, 1)
-    # excluded = excluded.where(excluded==False).dropna()
-    # len(excluded)/3
-
-    included = np.logical_not(excluded)
-    included = included.where(included == True).dropna()
-    scans = included
+        included = np.logical_not(excluded)
+        included = included.where(included == True).dropna()
+        scans = included
+    except AttributeError:
+        print('Small tracks file. Quitting.')
+        return
 
     if start_date is not None and end_date is not None:
         scans = scans.loc[:, slice(start_date, end_date), :, :]
@@ -485,8 +493,8 @@ def gen_operational_verification_figures(
             'uid_ind': None, 'line_coords': False, 'center_cell': False,
             'cell_ind': 10, 'winds': False, 'winds_fn': None,
             'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
-            'leg_loc': 2, 'label_type': 'velocities',
-            'system_winds': ['shift', 'relative', 'ambient_mean'],
+            'leg_loc': 2, 'label_type': 'shear',
+            'system_winds': ['shear', 'relative'],
             'boundary': True, 'exclude': True, 'exclusions': exclusions}
 
         figures.two_level(
