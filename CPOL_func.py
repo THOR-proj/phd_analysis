@@ -411,8 +411,8 @@ def gen_ACCESS_verification_figures(
             'uid_ind': None, 'line_coords': False, 'center_cell': False,
             'cell_ind': 10, 'winds': False, 'winds_fn': None,
             'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
-            'leg_loc': 2, 'label_type': 'shear',
-            'system_winds': ['shift', 'shear', 'relative'],
+            'leg_loc': 2, 'label_type': 'velocities',
+            'system_winds': ['shift', 'relative', 'ambient_mean'],
             'boundary': True, 'exclude': True, 'exclusions': exclusions}
 
         figures.two_level(
@@ -446,6 +446,89 @@ def gen_operational_verification_figures(
             'small_velocity', 'small_offset']
 
     path = save_dir + '/{:02}_{:04}_{:02}.pkl'.format(radar, year, month)
+    try:
+        with open(path, 'rb') as f:
+            tracks_obj = pickle.load(f)
+    except FileNotFoundError:
+        print('File {} does not exist. Confirm tracks were created.'.format(path))
+        return
+
+    # tracks_obj = cl.redo_exclusions(tracks_obj)
+    if len(tracks_obj.tracks)==0:
+        print('Empty tracks file. Quitting.')
+        return
+    try:
+        excluded = tracks_obj.exclusions[exclusions]
+        excluded = excluded.xs(0, level='level')
+        excluded = np.any(excluded, 1)
+        # excluded = excluded.where(excluded==False).dropna()
+        # len(excluded)/3
+
+        included = np.logical_not(excluded)
+        included = included.where(included == True).dropna()
+        scans = included
+    except AttributeError:
+        print('Small tracks file. Quitting.')
+        return
+
+    if start_date is not None and end_date is not None:
+        scans = scans.loc[:, slice(start_date, end_date), :, :]
+    scans = sorted(np.unique(scans.index.get_level_values(1).values))
+
+    file_list = None
+    tmp_dir = tempfile.mkdtemp(dir=save_dir)
+    tracks_obj.params['REMOTE'] = True
+
+    for s in scans:
+
+        grid, file_list = tint.process_operational_radar.get_grid(
+            s, tracks_obj.params, tracks_obj.reference_grid,
+            tmp_dir, file_list)
+
+        current_time = str(datetime.datetime.now())[0:-7]
+        current_time = current_time.replace(" ", "_").replace(":", "_")
+        current_time = current_time.replace("-", "")
+
+        params = {
+            'uid_ind': None, 'line_coords': False, 'center_cell': False,
+            'cell_ind': 10, 'winds': False, 'winds_fn': None,
+            'crosshair': False, 'fontsize': 18, 'colorbar_flag': True,
+            'leg_loc': 2, 'label_type': 'shear',
+            'system_winds': ['shear', 'relative'],
+            'boundary': True, 'exclude': True, 'exclusions': exclusions}
+
+        figures.two_level(
+            tracks_obj, grid, params=params, alt1=2000, alt2=8000)
+        save_path = fig_dir + '{}.png'.format(s)
+        plt.savefig(
+            save_path, dpi=200, facecolor='w', edgecolor='white',
+            bbox_inches='tight')
+        plt.close('all')
+
+    shutil.rmtree(tmp_dir)
+
+
+def gen_CPOL_verification_figures(
+        save_dir, fig_dir, year=2020, exclusions=None, suffix='',
+        start_date=None, end_date=None, month=12):
+
+    print('Creating figures for radar {} year {} month {}'.format(
+        year, month))
+
+    fig_dir += '/{}_{:04d}_{:02d}{}/'.format(
+        year, month, suffix)
+
+    if not os.path.exists(fig_dir):
+        os.makedirs(fig_dir)
+        print('Creating new directory.')
+
+    if exclusions is None:
+        exclusions = [
+            'small_area', 'large_area', 'intersect_border',
+            'intersect_border_convective', 'duration_cond',
+            'small_velocity', 'small_offset']
+
+    path = save_dir + '/{:02}_{:04}_{:02}.pkl'.format(year, month)
     try:
         with open(path, 'rb') as f:
             tracks_obj = pickle.load(f)

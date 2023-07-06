@@ -188,8 +188,7 @@ def get_all_regional(
 
 
 def plot_regional_seasonal_and_so(
-        all_obs_regional, all_radar, all_ACCESS, fig_dir, suff):
-    density = False
+        all_obs_regional, all_radar, all_ACCESS, fig_dir, suff, density=False):
 
     [
         all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
@@ -236,7 +235,9 @@ def plot_regional_seasonal_and_so(
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
 
-def plot_all_diurnal(all_radar, all_ACCESS, fig_dir, suff):
+def plot_all_diurnal(
+        all_radar, all_ACCESS, fig_dir, suff, density=False,
+        subplot_labels=True):
 
     [
         all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
@@ -245,8 +246,6 @@ def plot_all_diurnal(all_radar, all_ACCESS, fig_dir, suff):
     [
         all_obs_ACCESS, QC_obs_ACCESS, all_obs_weak_ACCESS, QC_obs_weak_ACCESS,
         all_obs_active_ACCESS, QC_obs_active_ACCESS] = all_ACCESS
-
-    density = False
 
     fig, axes = plt.subplots(3, 2, figsize=(12, 8))
 
@@ -271,27 +270,29 @@ def plot_all_diurnal(all_radar, all_ACCESS, fig_dir, suff):
 
     plt.subplots_adjust(hspace=1.1)
 
-    cl.make_subplot_labels(axes.flatten(), x_shift=-.14)
+    if subplot_labels:
+        cl.make_subplot_labels(axes.flatten(), x_shift=-.14)
 
     maximums = [10e3, 4e2, 8e3, 3e2, 2e3, 2.5e2]
     dy = [2e3, 1e2, 2e3, .5e2, .5e3, .5e2]
 
-    for i in range(len(axes.flatten())):
-        axes.flatten()[i].set_yticks(np.arange(0, maximums[i]+dy[i], dy[i]))
-        axes.flatten()[i].set_yticks(
-            np.arange(0, maximums[i]+dy[i]/2, dy[i]/2), minor=True)
-        axes.flatten()[i].grid(which='minor', alpha=0.2, axis='y')
-        axes.flatten()[i].grid(which='major', alpha=0.5, axis='y')
+    if not density:
+        for i in range(len(axes.flatten())):
+            axes.flatten()[i].set_yticks(np.arange(0, maximums[i]+dy[i], dy[i]))
+            axes.flatten()[i].set_yticks(
+                np.arange(0, maximums[i]+dy[i]/2, dy[i]/2), minor=True)
+            axes.flatten()[i].grid(which='minor', alpha=0.2, axis='y')
+            axes.flatten()[i].grid(which='major', alpha=0.5, axis='y')
 
     plt.savefig(
         fig_dir + '/time_ACCESS_radar_active_compare_{}.png'.format(suff),
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
 
-def plot_all_orientations(all_radar, all_ACCESS, fig_dir, suff):
+def plot_all_orientations(
+        all_radar, all_ACCESS, fig_dir, suff, density=False,
+        subplot_labels=True):
     fig, axes = plt.subplots(3, 2, figsize=(12, 7))
-
-    density = False
 
     [
         all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
@@ -322,17 +323,19 @@ def plot_all_orientations(all_radar, all_ACCESS, fig_dir, suff):
 
     plt.subplots_adjust(hspace=.65)
 
-    cl.make_subplot_labels(axes.flatten(), x_shift=-.14)
+    if subplot_labels:
+        cl.make_subplot_labels(axes.flatten(), x_shift=-.14)
 
     maximums = [8e3, 4e2, 8e3, 2.5e2, 2e3, 2e2]
     dy = [2e3, 1e2, 2e3, .5e2, .5e3, .5e2]
 
-    for i in range(len(axes.flatten())):
-        axes.flatten()[i].set_yticks(np.arange(0, maximums[i]+dy[i], dy[i]))
-        axes.flatten()[i].set_yticks(
-            np.arange(0, maximums[i]+dy[i]/2, dy[i]/2), minor=True)
-        axes.flatten()[i].grid(which='minor', alpha=0.2, axis='y')
-        axes.flatten()[i].grid(which='major', alpha=0.5, axis='y')
+    if not density:
+        for i in range(len(axes.flatten())):
+            axes.flatten()[i].set_yticks(np.arange(0, maximums[i]+dy[i], dy[i]))
+            axes.flatten()[i].set_yticks(
+                np.arange(0, maximums[i]+dy[i]/2, dy[i]/2), minor=True)
+            axes.flatten()[i].grid(which='minor', alpha=0.2, axis='y')
+            axes.flatten()[i].grid(which='major', alpha=0.5, axis='y')
 
     plt.savefig(
         fig_dir + '/orientation_ACCESS_radar_active_compare_{}.png'.format(suff),
@@ -480,9 +483,8 @@ def plot_all_time_series(time_series_all, fig_dir, suff):
         edgecolor='white', bbox_inches='tight')
 
 
-def plot_all_eccentricities(all_radar, all_ACCESS, fig_dir, suff):
-
-    density = False
+def plot_all_eccentricities(
+        all_radar, all_ACCESS, fig_dir, suff, density=True):
 
     [
         all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
@@ -522,9 +524,9 @@ def plot_all_eccentricities(all_radar, all_ACCESS, fig_dir, suff):
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
 
-def plot_all_velocities(all_radar, all_ACCESS, fig_dir, suff):
-
-    density = False
+def plot_all_velocities(
+        all_radar, all_ACCESS, fig_dir, suff, density=False,
+        fig_style='paper', subplot_labels=True):
 
     [
         all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
@@ -554,7 +556,8 @@ def plot_all_velocities(all_radar, all_ACCESS, fig_dir, suff):
 
     plt.subplots_adjust(hspace=.65)
 
-    cl.make_subplot_labels(axes.flatten(), x_shift=-.14)
+    if subplot_labels:
+        cl.make_subplot_labels(axes.flatten(), x_shift=-.14)
 
     axes.flatten()[-2].legend(
         loc='lower center', bbox_to_anchor=(1.1, -0.75),
@@ -563,12 +566,13 @@ def plot_all_velocities(all_radar, all_ACCESS, fig_dir, suff):
     maximums = [2.5e4, 10e2, 2e4, 10e2, 8e3, 8e2]
     dy = [.5e4, 2e2, .5e4, 2e2, 2e3, 2e2]
 
-    for i in range(len(axes.flatten())):
-        axes.flatten()[i].set_yticks(np.arange(0, maximums[i]+dy[i], dy[i]))
-        axes.flatten()[i].set_yticks(
-            np.arange(0, maximums[i]+dy[i]/2, dy[i]/2), minor=True)
-        axes.flatten()[i].grid(which='minor', alpha=0.2, axis='y')
-        axes.flatten()[i].grid(which='major', alpha=0.5, axis='y')
+    if not density:
+        for i in range(len(axes.flatten())):
+            axes.flatten()[i].set_yticks(np.arange(0, maximums[i]+dy[i], dy[i]))
+            axes.flatten()[i].set_yticks(
+                np.arange(0, maximums[i]+dy[i]/2, dy[i]/2), minor=True)
+            axes.flatten()[i].grid(which='minor', alpha=0.2, axis='y')
+            axes.flatten()[i].grid(which='major', alpha=0.5, axis='y')
 
     plt.savefig(
         fig_dir + '/zonal_ACCESS_radar_active_compare_{}.png'.format(suff),
@@ -598,7 +602,8 @@ def plot_all_velocities(all_radar, all_ACCESS, fig_dir, suff):
 
     plt.subplots_adjust(hspace=.65)
 
-    cl.make_subplot_labels(axes.flatten(), x_shift=-.14)
+    if subplot_labels:
+        cl.make_subplot_labels(axes.flatten(), x_shift=-.14)
 
     axes.flatten()[-2].legend(
         loc='lower center', bbox_to_anchor=(1.1, -0.75),
@@ -607,12 +612,13 @@ def plot_all_velocities(all_radar, all_ACCESS, fig_dir, suff):
     maximums = [2.5e4, 10e2, 2e4, 10e2, 8e3, 8e2]
     dy = [.5e4, 2e2, .5e4, 2e2, 2e3, 2e2]
 
-    for i in range(len(axes.flatten())):
-        axes.flatten()[i].set_yticks(np.arange(0, maximums[i]+dy[i], dy[i]))
-        axes.flatten()[i].set_yticks(
-            np.arange(0, maximums[i]+dy[i]/2, dy[i]/2), minor=True)
-        axes.flatten()[i].grid(which='minor', alpha=0.2, axis='y')
-        axes.flatten()[i].grid(which='major', alpha=0.5, axis='y')
+    if not density:
+        for i in range(len(axes.flatten())):
+            axes.flatten()[i].set_yticks(np.arange(0, maximums[i]+dy[i], dy[i]))
+            axes.flatten()[i].set_yticks(
+                np.arange(0, maximums[i]+dy[i]/2, dy[i]/2), minor=True)
+            axes.flatten()[i].grid(which='minor', alpha=0.2, axis='y')
+            axes.flatten()[i].grid(which='major', alpha=0.5, axis='y')
 
     plt.savefig(
         fig_dir + '/meridional_ACCESS_radar_active_compare_{}.png'.format(suff),
@@ -1427,9 +1433,7 @@ def plot_counts_regional_seasonal(
     plt.subplots_adjust(hspace=.4)
 
 
-def compare_all_sizes(all_radar, all_ACCESS, fig_dir, suff):
-
-    density = False
+def compare_all_sizes(all_radar, all_ACCESS, fig_dir, suff, density=False):
 
     [
         all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
@@ -1559,11 +1563,11 @@ def compare_velocities(
             ncol=2, fancybox=True, shadow=True)
 
     for i in range(len(ax.flatten())):
-        ax.flatten()[i].ticklabel_format(
-            axis='y', style='sci', scilimits=(0, 0))
         ax.flatten()[i].grid(which='major', alpha=0.5, axis='y')
         if density:
             ax.flatten()[i].set_ylabel('Density [-]')
+            ax.flatten()[i].ticklabel_format(
+                axis='y', style='sci', scilimits=(0, 0))
         else:
             ax.flatten()[i].set_ylabel('Count [-]')
         ax.flatten()[i].set_xlabel('Velocity [m/s]', labelpad=0)
