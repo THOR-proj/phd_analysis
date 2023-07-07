@@ -454,7 +454,7 @@ def gen_operational_verification_figures(
         return
 
     # tracks_obj = cl.redo_exclusions(tracks_obj)
-    if len(tracks_obj.tracks)==0:
+    if len(tracks_obj.tracks) == 0:
         print('Empty tracks file. Quitting.')
         return
     try:
