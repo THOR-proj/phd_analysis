@@ -427,7 +427,7 @@ def get_colors():
 
 def set_ticks(
         ax1, ax2, maximum_count, leg_columns=3, legend=True, diurnal=False,
-        fig_style='presentation'):
+        fig_style='presentation', leg_y=-0.7):
     plt.sca(ax1)
     if diurnal:
         plt.xticks(np.arange(0, 24, 2))
@@ -437,13 +437,17 @@ def set_ticks(
         plt.xlabel('Time since Detection [min]')
 
     handles, labels = ax1.get_legend_handles_labels()
-    by_label = dict(zip(labels, handles))
+    by_label = dict(zip(labels[:-1], handles[:-1]))
 
     if legend:
+        # ax1.legend(
+        #     by_label.values(), by_label.keys(),
+        #     loc='lower center', bbox_to_anchor=(1.1, leg_y),
+        #     ncol=2, fancybox=True, shadow=True)
         ax1.legend(
             by_label.values(), by_label.keys(),
-            loc='lower center', bbox_to_anchor=(1.1, -0.685),
-            ncol=leg_columns, fancybox=True, shadow=True)
+            loc='right',
+            ncol=5, fancybox=True, shadow=True)
 
     plt.ylabel('Count [-]')
 
@@ -476,7 +480,7 @@ def set_ticks(
     ax2.grid(which='minor', alpha=0.2, axis='y')
 
 
-def initialise_fig(length=12, height=3.5, n_subplots=2):
+def initialise_fig(length=12, height=4.5, n_subplots=2):
     fig, axes = plt.subplots(
         int(np.ceil(n_subplots/2)), 2, figsize=(length, height))
     return fig, axes
@@ -744,7 +748,7 @@ def plot_inflows(
         linestyle=linestyle, linewidth=linewidth)
     set_ticks(
         ax1, ax2, max(np.max(inflow_totals.loc[x].values), maximum),
-        legend=legend, diurnal=diurnal)
+        legend=legend, diurnal=diurnal, leg_y=-0.885)
 
     if time_thresh is not None:
         ax2.plot([time_thresh, time_thresh], [0, 1], '--', color='gray')
@@ -907,8 +911,8 @@ def plot_comparison(
         linewidth = 1.75
     else:
         print('Dark Mode.')
-        plt.style.use("dark_background")
-        fc = 'k'
+        # plt.style.use("dark_background")
+        fc = 'w'
         linewidth = 2.5
 
     if test_dir is None:
@@ -959,7 +963,7 @@ def plot_comparison(
             plt.suptitle(title, y=.925)
 
         plt.savefig(
-            fig_dir + 'offsets_inflows_comparison{}.png'.format(suffix),
+            fig_dir + 'offsets_inflows_comparison{}.svg'.format(suffix),
             dpi=200, facecolor=fc, edgecolor=fc, bbox_inches='tight')
 
         plot_tilts(
@@ -979,7 +983,7 @@ def plot_comparison(
             plt.suptitle(title, y=.945)
 
         plt.savefig(
-            fig_dir + 'tilts_propagations_comparison{}.png'.format(suffix),
+            fig_dir + 'tilts_propagations_comparison{}.svg'.format(suffix),
             dpi=200, facecolor=fc, edgecolor=fc, bbox_inches='tight')
 
         plt.close('all')
@@ -1085,7 +1089,7 @@ def plot_all(
             make_subplot_labels(axes.flatten())
 
         plt.savefig(
-            fig_dir + 'offsets_inflows' + diurnal*'_diurnal' + '.png',
+            fig_dir + 'offsets_inflows' + diurnal*'_diurnal' + '.svg',
             dpi=200, facecolor=fc, edgecolor=fc, bbox_inches='tight')
 
         fig, axes = initialise_fig(height=6, n_subplots=4)
@@ -1118,7 +1122,7 @@ def plot_all(
         plt.subplots_adjust(hspace=0.775)
 
         plt.savefig(
-            fig_dir + 'tilts_propagations' + diurnal*'_diurnal' + '.png',
+            fig_dir + 'tilts_propagations' + diurnal*'_diurnal' + '.svg',
             dpi=200, facecolor=fc,
             edgecolor=fc, bbox_inches='tight')
 
@@ -1247,7 +1251,7 @@ def plot_sensitivities(
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
     fig_dir = base_dir + 'TINT_figures/'
     plt.savefig(
-        fig_dir + 'total_ratio_sensitivities{}.png'.format(suff),
+        fig_dir + 'total_ratio_sensitivities{}.svg'.format(suff),
         dpi=200, facecolor=fc, edgecolor=fc, bbox_inches='tight')
 
 
@@ -1362,7 +1366,7 @@ def plot_sensitivities_comp(
     base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
     fig_dir = base_dir + 'TINT_figures/'
     plt.savefig(
-        fig_dir + 'total_ratio_sensitivities{}.png'.format(suff),
+        fig_dir + 'total_ratio_sensitivities{}.svg'.format(suff),
         dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
 
@@ -1455,7 +1459,7 @@ def category_breakdown(
 
     # fig_dir = base_dir + 'TINT_figures/'
     # plt.savefig(
-    #     fig_dir + 'relative_stratiform_breakdown.png', dpi=200, facecolor='w',
+    #     fig_dir + 'relative_stratiform_breakdown.svg', dpi=200, facecolor='w',
     #     edgecolor='white', bbox_inches='tight')
 
     return tilt_sensitivity_df
@@ -1608,7 +1612,7 @@ def category_breakdown_comp(
 
     # fig_dir = base_dir + 'TINT_figures/'
     # plt.savefig(
-    #     fig_dir + 'relative_stratiform_breakdown.png', dpi=200, facecolor='w',
+    #     fig_dir + 'relative_stratiform_breakdown.svg', dpi=200, facecolor='w',
     #     edgecolor='white', bbox_inches='tight')
 
     return tilt_sensitivity_df
@@ -1752,7 +1756,7 @@ def plot_categories(
         transform=ax.transAxes, size=12, backgroundcolor='1')
 
     # plt.savefig(
-    #     fig_dir + 'categories.png', dpi=200, facecolor='w',
+    #     fig_dir + 'categories.svg', dpi=200, facecolor='w',
     #     edgecolor='white', bbox_inches='tight')
 
 
@@ -1889,7 +1893,7 @@ def compare_categories(
         transform=ax.transAxes, size=12, backgroundcolor='1')
 
     # plt.savefig(
-    #     fig_dir + 'categories.png', dpi=200, facecolor='w',
+    #     fig_dir + 'categories.svg', dpi=200, facecolor='w',
     #     edgecolor='white', bbox_inches='tight')
 
 
@@ -1936,7 +1940,7 @@ def pope_comparison(class_df=None):
         ncol=5, fancybox=True, shadow=True)
 
     plt.savefig(
-        fig_dir + 'pope_breakdown.png', dpi=200, facecolor='w',
+        fig_dir + 'pope_breakdown.svg', dpi=200, facecolor='w',
         edgecolor='white', bbox_inches='tight')
 
 
@@ -1996,7 +2000,7 @@ def pope_comparison_radar(class_df=None, class_path=None):
         ncol=5, fancybox=True, shadow=True)
 
     plt.savefig(
-        fig_dir + 'pope_breakdown_radar.png', dpi=200, facecolor='w',
+        fig_dir + 'pope_breakdown_radar.svg', dpi=200, facecolor='w',
         edgecolor='white', bbox_inches='tight')
 
 
@@ -2081,7 +2085,7 @@ def pope_comparison_radar_sensitivity(
         fontsize=14, y=.94)
 
     plt.savefig(
-        fig_dir + 'pope_breakdown_radar_sensitivity.png', dpi=200, facecolor='w',
+        fig_dir + 'pope_breakdown_radar_sensitivity.svg', dpi=200, facecolor='w',
         edgecolor='white', bbox_inches='tight')
 
 

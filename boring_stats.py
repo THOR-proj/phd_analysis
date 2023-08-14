@@ -237,7 +237,16 @@ def plot_regional_seasonal_and_so(
 
 def plot_all_diurnal(
         all_radar, all_ACCESS, fig_dir, suff, density=False,
-        subplot_labels=True):
+        subplot_labels=True, fig_style='paper'):
+
+    if fig_style == 'paper':
+        print('Paper style. Using defaults.')
+        # plt.style.use('classic')
+        fc = 'w'
+    else:
+        print('Dark Mode.')
+        plt.style.use("dark_background")
+        fc = 'k'
 
     [
         all_obs_radar, QC_obs_radar, all_obs_weak_radar, QC_obs_weak_radar,
@@ -286,12 +295,22 @@ def plot_all_diurnal(
 
     plt.savefig(
         fig_dir + '/time_ACCESS_radar_active_compare_{}.png'.format(suff),
-        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+        dpi=200, facecolor=fc, edgecolor=fc, bbox_inches='tight')
 
 
 def plot_all_orientations(
         all_radar, all_ACCESS, fig_dir, suff, density=False,
-        subplot_labels=True):
+        subplot_labels=True, fig_style='paper'):
+
+    if fig_style == 'paper':
+        print('Paper style. Using defaults.')
+        # plt.style.use('classic')
+        fc = 'w'
+    else:
+        print('Dark Mode.')
+        plt.style.use("dark_background")
+        fc = 'k'
+
     fig, axes = plt.subplots(3, 2, figsize=(12, 7))
 
     [
@@ -338,8 +357,9 @@ def plot_all_orientations(
             axes.flatten()[i].grid(which='major', alpha=0.5, axis='y')
 
     plt.savefig(
-        fig_dir + '/orientation_ACCESS_radar_active_compare_{}.png'.format(suff),
-        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+        fig_dir + '/orientation_ACCESS_radar_active_compare_{}.png'.format(
+            suff),
+        dpi=200, facecolor=fc, edgecolor=fc, bbox_inches='tight')
 
 
 def plot_all_time_series(time_series_all, fig_dir, suff):
@@ -536,6 +556,15 @@ def plot_all_velocities(
         all_obs_ACCESS, QC_obs_ACCESS, all_obs_weak_ACCESS, QC_obs_weak_ACCESS,
         all_obs_active_ACCESS, QC_obs_active_ACCESS] = all_ACCESS
 
+    if fig_style == 'paper':
+        print('Paper style. Using defaults.')
+        # plt.style.use('classic')
+        fc = 'w'
+    else:
+        print('Dark Mode.')
+        plt.style.use("dark_background")
+        fc = 'k'
+
     fig, axes = plt.subplots(3, 2, figsize=(12, 7))
 
     compare_velocities(
@@ -576,7 +605,7 @@ def plot_all_velocities(
 
     plt.savefig(
         fig_dir + '/zonal_ACCESS_radar_active_compare_{}.png'.format(suff),
-        dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
+        dpi=200, facecolor=fc, edgecolor=fc, bbox_inches='tight')
 
     fig, axes = plt.subplots(3, 2, figsize=(12, 7))
 
@@ -1537,6 +1566,8 @@ def compare_velocities(
         fig, ax = plt.subplots(2, 2, figsize=(12, 4))
     cl.init_fonts()
 
+    colors = cl.get_colors()
+
     if direction == 'Zonal':
         ind = 5
     else:
@@ -1544,14 +1575,15 @@ def compare_velocities(
 
     ax.flatten()[0].hist(
         [all_obs_radar[ind], all_obs_ACCESS[ind]],
+        color=[colors[0], colors[1]], fill=True,
         bins=np.arange(-20, 22, 2), label=['Radar', 'ACCESS-C'],
         density=density)
 
     ax.flatten()[0].set_title('Raw {} Velocities'.format(direction))
 
     ax.flatten()[1].hist(
-        [QC_obs_radar[ind], QC_obs_ACCESS[ind]],
-        bins=np.arange(-20, 22, 2), label=['Radar', 'ACCESS-C'],
+        [QC_obs_radar[ind], QC_obs_ACCESS[ind]], color=[colors[0], colors[1]],
+        fill=True, bins=np.arange(-20, 22, 2), label=['Radar', 'ACCESS-C'],
         density=density)
 
     ax.flatten()[1].set_title(
@@ -1591,18 +1623,20 @@ def compare_orientation(
         fig, ax = plt.subplots(1, 2, figsize=(12, 2))
     cl.init_fonts()
 
+    colors = cl.get_colors()
+
     ax.flatten()[0].hist(
-        [all_obs_radar[7], all_obs_ACCESS[7]],
+        [all_obs_radar[7], all_obs_ACCESS[7]], color=[colors[0], colors[1]],
         bins=np.arange(0, 391.25, 11.25), label=['Radar', 'ACCESS-C'],
-        density=density, rwidth=1)
+        density=density, rwidth=1, fill=True)
 
     ax.flatten()[0].set_title('Raw Orientations')
     ax.flatten()[0].set_xticks(np.arange(0, 405, 45))
 
     ax.flatten()[1].hist(
-        [QC_obs_radar[7], QC_obs_ACCESS[7]],
+        [QC_obs_radar[7], QC_obs_ACCESS[7]], color=[colors[0], colors[1]],
         bins=np.arange(0, 391.25, 11.25), label=['Radar', 'ACCESS-C'],
-        density=density, rwidth=1)
+        density=density, rwidth=1, fill=True)
 
     ax.flatten()[1].set_title('Restricted Sample Orientations')
     ax.flatten()[1].set_xticks(np.arange(0, 405, 45))
@@ -1751,6 +1785,8 @@ def compare_time(
         fig, ax = plt.subplots(1, 2, figsize=(12, 2))
     cl.init_fonts()
 
+    colors = cl.get_colors()
+
     a_hour = [int(s.astype(str)[11:13]) for s in all_obs_radar[2]]
     b_hour = [int(s.astype(str)[11:13]) for s in all_obs_ACCESS[2]]
     c_hour = [int(s.astype(str)[11:13]) for s in QC_obs_radar[2]]
@@ -1759,7 +1795,7 @@ def compare_time(
     ax.flatten()[0].hist(
         [a_hour, b_hour],
         bins=np.arange(0, 25, 1), label=['Radar', 'ACCESS-C'],
-        density=density, rwidth=1)
+        density=density, rwidth=1, color=[colors[0], colors[1]], fill=True)
 
     ax.flatten()[0].set_title('Raw Observation Count')
     ax.flatten()[0].set_xticks(np.arange(0, 25, 2))
@@ -1780,7 +1816,7 @@ def compare_time(
     ax.flatten()[1].hist(
         [c_hour, d_hour],
         bins=np.arange(0, 25, 1), label=['Radar', 'ACCESS-C'],
-        density=density, rwidth=1)
+        density=density, rwidth=1, color=[colors[0], colors[1]], fill=True)
 
     ax.flatten()[1].set_title('Restricted Observation Count')
     ax.flatten()[1].set_xticks(np.arange(0, 25, 2))
@@ -1839,7 +1875,7 @@ def gen_error_model_plot(
     s_mags = [0, 5e3, 10e3, 20e3, 30e3, 40e3]
 
     prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
+    s = prop_cycle.by_key()['color']
     colors = [colors[i] for i in [0, 1, 2, 4, 5, 6]]
 
     base_label = r"$\Delta r="

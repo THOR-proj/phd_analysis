@@ -24,7 +24,6 @@ def get_all_and_QC_radar_stats(
     return all_radar
 
 
-
 def get_all_regional(
         save_dir, exclusions=None, morning_only=False,
         class_thresh=None, excl_thresh=None, radars=[42, 63, 77]):
