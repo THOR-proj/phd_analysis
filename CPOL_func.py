@@ -214,7 +214,7 @@ def get_ACCESS_season(
 
 def get_oper_month(
         radar, year=2020, month=10, base_dir=None, ERA5_dir=None,
-        b_path=None, save_dir=None):
+        b_path=None, save_dir=None, test='base'):
     if base_dir is None:
         base_dir = '/g/data/hj10/cpol/cpol_level_1b/v2020/'
         base_dir += 'gridded/grid_150km_2500m/'
@@ -256,20 +256,144 @@ def get_oper_month(
         d for d in days
         if np.datetime64(str(d)[:10]) in common_datetimes])
 
-    tracks_obj = tint.Tracks(params={
-        'GS_ALT': 1500,  # m
-        # Layers to identify objects within.
-        'LEVELS': np.array(
-            [[500, 3500], [3500, 7500], [7500, 10000]]),  # m
-        # Interval in the above array used for tracking.
-        'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
-        'SAVE_DIR': save_dir,
-        'REFERENCE_GRID_FORMAT': 'ODIM',
-        'INPUT_TYPE': 'OPER_DATETIMES',
-        'REFERENCE_RADAR': radar,
-        'REMOTE': True,
-        'USE_DAY_GRIDS': True,
-        'DT': 10})
+    if test == 'base':
+        tracks_obj = tint.Tracks(params={
+            'GS_ALT': 1500,  # m
+            # Layers to identify objects within.
+            'LEVELS': np.array(
+                [[500, 3500], [3500, 7500], [7500, 10000]]),  # m
+            # Interval in the above array used for tracking.
+            'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
+            'SAVE_DIR': save_dir,
+            'REFERENCE_GRID_FORMAT': 'ODIM',
+            'INPUT_TYPE': 'OPER_DATETIMES',
+            'REFERENCE_RADAR': radar,
+            'REMOTE': True,
+            'USE_DAY_GRIDS': True,
+            'DT': 10})
+
+    if test == 'C2':
+        tracks_obj = tint.Tracks(params={
+            'GS_ALT': 1500,  # m
+            # Layers to identify objects within.
+            'LEVELS': np.array(
+                [[500, 2500], [2500, 7500], [7500, 10000]]),  # m
+            # Interval in the above array used for tracking.
+            'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
+            'SAVE_DIR': save_dir,
+            'REFERENCE_GRID_FORMAT': 'ODIM',
+            'INPUT_TYPE': 'OPER_DATETIMES',
+            'REFERENCE_RADAR': radar,
+            'REMOTE': True,
+            'USE_DAY_GRIDS': True,
+            'DT': 10})
+
+    if test == 'C4':
+        tracks_obj = tint.Tracks(params={
+            'GS_ALT': 1500,  # m
+            # Layers to identify objects within.
+            'LEVELS': np.array(
+                [[500, 4500], [4500, 7500], [7500, 10000]]),  # m
+            # Interval in the above array used for tracking.
+            'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
+            'SAVE_DIR': save_dir,
+            'REFERENCE_GRID_FORMAT': 'ODIM',
+            'INPUT_TYPE': 'OPER_DATETIMES',
+            'REFERENCE_RADAR': radar,
+            'REMOTE': True,
+            'USE_DAY_GRIDS': True,
+            'DT': 10})
+
+    if test == '4L':
+        tracks_obj = tint.Tracks(params={
+            'GS_ALT': 1500,  # m
+            # Layers to identify objects within.
+            'LEVELS': np.array([
+                [500,  3500],
+                [3500,  5500],
+                [5500,  7500],
+                [7500, 10000]]),
+            'MIN_SIZE': [80, 400, 400, 800],
+            'FIELD_THRESH': ['convective', 20, 20, 15],
+            'ISO_THRESH': [10, 10, 10, 10],
+            # Interval in the above array used for tracking.
+            'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
+            'SAVE_DIR': save_dir,
+            'REFERENCE_GRID_FORMAT': 'ODIM',
+            'INPUT_TYPE': 'OPER_DATETIMES',
+            'REFERENCE_RADAR': radar,
+            'REMOTE': True,
+            'USE_DAY_GRIDS': True,
+            'DT': 10})
+
+    if test == 'NS':
+        tracks_obj = tint.Tracks(params={
+            'GS_ALT': 1500,  # m
+            # Layers to identify objects within.
+            'LEVELS': np.array(
+                [[500, 3500], [3500, 7500], [7500, 10000]]),  # m
+            # Interval in the above array used for tracking.
+            'FIELD_THRESH': [40, 20, 15],
+            'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
+            'SAVE_DIR': save_dir,
+            'REFERENCE_GRID_FORMAT': 'ODIM',
+            'INPUT_TYPE': 'OPER_DATETIMES',
+            'REFERENCE_RADAR': radar,
+            'REMOTE': True,
+            'USE_DAY_GRIDS': True,
+            'DT': 10})
+
+    if test == 'LR':
+        tracks_obj = tint.Tracks(params={
+            'GS_ALT': 1500,  # m
+            # Layers to identify objects within.
+            'LEVELS': np.array(
+                [[500, 3500], [3500, 7500], [7500, 10000]]),  # m
+            # Interval in the above array used for tracking.
+            'FIELD_THRESH': [35, 15, 10],
+            'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
+            'SAVE_DIR': save_dir,
+            'REFERENCE_GRID_FORMAT': 'ODIM',
+            'INPUT_TYPE': 'OPER_DATETIMES',
+            'REFERENCE_RADAR': radar,
+            'REMOTE': True,
+            'USE_DAY_GRIDS': True,
+            'DT': 10})
+
+    if test == 'C':
+        tracks_obj = tint.Tracks(params={
+            'GS_ALT': 1500,  # m
+            # Layers to identify objects within.
+            'LEVELS': np.array([
+                [500,  3500],
+                [3500,  5500],
+                [5500,  7500],
+                [7500, 10000]]),
+            # Interval in the above array used for tracking.
+            'MIN_SIZE': [80, 400, 400, 800],
+            'FIELD_THRESH': [40, 20, 20, 15],
+            'ISO_THRESH': [10, 10, 10, 10],
+            'AMBIENT': 'ERA5', 'AMBIENT_BASE_DIR': ERA5_dir,
+            'SAVE_DIR': save_dir,
+            'REFERENCE_GRID_FORMAT': 'ODIM',
+            'INPUT_TYPE': 'OPER_DATETIMES',
+            'REFERENCE_RADAR': radar,
+            'REMOTE': True,
+            'USE_DAY_GRIDS': True,
+            'DT': 10,
+            'CLASS_THRESH': {
+                'OFFSET_MAG': 12500,
+                'SHEAR_MAG': 3,
+                'VEL_MAG': 5,
+                'REL_VEL_MAG': 3,
+                'ANGLE_BUFFER': 15},
+            'EXCL_THRESH': {
+                'SMALL_AREA': 2000,
+                'LARGE_AREA': 50000,
+                'BORD_THRESH': 0.001,
+                'MAJOR_AXIS_LENGTH': 25,
+                'AXIS_RATIO': 2,
+                'DURATION': 30}})
 
     # tracks_obj = tint.Tracks(params={
     #     'GS_ALT': 1000,

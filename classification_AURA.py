@@ -264,7 +264,7 @@ def get_counts(
 def get_counts_radar(
         base_dir=None, tracks_dir='base',
         non_linear=False, class_thresh=None, excl_thresh=None,
-        years=[2013], radar=63, fake_pope=False, exclusions=None,
+        years=[2013], radar=63, fake_pope=True, exclusions=None,
         morning_only=False):
     if base_dir is None:
         base_dir = '/g/data/w40/esh563/CPOL_analysis/'
@@ -275,13 +275,14 @@ def get_counts_radar(
     for y in years:
         for m in range(1, 13):
             try:
+                # import pdb; pdb.set_trace()
                 tracks_obj = load_op_month(
-                    y, m, radar, tracks_dir=tracks_dir)
+                    y, m, radar, tracks_dir=tracks_dir + '/{}/'.format(y))
             except FileNotFoundError:
                 print('No tracks file. Skipping')
                 continue
 
-            if len(tracks_obj.tracks) < 4:
+            if len(tracks_obj.tracks) < 6:
                 print('No tracks. Skipping')
                 continue
 
@@ -297,10 +298,19 @@ def get_counts_radar(
                     tracks_obj.exclusions.index.get_level_values('time').hour < 12]
 
             print('Getting new exclusions.')
-            tracks_obj = redo_exclusions(tracks_obj, class_thresh, excl_thresh)
+            try:
+                tracks_obj = redo_exclusions(
+                    tracks_obj, class_thresh, excl_thresh)
+            except KeyError:
+                print('No system tracks. Skipping.')
+                continue
+
             print('Adding Pope monsoon regime.')
             tracks_obj = add_monsoon_regime(
                 tracks_obj, base_dir=base_dir, fake_pope=fake_pope)
+
+            # Get raw and res sample)
+
             sub_tracks = get_sub_tracks(
                 tracks_obj, non_linear=non_linear, exclusions=exclusions)
             if sub_tracks is None:
@@ -456,7 +466,7 @@ def get_save_dir(save_dir):
 def plot_offsets(
         class_df, save_dir=None, append_time=False, fig=None,
         ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
-        diurnal=False, time_thresh=None):
+        diurnal=False, time_thresh=None, linewidth=2):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -505,32 +515,34 @@ def plot_offsets(
         x = np.arange(30, 310, 10)
     ax1.plot(
         x, TS.loc[x], label='Trailing Stratiform', color=colors[0],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, LS.loc[x], label='Leading Stratiform', color=colors[1],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, LeS.loc[x], label='Left Stratiform', color=colors[2],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, RiS.loc[x], label='Right Stratiform', color=colors[4],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, offset_totals.loc[x], label='Total', color=colors[3],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
 
     ax2.plot(
         x, (TS/offset_totals).loc[x],
-        label='Trailing Stratiform', color=colors[0], linestyle=linestyle)
+        label='Trailing Stratiform', color=colors[0], linestyle=linestyle,
+        linewidth=linewidth)
     ax2.plot(
         x, (LeS/offset_totals).loc[x], label='Left Stratiform',
-        color=colors[2], linestyle=linestyle)
+        color=colors[2], linestyle=linestyle, linewidth=linewidth)
     ax2.plot(
         x, (RiS/offset_totals).loc[x], label='Right Stratiform',
-        color=colors[4], linestyle=linestyle)
+        color=colors[4], linestyle=linestyle, linewidth=linewidth)
     ax2.plot(
         x, (LS/offset_totals).loc[x],
-        label='Leading Stratiform', color=colors[1], linestyle=linestyle)
+        label='Leading Stratiform', color=colors[1], linestyle=linestyle,
+        linewidth=linewidth)
 
     if time_thresh is not None:
         ax2.plot([time_thresh, time_thresh], [0, 1], '--', color='gray')
@@ -545,7 +557,7 @@ def plot_offsets(
 def plot_relative_offsets(
         class_df, save_dir=None, append_time=False, fig=None,
         ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
-        diurnal=False, time_thresh=None):
+        diurnal=False, time_thresh=None, linewidth=2):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -598,36 +610,36 @@ def plot_relative_offsets(
         x = np.arange(30, 310, 10)
     ax1.plot(
         x, TS.loc[x], label='Relative Trailing Stratiform', color=colors[0],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, LS.loc[x], label='Relative Leading Stratiform', color=colors[1],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, LeS.loc[x], label='Relative Left Stratiform',
-        color=colors[2], linestyle=linestyle)
+        color=colors[2], linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, RiS.loc[x], label='Relative Right Stratiform',
-        color=colors[4], linestyle=linestyle)
+        color=colors[4], linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, offset_totals.loc[x], label='Total', color=colors[3],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
 
     ax2.plot(
         x, (TS/offset_totals).loc[x],
         label='Relative Trailing Stratiform', color=colors[0],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax2.plot(
         x, (LeS/offset_totals).loc[x],
         label='Relative Left Stratiform',
-        color=colors[2], linestyle=linestyle)
+        color=colors[2], linestyle=linestyle, linewidth=linewidth)
     ax2.plot(
         x, (RiS/offset_totals).loc[x],
         label='Relative Right Stratiform',
-        color=colors[4], linestyle=linestyle)
+        color=colors[4], linestyle=linestyle, linewidth=linewidth)
     ax2.plot(
         x, (LS/offset_totals).loc[x],
         label='Relative Leading Stratiform', color=colors[1],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
 
     if time_thresh is not None:
         ax2.plot([time_thresh, time_thresh], [0, 1], '--', color='gray')
@@ -642,7 +654,7 @@ def plot_relative_offsets(
 def plot_inflows(
         class_df, save_dir=None, append_time=False, fig=None,
         ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
-        diurnal=False, time_thresh=None):
+        diurnal=False, time_thresh=None, linewidth=2):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -696,37 +708,38 @@ def plot_inflows(
         x = np.arange(30, 310, 10)
     ax1.plot(
         x, FF.loc[x], label='Front Fed', color=colors[0],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
-        x, RF.loc[x], label='Rear Fed', color=colors[1], linestyle=linestyle)
+        x, RF.loc[x], label='Rear Fed', color=colors[1],
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, LeF.loc[x], label='Left Fed', color=colors[2],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, RiF.loc[x], label='Right Fed', color=colors[4],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, A.loc[x], label='Ambiguous', color=colors[5],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, inflow_totals.loc[x], label='Total', color=colors[3],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
 
     ax2.plot(
         x, (FF/inflow_totals).loc[x], label='Front Fed', color=colors[0],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax2.plot(
         x, (RF/inflow_totals).loc[x], label='Rear Fed', color=colors[1],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax2.plot(
         x, (LeF/inflow_totals).loc[x], label='Left Fed',
-        color=colors[2], linestyle=linestyle)
+        color=colors[2], linestyle=linestyle, linewidth=linewidth)
     ax2.plot(
         x, (RiF/inflow_totals).loc[x], label='Right Fed',
-        color=colors[4], linestyle=linestyle)
+        color=colors[4], linestyle=linestyle, linewidth=linewidth)
     ax2.plot(
         x, (A/inflow_totals).loc[x], label='Ambiguous', color=colors[5],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     set_ticks(
         ax1, ax2, max(np.max(inflow_totals.loc[x].values), maximum),
         legend=legend, diurnal=diurnal)
@@ -741,7 +754,7 @@ def plot_inflows(
 def plot_tilts(
         class_df, save_dir=None, append_time=False, fig=None,
         ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
-        diurnal=False, time_thresh=None):
+        diurnal=False, time_thresh=None, linewidth=2):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -786,26 +799,26 @@ def plot_tilts(
         x = np.arange(30, 310, 10)
     ax1.plot(
         x, UST.loc[x], label='Up-Shear Tilted', color=colors[0],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, DST.loc[x], label='Down-Shear Tilted', color=colors[1],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, SP.loc[x], label='Shear Perpendicular', color=colors[5],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, tilt_totals.loc[x], label='Total', color=colors[3],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
 
     ax2.plot(
         x, (UST/tilt_totals).loc[x], label='Up-Shear Tilted',
-        color=colors[0], linestyle=linestyle)
+        color=colors[0], linestyle=linestyle, linewidth=linewidth)
     ax2.plot(
         x, (DST/tilt_totals).loc[x], label='Down-Shear Tilted',
-        color=colors[1], linestyle=linestyle)
+        color=colors[1], linestyle=linestyle, linewidth=linewidth)
     ax2.plot(
         x, (SP/tilt_totals).loc[x], label='Ambiguous', color=colors[5],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
 
     if time_thresh is not None:
         ax2.plot([time_thresh, time_thresh], [0, 1], '--', color='gray')
@@ -821,7 +834,7 @@ def plot_tilts(
 def plot_propagations(
         class_df, save_dir=None, append_time=False, fig=None,
         ax1=None, ax2=None, linestyle='-', legend=True, maximum=0,
-        diurnal=False, time_thresh=None):
+        diurnal=False, time_thresh=None, linewidth=2):
     if (fig is None) or (ax1 is None) or (ax2 is None):
         fig, (ax1, ax2) = initialise_fig()
     save_dir = get_save_dir(save_dir)
@@ -867,26 +880,26 @@ def plot_propagations(
         x = np.arange(30, 310, 10)
     ax1.plot(
         x, DSP.loc[x], label='Down-Shear Propagating', color=colors[0],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, USP.loc[x], label='Up-Shear Propagating', color=colors[1],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, SP.loc[x], label='Shear Perpendicular', color=colors[5],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
     ax1.plot(
         x, prop_totals.loc[x], label='Total', color=colors[3],
-        linestyle=linestyle)
+        linestyle=linestyle, linewidth=linewidth)
 
     ax2.plot(
         x, (DSP/prop_totals).loc[x], label='Down-Shear Propagating',
-        color=colors[0], linestyle=linestyle)
+        color=colors[0], linestyle=linestyle, linewidth=linewidth)
     ax2.plot(
         x, (USP/prop_totals).loc[x], label='Up-Shear Propagating',
-        color=colors[1], linestyle=linestyle)
+        color=colors[1], linestyle=linestyle, linewidth=linewidth)
     ax2.plot(
         x, (SP/prop_totals).loc[x], label='Shear Perpendicular',
-        color=colors[5], linestyle=linestyle)
+        color=colors[5], linestyle=linestyle, linewidth=linewidth)
 
     if time_thresh is not None:
         ax2.plot([time_thresh, time_thresh], [0, 1.1], '--', color='gray')
@@ -976,6 +989,186 @@ def plot_comparison(
             dpi=200, facecolor='w', edgecolor='white', bbox_inches='tight')
 
         plt.close('all')
+
+
+def plot_all_oldschool(
+        test_dir=None, test_names=None, diurnal=False,
+        time_threshes=None, fig_style='paper'):
+
+    if (test_dir is None) or (test_names is None):
+        test_dir = [
+            'base', 'lower_conv_level', 'higher_conv_level',
+            'four_levels', 'no_steiner', 'lower_ref_thresh',
+            'higher_shear_thresh', 'higher_rel_vel_thresh', 'higher_theta_e',
+            'higher_offset_thresh',
+            'higher_area_thresh', 'higher_border_thresh', 'linear_50',
+            'linear_25', 'combined']
+        test_names = [
+            'Base', 'Lower Convective Level', 'Higher Convective Level',
+            'Four Levels', 'No Steiner', 'Lower Reflectivitiy Thresholds',
+            'Higher Shear Threshold', 'Higher Relative Velocity Threshold',
+            'Higher Quadrant Buffer', 'Higher Stratiform Offset Threshold',
+            'Higher Minimum Area Threshold',
+            'Stricter Border Intersection Threshold',
+            '50 km Linearity Threshold',
+            '25 km Reduced Axis Ratio Linearity Threshold', 'Combined']
+    if time_threshes is None:
+        time_threshes = [[None]*5]*len(test_names)
+
+    test = []
+    [TS, LS, LeS, RiS, offset_total] = [[] for i in range(5)]
+    [RTS, RLS, RLeS, RRiS, rel_offset_total] = [[] for i in range(5)]
+    [FF, RF, LeF, RiF, A_inflow, inflow_total] = [[] for i in range(6)]
+    [UST, DST, A_tilt, tilt_total] = [[] for i in range(4)]
+    [USP, DSP, A_prop, prop_total] = [[] for i in range(4)]
+
+    if fig_style == 'paper':
+        print('Paper style. Using defaults.')
+        plt.style.use('default')
+        init_fonts()
+        fc = 'w'
+        linewidth = 1.75
+    else:
+        print('Dark Mode.')
+        plt.style.use("dark_background")
+        fc = 'k'
+        linewidth = 2.5
+
+    for i in range(len(test_dir)):
+    # for i in [0]:
+        base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+        class_path = base_dir + 'TINT_tracks/national/'
+        class_path += '{}_classes.pkl'.format(test_dir[i])
+        fig_dir = base_dir + 'TINT_figures/national/'
+        fig_dir += test_dir[i] + '/'
+
+        if not os.path.exists(fig_dir):
+            os.makedirs(fig_dir)
+            print('Creating new directory.')
+        with open(class_path, 'rb') as f:
+            class_df = pickle.load(f)
+        test.append(test_names[i])
+
+        # import pdb; pdb.set_trace()
+
+        if fig_style == 'paper':
+            fig, axes = initialise_fig(height=10, n_subplots=6)
+        else:
+            fig, axes = initialise_fig(height=12, n_subplots=6)
+
+        offset_summary = plot_offsets(
+            class_df, fig_dir, fig=fig, ax1=axes[0][0], ax2=axes[0][1],
+            diurnal=diurnal, time_thresh=time_threshes[i][0],
+            linewidth=linewidth)
+        TS.append(offset_summary[0].values[0])
+        LS.append(offset_summary[1].values[0])
+        LeS.append(offset_summary[2].values[0])
+        RiS.append(offset_summary[3].values[0])
+        offset_total.append(offset_summary[4].values[0])
+
+        rel_offset_summary = plot_relative_offsets(
+            class_df, fig_dir, fig=fig, ax1=axes[1][0], ax2=axes[1][1],
+            diurnal=diurnal, time_thresh=time_threshes[i][1],
+            linewidth=linewidth)
+        RTS.append(rel_offset_summary[0].values[0])
+        RLS.append(rel_offset_summary[1].values[0])
+        RLeS.append(rel_offset_summary[2].values[0])
+        RRiS.append(rel_offset_summary[3].values[0])
+        rel_offset_total.append(rel_offset_summary[4].values[0])
+
+        inflow_summary = plot_inflows(
+            class_df, fig_dir, fig=fig, ax1=axes[2][0], ax2=axes[2][1],
+            diurnal=diurnal, time_thresh=time_threshes[i][2],
+            linewidth=linewidth)
+        FF.append(inflow_summary[0].values[0])
+        RF.append(inflow_summary[1].values[0])
+        LeF.append(inflow_summary[2].values[0])
+        RiF.append(inflow_summary[3].values[0])
+        A_inflow.append(inflow_summary[4].values[0])
+        inflow_total.append(inflow_summary[5].values[0])
+
+        plt.subplots_adjust(hspace=0.775)
+        if fig_style == 'paper':
+            make_subplot_labels(axes.flatten())
+
+        plt.savefig(
+            fig_dir + 'offsets_inflows' + diurnal*'_diurnal' + '.svg',
+            dpi=200, facecolor=fc, edgecolor=fc, bbox_inches='tight')
+
+        fig, axes = initialise_fig(height=6, n_subplots=4)
+
+        if fig_style == 'paper':
+            fig, axes = initialise_fig(height=6, n_subplots=4)
+        else:
+            fig, axes = initialise_fig(height=7, n_subplots=4)
+
+        tilt_summary = plot_tilts(
+            class_df, fig_dir, fig=fig, ax1=axes[0][0], ax2=axes[0][1],
+            diurnal=diurnal, time_thresh=time_threshes[i][3],
+            linewidth=linewidth)
+        UST.append(tilt_summary[0].values[0])
+        DST.append(tilt_summary[1].values[0])
+        A_tilt.append(tilt_summary[2].values[0])
+        tilt_total.append(tilt_summary[3].values[0])
+
+        prop_summary = plot_propagations(
+            class_df, fig_dir, fig=fig, ax1=axes[1][0], ax2=axes[1][1],
+            diurnal=diurnal, time_thresh=time_threshes[i][4],
+            linewidth=linewidth)
+        USP.append(prop_summary[1].values[0])
+        DSP.append(prop_summary[0].values[0])
+        A_prop.append(prop_summary[2].values[0])
+        prop_total.append(prop_summary[3].values[0])
+
+        if fig_style == 'paper':
+            make_subplot_labels(axes.flatten())
+        plt.subplots_adjust(hspace=0.775)
+
+        plt.savefig(
+            fig_dir + 'tilts_propagations' + diurnal*'_diurnal' + '.svg',
+            dpi=200, facecolor=fc,
+            edgecolor=fc, bbox_inches='tight')
+
+        plt.close('all')
+
+    offset_sensitivity_df = pd.DataFrame({
+        'Test': test, 'Trailing Stratiform': TS,
+        'Leading Stratiform': LS, 'Left Stratiform': LeS,
+        'Right Stratiform': RiS, 'Total': offset_total})
+    offset_sensitivity_df = offset_sensitivity_df.set_index('Test')
+
+    inflow_sensitivity_df = pd.DataFrame({
+        'Test': test, 'Front Fed': FF,
+        'Rear Fed': RF, 'Left Fed': LeF,
+        'Right Fed': RiF, 'Ambiguous': A_inflow,
+        'Total': inflow_total})
+    inflow_sensitivity_df = inflow_sensitivity_df.set_index('Test')
+
+    tilt_sensitivity_df = pd.DataFrame({
+        'Test': test, 'Up-Shear Tilted': UST,
+        'Down-Shear Tilted': DST, 'Shear Perpendicular': A_tilt,
+        'Total': tilt_total})
+    tilt_sensitivity_df = tilt_sensitivity_df.set_index('Test')
+
+    prop_sensitivity_df = pd.DataFrame({
+        'Test': test, 'Down-Shear Propagating': DSP,
+        'Up-Shear Propagating': USP, 'Shear Perpendicular': A_prop,
+        'Total': prop_total})
+    prop_sensitivity_df = prop_sensitivity_df.set_index('Test')
+
+    rel_offset_sensitivity_df = pd.DataFrame({
+        'Test': test, 'Relative Trailing Stratiform': RTS,
+        'Relative Leading Stratiform': RLS,
+        'Relative Left Stratiform': RLeS,
+        'Relative Right Stratiform': RRiS,
+        'Total': rel_offset_total})
+    rel_offset_sensitivity_df = rel_offset_sensitivity_df.set_index('Test')
+
+    sen_dfs = [
+        offset_sensitivity_df, inflow_sensitivity_df,
+        tilt_sensitivity_df, prop_sensitivity_df, rel_offset_sensitivity_df]
+
+    return sen_dfs
 
 
 def plot_all(
@@ -1120,6 +1313,144 @@ def plot_all(
     return radar_dfs
 
 
+def plot_sensitivities_oldschool(
+        sen_dfs, test_dirs, raw, res, name_abvs=None, suff='', alt_layout=False,
+        fig_style='paper'):
+
+    if name_abvs is None:
+        name_abvs = [
+            'Base', 'C2', 'C4', '4L', 'NS', 'LR', 'S4', 'RV4', 'T15',
+            'S15', 'A2', 'B5', 'L50', 'L25', 'C']
+
+    ss_df = pd.DataFrame({'Raw Sample': raw, 'Restricted Sample': res}, index=sen_dfs[0].index)
+
+    if fig_style == 'paper':
+        print('Paper style. Using defaults.')
+        plt.style.use('default')
+        fc = 'w'
+        width = 12
+        init_fonts()
+        wspace = .3
+    else:
+        print('Dark Mode.')
+        plt.style.use("dark_background")
+        fc = 'k'
+        width = 16
+        wspace = .2
+
+    if alt_layout:
+        fig, axes = plt.subplots(2, 3, figsize=(10, 8))
+    else:
+        fig, axes = plt.subplots(3, 2, figsize=(width, 9))
+    colors = get_colors()
+    offset_c = [colors[i] for i in [0, 1, 2, 4]]
+    inflow_c = [colors[i] for i in [0, 1, 2, 4, 5]]
+    tilt_c = [colors[i] for i in [0, 1, 5]]
+    prop_c = [colors[i] for i in [0, 1, 5]]
+    clists = [offset_c, inflow_c, tilt_c, prop_c, offset_c]
+    offset_1 = -.575
+    leg_offset = [offset_1, offset_1, offset_1, offset_1, offset_1]
+    leg_offset_x = [.475] * 4 + [.475]
+    leg_columns = [2, 3, 2, 2, 2]
+
+    # plot raw and res
+    # import pdb; pdb.set_trace()
+    ncol = 2
+    ax = axes[0, 0]
+    x = np.arange(0, 15)
+
+    b1 = ax.bar(
+        x-0.7*ncol/12, ss_df['Raw Sample'].values,
+        width=0.7*ncol/6, label='Raw Sample', zorder=1)
+    ax.set_xticks(x)
+    ax.set_yticks(np.arange(0, 44000, 4000))
+    ax.set_yticks(np.arange(0, 42000, 2000), minor=True)
+    ax.set_xticklabels(name_abvs)
+    ax.set_ylabel('Raw Sample Size [-]')
+    ax.set_xlim([-.5, 14.5])
+    ax.set_ylim([0, 40000])
+    for k in range(14):
+        ax.plot(
+            [.5+k, .5+k], [0, 40000], 'grey', alpha=.6, linewidth=1, zorder=1)
+    ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+
+    ax_alt = ax.twinx()
+    b2 = ax_alt.bar(
+        x+0.7*ncol/12, ss_df['Restricted Sample'].values,
+        width=0.7*ncol/6, color='Tab:orange',
+        label='Restricted Sample', zorder=1)
+    ax_alt.set_yticks(np.arange(0, 1100, 100))
+    ax_alt.set_yticks(np.arange(0, 1050, 50), minor=True)
+    ax_alt.set_ylabel('Restricted Sample Size [-]')
+
+    # added these three lines
+    leg_h = [b1[0], b2[0]]
+    labs = ['Raw Sample', 'Restricted Sample']
+
+    # ax.grid(which='major', alpha=.8, axis='y', color='grey', linewidth=1, zorder=2)
+    ax_alt.grid(
+        which='major', alpha=.8, axis='y', color='grey', linewidth=1, zorder=2)
+
+    ax_alt.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+
+    ax.legend(
+        leg_h, labs, loc='lower center',
+        bbox_to_anchor=(leg_offset_x[0], -0.45),
+        ncol=2, fancybox=True, shadow=True)
+
+    for i in range(0, len(sen_dfs)):
+
+        base_ratios = sen_dfs[i].drop('Total', axis=1)
+        c_list = clists[i]
+        for c in base_ratios.columns:
+            base_ratios.loc[:, c] = (
+                base_ratios.loc[:, c]/sen_dfs[i].loc[:, 'Total'])
+
+        base_ratios = base_ratios.reset_index(drop=True)
+        base_ratios.loc[:, 'Test'] = np.array(name_abvs)
+        base_ratios = base_ratios.set_index('Test')
+        max_rat = np.ceil(base_ratios.max().max()*10)/10
+
+        ax = axes[(i+1) // 2, (i+1) % 2]
+        ncol = len(base_ratios.columns)
+        ax = base_ratios.plot(
+            kind='bar', stacked=False, fontsize=12, rot=0, ax=ax,
+            yticks=np.arange(0, max_rat+0.2, 0.1), width=0.7*ncol/4,
+            color=c_list)
+        ax.set_xlabel(None)
+        ax.xaxis.set_label_coords(.5, -0.15)
+
+        for k in range(14):
+            ax.plot(
+                [.5+k, .5+k], [0, max_rat+.1], 'grey', alpha=.6, linewidth=1)
+        ax.set_xlim([-.5, 14.5])
+        ax.set_ylim([0, max_rat+.1])
+
+        ax.set_ylabel('Ratio [-]', fontsize=12)
+        ax.legend(
+            loc='lower center',
+            bbox_to_anchor=(leg_offset_x[i], leg_offset[i]),
+            ncol=leg_columns[i], fancybox=True, shadow=True)
+        ax.set_yticks(np.arange(0, max_rat+0.05, 0.05), minor=True)
+        ax.tick_params(axis='x', length=0)
+        # ax.grid(which='minor', alpha=0.2, axis='y', color='w')
+        ax.grid(which='major', alpha=.8, axis='y', color='grey', linewidth=1)
+    #
+    # category_breakdown(
+    #     fig=fig, ax=axes[2, 1], leg_offset_h=-.71, test_dir=test_dirs,
+    #     test_names=name_abvs, name_abvs=name_abvs)
+    plt.subplots_adjust(hspace=0.65)
+
+    plt.subplots_adjust(wspace=wspace)
+    make_subplot_labels(axes.flatten())
+
+    base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
+    fig_dir = base_dir + 'TINT_figures/'
+    plt.savefig(
+        fig_dir + 'total_ratio_sensitivities{}.png'.format(suff),
+        dpi=200, facecolor=fc, edgecolor=fc, bbox_inches='tight')
+
+
 def plot_sensitivities(
         sen_dfs, suff='', alt_layout=False):
 
@@ -1139,6 +1470,7 @@ def plot_sensitivities(
     leg_offset = [offset_1, offset_1, offset_1, offset_1, offset_1]
     leg_offset_x = [.475] * 4 + [.475]
     leg_columns = [2, 3, 2, 2, 2]
+    import pdb; pdb.set_trace()
     for i in range(len(sen_dfs)):
         base_ratios = sen_dfs[i].drop('Total', axis=1)
         c_list = clists[i]
