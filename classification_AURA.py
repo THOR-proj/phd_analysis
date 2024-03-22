@@ -1568,7 +1568,7 @@ def plot_pie_map(radar_dfs):
     tilt_c = [colors[i] for i in [0, 1, 5]]
     prop_c = [colors[i] for i in [0, 1, 5]]
     clists = [offset_c, inflow_c, tilt_c, prop_c, offset_c]
-    #test
+
     names = [
         'Stratiform-Offset', 'Inflow', 'Tilt', 'Propagation',
         'Relative Stratiform-Offset']
