@@ -1,0 +1,4 @@
+Test better commit message
+
+This commit tests the use of better structured commit messages. Note the
+text wrapping at 72 characters.
