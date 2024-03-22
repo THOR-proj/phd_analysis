@@ -309,7 +309,7 @@ def get_counts_radar(
             tracks_obj = add_monsoon_regime(
                 tracks_obj, base_dir=base_dir, fake_pope=fake_pope)
 
-            # Get raw and res sample)
+            # Get raw and res sample
 
             sub_tracks = get_sub_tracks(
                 tracks_obj, non_linear=non_linear, exclusions=exclusions)
@@ -995,6 +995,8 @@ def plot_all_oldschool(
         test_dir=None, test_names=None, diurnal=False,
         time_threshes=None, fig_style='paper'):
 
+    # import pdb; pdb.set_trace()
+
     if (test_dir is None) or (test_names is None):
         test_dir = [
             'base', 'lower_conv_level', 'higher_conv_level',
@@ -1037,9 +1039,9 @@ def plot_all_oldschool(
     for i in range(len(test_dir)):
     # for i in [0]:
         base_dir = '/home/student.unimelb.edu.au/shorte1/Documents/'
-        class_path = base_dir + 'TINT_tracks/national/'
+        class_path = base_dir + 'TINT_tracks/'
         class_path += '{}_classes.pkl'.format(test_dir[i])
-        fig_dir = base_dir + 'TINT_figures/national/'
+        fig_dir = base_dir + 'TINT_figures/'
         fig_dir += test_dir[i] + '/'
 
         if not os.path.exists(fig_dir):
@@ -1288,13 +1290,13 @@ def plot_all(
 
     tilt_sensitivity_df = pd.DataFrame({
         'Radar': radars, 'Up-Shear Tilted': UST,
-        'Down-Shear Tilted': DST, 'Shear Perpendicular': A_tilt,
+        'Down-Shear Tilted': DST, 'Shear-Perpendicular Tilted': A_tilt,
         'Total': tilt_total})
     tilt_sensitivity_df = tilt_sensitivity_df.set_index('Radar')
 
     prop_sensitivity_df = pd.DataFrame({
         'Radar': radars, 'Down-Shear Propagating': DSP,
-        'Up-Shear Propagating': USP, 'Shear Perpendicular': A_prop,
+        'Up-Shear Propagating': USP, 'Shear-Perpendicular Propagating': A_prop,
         'Total': prop_total})
     prop_sensitivity_df = prop_sensitivity_df.set_index('Radar')
 
@@ -1315,7 +1317,7 @@ def plot_all(
 
 def plot_sensitivities_oldschool(
         sen_dfs, test_dirs, raw, res, name_abvs=None, suff='', alt_layout=False,
-        fig_style='paper'):
+        fig_style='paper', raw_max=40000, res_max=1000, raw_step=4000, res_step=100):
 
     if name_abvs is None:
         name_abvs = [
@@ -1350,7 +1352,7 @@ def plot_sensitivities_oldschool(
     clists = [offset_c, inflow_c, tilt_c, prop_c, offset_c]
     offset_1 = -.575
     leg_offset = [offset_1, offset_1, offset_1, offset_1, offset_1]
-    leg_offset_x = [.475] * 4 + [.475]
+    leg_offset_x = [.45] * 4 + [.45]
     leg_columns = [2, 3, 2, 2, 2]
 
     # plot raw and res
@@ -1363,15 +1365,15 @@ def plot_sensitivities_oldschool(
         x-0.7*ncol/12, ss_df['Raw Sample'].values,
         width=0.7*ncol/6, label='Raw Sample', zorder=1)
     ax.set_xticks(x)
-    ax.set_yticks(np.arange(0, 44000, 4000))
-    ax.set_yticks(np.arange(0, 42000, 2000), minor=True)
+    ax.set_yticks(np.arange(0, raw_max+raw_step/2, raw_step))
+    ax.set_yticks(np.arange(0, raw_max+raw_step/4, raw_step/2), minor=True)
     ax.set_xticklabels(name_abvs)
     ax.set_ylabel('Raw Sample Size [-]')
     ax.set_xlim([-.5, 14.5])
-    ax.set_ylim([0, 40000])
+    ax.set_ylim([0, raw_max])
     for k in range(14):
         ax.plot(
-            [.5+k, .5+k], [0, 40000], 'grey', alpha=.6, linewidth=1, zorder=1)
+            [.5+k, .5+k], [0, raw_max], 'grey', alpha=.6, linewidth=1, zorder=1)
     ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
     ax_alt = ax.twinx()
@@ -1379,8 +1381,10 @@ def plot_sensitivities_oldschool(
         x+0.7*ncol/12, ss_df['Restricted Sample'].values,
         width=0.7*ncol/6, color='Tab:orange',
         label='Restricted Sample', zorder=1)
-    ax_alt.set_yticks(np.arange(0, 1100, 100))
-    ax_alt.set_yticks(np.arange(0, 1050, 50), minor=True)
+
+    ax_alt.set_yticks(np.arange(0, res_max+res_step/2, res_step))
+    ax_alt.set_yticks(np.arange(0, res_max+res_step/4, res_step/2), minor=True)
+    
     ax_alt.set_ylabel('Restricted Sample Size [-]')
 
     # added these three lines
@@ -1470,7 +1474,7 @@ def plot_sensitivities(
     leg_offset = [offset_1, offset_1, offset_1, offset_1, offset_1]
     leg_offset_x = [.475] * 4 + [.475]
     leg_columns = [2, 3, 2, 2, 2]
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     for i in range(len(sen_dfs)):
         base_ratios = sen_dfs[i].drop('Total', axis=1)
         c_list = clists[i]
@@ -1579,6 +1583,8 @@ def plot_pie_map(radar_dfs):
             return "{:1.0f}".format(pct)
         else:
             return ''
+
+    # import pdb; pdb.set_trace()
 
     def plot_pie_inset(
             data, ilon, ilat, ax, width, total, radar, offsets, colors):

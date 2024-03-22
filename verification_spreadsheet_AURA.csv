@@ -1,2 +1,121 @@
-Radar,Year,Month,Time,Object,Notes
-2,2012,12,,,Some nice examples during this region/season.
+Year,Radar,Month,Date,Time,Object,Notes,Affects raw sample?,Affects res sample?
+2012,2,6,,,,All good,,
+,,12,,,,All good,,
+,3,6,2012+AC0-06+AC0-05,02:10:00,,Bad anvil,yes,no
+,,,2012+AC0-06+AC0-05,02:40:00,,Bad anvil,yes,no
+,,,2012+AC0-06+AC0-05,02:50:00,,Bad anvil,yes,no
+,,,2012+AC0-06+AC0-05,03:00:00,,Bad anvil,yes,no
+,,,2012+AC0-06+AC0-05,03:10:00,,Bad anvil,yes,no
+,,,2012+AC0-06+AC0-05,03:20:00,,Bad anvil,yes,no
+,,,2012+AC0-06+AC0-05,03:30:00,,Bad anvil,yes,no
+,,12,,,,All good,,
+,4,6,,,,All good,,
+,,12,,,,All good,,
+,5,6,,,,All good,,
+,,12,,,,All good,,
+,6,6,,,,All good,,
+,,12,,,,All good,,
+,8,6,,,,All good,,
+,,12,,,,All good,,
+,9,6,,,,All good,,
+,,12,,,,All good,,
+,14,6,,,,All good,,
+,,12,,,,All good,,
+,16,6,,,,All good,,
+,,12,2012+AC0-12+AC0-01,,,Bad velocity at 2012+AC0-12+AC0-01,No,No
+,,,2012+AC0-12+AC0-09,13:10:00,,Bad ellipse fit,No,Yes
+,,,,13:20:00,,Bad ellipse fit,No,Yes
+,,,,13:30:00,,Bad ellipse fit,No,Yes
+,,,2012+AC0-12+AC0-24,15:20:00,,Bad velocity,No,No
+,,,,15:30:00,,Bad velocity,,No
+,,,,15:40:00,,Bad velocity,,No
+,,,,15:50:00,,Bad velocity,,No
+,17,6,,,,All good,,
+,,12,,,,All good,,
+,19,6,,,,All good,,
+,,12,,,,All good,,
+,22,6,,,,All good,,
+,,12,,,,All good,,
+,23,6,,,,All good,,
+,,12,,,,All good,,
+,24,6,,,,All good,,
+,,12,,,,All good,,
+,25,6,,,,All good,,
+,,12,,,,All good,,
+,27,6,,,,All good,,
+,,12,,,,All good,,
+,29,6,,,,All good,,
+,,12,,,,All good,,
+,31,6,,,,All good,,
+,,12,,,,All good,,
+,32,6,,,,All good,,
+,,12,,,,All good,,
+,33,6,2012+AC0-06+AC0-13,08:30:00,,Bad velocity,,Yes
+,,,,08:50:00,,Bad velocity,,Yes
+,,12,,,,All good,,
+,36,6,,,,All good,,
+,,12,,,,All good,,
+,37,6,,,,All good,,
+,,12,,,,All good,,
+,40,6,,,,All good,,
+,,12,,,,All good,,
+,41,6,,,,All good,,
+,,12,,,,All good,,
+,42,6,,,,All good,,
+,,12,,,,All good,,
+,44,6,,,,All good,,
+,,12,,,,All good,,
+,46,6,,,,All good,,
+,,12,,,,All good,,
+,48,6,,,,All good,,
+,,12,,,,All good,,
+,49,6,,,,All good,,
+,,12,,,,All good,,
+,50,6,,,,All good,,
+,,12,,,,All good,,
+,52,6,,,,All good,,
+,,12,,,,All good,,
+,53,6,,,,All good,,
+,,12,2012+AC0-12+AC0-25,11:54:00,,Bad anvil,,yes
+,,,,12:04:00,,Bad anvil,,yes
+,,,,12:14:00,,Bad anvil,,yes
+,54,6,,,,All good,,
+,,12,2012+AC0-12+AC0-23,04:00:00,,Bad velocity,,no
+,,,,04:12:00,,Bad velocity,,no
+,,,,04:24:00,,Bad velocity,,no
+,55,6,,,,All good,,
+,,12,,,,All good,,
+,56,6,,,,All good,,
+,,12,,,,All good,,
+,63,6,,,,All good,,
+,,12,,,,All good,,
+,64,6,,,,All good,,
+,,12,,,,All good,,
+,66,6,,,,All good,,
+,,12,,,,All good,,
+,67,6,,,,All good,,
+,,12,,,,All good,,
+,68,6,,,,All good,,
+,,12,,,,All good,,
+,69,6,2012+AC0-06+AC0-16,03:40:00,,+ACI-Bad anvil, bad cells+ACI-,,yes
+,,,,03:50:00,,+ACI-Bad anvil, bad cells+ACI-,,yes
+,,,,04:00:00,,+ACI-Bad anvil, bad cells+ACI-,,yes
+,,,,04:10:00,,+ACI-Bad anvil, bad cells+ACI-,,yes
+,,,,04:20:00,,+ACI-Bad anvil, bad cells+ACI-,,yes
+,,,,04:30:00,,+ACI-Bad anvil, bad cells+ACI-,,yes
+,,,,04:40:00,,+ACI-Bad anvil, bad cells+ACI-,,yes
+,,12,,,,All good,,
+,70,6,,,,All good,,
+,,12,,,,All good,,
+,71,6,,,,All good,,
+,,12,,,,All good,,
+,72,6,,,,All good,,
+,,12,,,,All good,,
+,73,6,,,,All good,,
+,,12,,,,All good,,
+,75,6,,,,All good,,
+,,12,,,,All good,,
+,76,6,,,,All good,,
+,,12,,,,All good,,
+,77,6,,,,All good,,
+,,12,,,,All good,,
